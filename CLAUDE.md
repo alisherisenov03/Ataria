@@ -102,6 +102,10 @@ Approved outputs (do not regenerate, reuse or fix manually):
 - Light-kitchen story base (raw a3d54277) + bowl handle transplanted from cover 0720c8a9, full res 1520×2688:
   dfd281fd-3b16-4370-a4ba-2de3a0b1d922.png (dial/buttons still as generated — not yet fixed).
 - Reels: espresso hero frame 6f508c57-bc12-4c5e-abac-22f7fb9c4a34; dough reel dd87ff09-3642-4245-ac41-1544587f1d5a.
+- Post-run berry smoothie reel (no apron, Almaty First President's Park → home → blender on top port → dial → drink), 24.8 s,
+  calm music e7d05ff9: a43b8736-37b9-4054-911f-d530941c6a2f.mp4. Dial clip was reversed + glow recoloured so 0 = off and
+  P (turbo) lights up; smoothie vortex shot cropped so the mis-mounted body is hidden. Fixed keyframes: kitchen 90d53de7…,
+  dial macro with hand-drawn P 0 1–6 marks 4fffc874-139d-4437-a149-fd65635eb189.
 
 ## Ideas already discussed
 
