@@ -99,6 +99,8 @@ Approved outputs (do not regenerate, reuse or fix manually):
   manually if reused.
 - Order stories with corrected handle: WhatsApp a1268199-2f2a-48c6-b55b-6f021b3e62c1,
   Kaspi 2637a72b-7834-4134-95b1-12327384cfc9, clean base 78c92e51-194b-48a2-9e00-bbfd72549a4d.
+- Light-kitchen story base (raw a3d54277) + bowl handle transplanted from cover 0720c8a9, full res 1520×2688:
+  dfd281fd-3b16-4370-a4ba-2de3a0b1d922.png (dial/buttons still as generated — not yet fixed).
 - Reels: espresso hero frame 6f508c57-bc12-4c5e-abac-22f7fb9c4a34; dough reel dd87ff09-3642-4245-ac41-1544587f1d5a.
 
 ## Ideas already discussed
