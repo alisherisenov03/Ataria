@@ -107,9 +107,15 @@ Approved outputs (do not regenerate, reuse or fix manually):
   P (turbo) lights up; smoothie vortex shot cropped so the mis-mounted body is hidden. Fixed keyframes: kitchen 90d53de7…,
   dial macro with hand-drawn P 0 1–6 marks 4fffc874-139d-4437-a149-fd65635eb189.
 - Feed carousel "Три насадки для теста" (light European style, 1080×1350, text overlaid with Montserrat Light/Regular,
-  not AI text): cover 6b09cf7a-0368-42fa-82ae-c4c65cb89d73, hook 51b3bec4-9682-460a-9307-ddee7126d652,
-  beater 0da89887-364c-4b68-bf8e-9c12a8f89d2a, whisk 671025d9-8606-4ddd-88ac-ae74aade3488 (.jpg).
+  not AI text). v2 (Oct 3): cover 5e880b82-30ab-4299-bb68-563ef2d6d3e8 (flat lay, text at x=290),
+  hook 51b3bec4-9682-460a-9307-ddee7126d652 (approved, keep), beater 342e0811-a237-4f53-8267-0e1127eaa995 (clean),
+  whisk 63138cba-acdf-4023-bbd7-4d0e8a675cfe (lying + cream) / alt 7f6afa87-2eaa-4642-bb90-d4e1ee552363 (in cream bowl) (.jpg).
+  v1 cover/beater/whisk (6b09cf7a, 0da89887, 671025d9) rejected: wrong/narrow whisk with a plate, dirty beater.
   Speeds from the head icon pills: hook 1–2, beater and whisk 1–6.
+- **Real whisk** (user photo, mounted): 9ee0798d-5bbd-44b2-86b2-7ca3c520a4b0.jpg. Wide balloon of many wires going
+  straight into a cylindrical satin-aluminium hub with a J bayonet slot — **NO flat disk/plate**. Real attachments
+  are larger than the model tends to draw; prompt "wide, full-size". Mounted-on-machine generations give a wrong
+  (black, round) head — avoid or use real photos.
 
 ## Ideas already discussed
 
