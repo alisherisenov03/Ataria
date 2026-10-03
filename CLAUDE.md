@@ -106,6 +106,10 @@ Approved outputs (do not regenerate, reuse or fix manually):
   calm music e7d05ff9: a43b8736-37b9-4054-911f-d530941c6a2f.mp4. Dial clip was reversed + glow recoloured so 0 = off and
   P (turbo) lights up; smoothie vortex shot cropped so the mis-mounted body is hidden. Fixed keyframes: kitchen 90d53de7…,
   dial macro with hand-drawn P 0 1–6 marks 4fffc874-139d-4437-a149-fd65635eb189.
+- Feed carousel "Три насадки для теста" (light European style, 1080×1350, text overlaid with Montserrat Light/Regular,
+  not AI text): cover 6b09cf7a-0368-42fa-82ae-c4c65cb89d73, hook 51b3bec4-9682-460a-9307-ddee7126d652,
+  beater 0da89887-364c-4b68-bf8e-9c12a8f89d2a, whisk 671025d9-8606-4ddd-88ac-ae74aade3488 (.jpg).
+  Speeds from the head icon pills: hook 1–2, beater and whisk 1–6.
 
 ## Ideas already discussed
 
