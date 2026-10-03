@@ -107,7 +107,7 @@ Approved outputs (do not regenerate, reuse or fix manually):
   P (turbo) lights up; smoothie vortex shot cropped so the mis-mounted body is hidden. Fixed keyframes: kitchen 90d53de7…,
   dial macro with hand-drawn P 0 1–6 marks 4fffc874-139d-4437-a149-fd65635eb189.
 - Feed carousel "Три насадки для теста" (light European style, 1080×1350, text overlaid with Montserrat Light/Regular,
-  not AI text). Current set (Oct 3): cover v7 4a44e309-559d-45ea-bb16-6b580e8ebe04 (base gen 47a202c7 chosen by user, whisk laid on its side via edit job ec5bc3b9; alt v7b 1e21af77 whisk horizontal), hook 51b3bec4-9682-460a-9307-ddee7126d652,
+  not AI text). Current set (Oct 3): cover v8 290bd5b3-e6b6-4561-a573-43a37ff5e745 (clean no-text 1792×2240: ad085013-f556-41f1-aa28-df83be8c28ef; = edit job ec5bc3b9 with the whisk region manually scaled ×1.15 about its lower-left, feathered paste; v7 4a44e309 = same without the scale; base gen 47a202c7 chosen by user; alt v7b 1e21af77 whisk horizontal), hook 51b3bec4-9682-460a-9307-ddee7126d652,
   beater 342e0811-a237-4f53-8267-0e1127eaa995, whisk v3 83698c41-6f31-48be-a5ab-18f9e2c90915 (in cream bowl);
   whisk alts fc298799-3a43-4357-a6d2-c893969d3752 (lying) / a6c1d992-b1e2-43ba-be66-98096a9cc0e5 (flat lay) (.jpg).
   Rejected: v1 cover/beater/whisk (6b09cf7a, 0da89887, 671025d9); v2 cover 5e880b82, v3 cover 8b73706b (beater too narrow), v4 cover 0aa49513 (beater spine straight, whisk hub too thick), v5 cover 6844ca99 (attachments posed upright, unnatural), v6 cover b0494ea1, and whisks 63138cba/7f6afa87
