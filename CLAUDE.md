@@ -107,11 +107,13 @@ Approved outputs (do not regenerate, reuse or fix manually):
   P (turbo) lights up; smoothie vortex shot cropped so the mis-mounted body is hidden. Fixed keyframes: kitchen 90d53de7…,
   dial macro with hand-drawn P 0 1–6 marks 4fffc874-139d-4437-a149-fd65635eb189.
 - Feed carousel "Три насадки для теста" (light European style, 1080×1350, text overlaid with Montserrat Light/Regular,
-  not AI text). Current set (Oct 3): cover v3 8b73706b-ac10-40eb-84a7-59f51f60d2da, hook 51b3bec4-9682-460a-9307-ddee7126d652,
+  not AI text). Current set (Oct 3): cover v4 0aa49513-5a9a-408d-9181-7930e1b4ee3a (3/4 view on counter, flour bowl + wheat), hook 51b3bec4-9682-460a-9307-ddee7126d652,
   beater 342e0811-a237-4f53-8267-0e1127eaa995, whisk v3 83698c41-6f31-48be-a5ab-18f9e2c90915 (in cream bowl);
   whisk alts fc298799-3a43-4357-a6d2-c893969d3752 (lying) / a6c1d992-b1e2-43ba-be66-98096a9cc0e5 (flat lay) (.jpg).
-  Rejected: v1 cover/beater/whisk (6b09cf7a, 0da89887, 671025d9); v2 cover 5e880b82 and whisks 63138cba/7f6afa87
+  Rejected: v1 cover/beater/whisk (6b09cf7a, 0da89887, 671025d9); v2 cover 5e880b82, v3 cover 8b73706b (beater too narrow), and whisks 63138cba/7f6afa87
   (whisk still too narrow). Lesson: build covers ONLY from real reference photos, never from earlier generations.
+  **Real beater** (ref 0a7638b3): WIDE rounded-shield frame, width ≈ height, thick rim; one central spine curving to
+  the tip + two parallel ribs branching to ONE side (not a narrow leaf, not symmetric Y veins).
   Speeds from the head icon pills: hook 1–2, beater and whisk 1–6.
 - **Real whisk** photos: mounted 9ee0798d-5bbd-44b2-86b2-7ca3c520a4b0, in hand 8793dc19-1f61-4f5a-b7b0-9f930177e243,
   8223b08c-454d-4dc8-b990-5e80f8a8f3d1, 5ab465d8-a6bf-4609-881f-631462f581f7 (use all 4 as refs; they show a private
