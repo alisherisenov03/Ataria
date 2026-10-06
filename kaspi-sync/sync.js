@@ -10,6 +10,8 @@ const BACKFILL_DAYS = Number(process.env.BACKFILL_DAYS || 60);
 const BASE = "https://kaspi.kz/shop/api/v2";
 const DAY = 864e5;
 const WINDOW = 14 * DAY; // Kaspi отдаёт заказы окнами не больше 14 дней
+// Kaspi просит указать статус заказа; ARCHIVE нужен, чтобы видеть завершённые заказы
+const STATES = ["NEW", "SIGN_REQUIRED", "PICKUP", "DELIVERY", "KASPI_DELIVERY", "ARCHIVE"];
 
 if (!DB) { console.error("Нет DATABASE_URL"); process.exit(1); }
 const pool = new pg.Pool({ connectionString: DB, ssl: DB.includes("railway.internal") ? false : { rejectUnauthorized: false } });
@@ -60,10 +62,11 @@ async function qtyOf(orderId) {
   } catch (e) { console.warn("Не получил позиции заказа", orderId, e.message); return null; }
 }
 
-async function syncWindow(from, to) {
+async function syncWindow(from, to, state) {
   let page = 0, saved = 0;
   for (;;) {
     const q = `?page[number]=${page}&page[size]=100`
+      + `&filter[orders][state]=${state}`
       + `&filter[orders][creationDate][$ge]=${from}&filter[orders][creationDate][$le]=${to}`;
     const j = await api("/orders" + q);
     const rows = j.data || [];
@@ -94,13 +97,24 @@ async function run() {
   let total = 0;
   while (from < now) {
     const to = Math.min(from + WINDOW, now);
-    total += await syncWindow(from, to);
+    for (const state of STATES) {
+      try {
+        const n = await syncWindow(from, to, state);
+        total += n;
+        console.log(`${new Date(from).toISOString().slice(0, 10)}..${new Date(to).toISOString().slice(0, 10)} ${state}: ${n}`);
+      } catch (e) { console.error(`Ошибка ${state}:`, e.message); }
+    }
     from = to;
   }
   await pool.query(
     "insert into sync_state (key, value) values ('last_to',$1) on conflict (key) do update set value=excluded.value",
     [String(now)]);
   console.log(new Date().toISOString(), "заказов обновлено:", total);
+  const today = await pool.query(
+    `select state, count(*) n from kaspi_orders
+     where (created_at at time zone 'Asia/Almaty')::date = (now() at time zone 'Asia/Almaty')::date
+     group by state order by state`);
+  console.log("Сегодня по статусам:", JSON.stringify(today.rows));
 }
 
 async function main() {
