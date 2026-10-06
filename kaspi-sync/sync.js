@@ -54,13 +54,18 @@ async function init() {
       total_price numeric
     );
     create index if not exists kaspi_items_order_idx on kaspi_items (order_id);
+    create table if not exists product_owner (code text primary key, owner text not null);
+    insert into product_owner (code, owner) values
+      ('387114608','jiger'), ('106498300_822011449','jiger'),
+      ('152520848_858990392','jiger'), ('139968544_715840126','jiger')
+    on conflict (code) do nothing;
     create or replace view daily_sales as
       select (created_at at time zone 'Asia/Almaty')::date as day,
              count(*) as orders,
              coalesce(sum(qty), 0) as units,
              coalesce(sum(total_price), 0) as revenue
       from kaspi_orders
-      where state not in ('CANCELLED', 'CANCELLING')
+      where state not in ('CANCELLED', 'CANCELLING') and total_price >= 1000
       group by 1 order by 1;
   `);
 }
@@ -148,6 +153,7 @@ async function report() {
   const today = await pool.query(
     `select state, count(*) n from kaspi_orders
      where (created_at at time zone 'Asia/Almaty')::date = (now() at time zone 'Asia/Almaty')::date
+       and total_price >= 1000
      group by state order by state`);
   console.log("Сегодня по статусам:", JSON.stringify(today.rows));
   // Открытые заказы: собран ли заказ и передан ли курьеру (по полям Kaspi). Только флаги, без данных клиентов.
@@ -156,20 +162,25 @@ async function report() {
             raw->'attributes'->>'assembled' as assembled,
             (raw->'attributes'->'kaspiDelivery'->>'courierTransmissionDate') is not null as handed_to_courier,
             count(*) n
-     from kaspi_orders where state <> 'ARCHIVE' group by 1,2,3,4 order by 1,2,3,4`);
+     from kaspi_orders where state <> 'ARCHIVE' and total_price >= 1000 group by 1,2,3,4 order by 1,2,3,4`);
   console.log("Открытые заказы:", JSON.stringify(open.rows));
   const keys = await pool.query(
     `select (select array_agg(k) from jsonb_object_keys(raw->'attributes') k) as attr_keys,
             (select array_agg(k) from jsonb_object_keys(coalesce(raw->'attributes'->'kaspiDelivery','{}'::jsonb)) k) as delivery_keys
      from kaspi_orders where state <> 'ARCHIVE' order by created_at desc limit 1`);
   console.log("Поля заказа:", JSON.stringify(keys.rows[0] || {}));
+  const bo = await pool.query(
+    "select count(*) n, coalesce(sum(total_price),0) s from kaspi_orders where total_price < 1000");
+  console.log("Самовыкупы (исключены):", JSON.stringify(bo.rows[0]));
   const prod = await pool.query(
-    `select i.product_name, i.product_code, sum(i.qty) units, sum(i.total_price) revenue,
-            count(distinct i.order_id) orders, round(sum(i.total_price)/nullif(sum(i.qty),0)) avg_price
+    `select coalesce(po.owner,'alisher') owner, i.product_name, i.product_code,
+            sum(i.qty) units, sum(i.total_price) revenue, count(distinct i.order_id) orders,
+            round(sum(i.total_price)/nullif(sum(i.qty),0)) avg_price
      from kaspi_items i join kaspi_orders o on o.id = i.order_id
-     where o.state not in ('CANCELLED','CANCELLING')
-     group by 1,2 order by revenue desc nulls last limit 60`);
-  console.log("Товары за 60 дней:", JSON.stringify(prod.rows));
+     left join product_owner po on po.code = i.product_code
+     where o.state not in ('CANCELLED','CANCELLING') and o.total_price >= 1000
+     group by 1,2,3 order by 1, revenue desc nulls last limit 60`);
+  console.log("Товары за 60 дней без самовыкупов:", JSON.stringify(prod.rows));
   const days = await pool.query(
     "select to_char(day,'YYYY-MM-DD') d, orders, units, revenue from daily_sales order by day desc limit 10");
   console.log("Продажи по дням (заказы/штуки/выручка):", JSON.stringify(days.rows));
