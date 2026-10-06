@@ -184,6 +184,40 @@ async function report() {
   const days = await pool.query(
     "select to_char(day,'YYYY-MM-DD') d, orders, units, revenue from daily_sales order by day desc limit 10");
   console.log("Продажи по дням (заказы/штуки/выручка):", JSON.stringify(days.rows));
+  await snapshot();
+}
+
+// Одна строка JSON с продажами Alisher за 60 дней по моделям. Её читает утренняя страница.
+const SNAP_KEYS = [
+  ["sm23", /AT-?SM23|комбайн/i], ["at2300", /AT-?2300/i], ["at1700", /AT-?1700/i], ["at1100", /AT-?1100/i],
+  ["silk", /Ataria\s*2|40\s*[xх]\s*61|шёлк|шелк/i], ["btf", /ортопедическ|бабочк/i], ["wave", /35\s*[xх]\s*60|волн/i],
+];
+async function snapshot() {
+  const r = await pool.query(
+    `select i.product_name name, sum(i.qty) units, sum(i.total_price) revenue
+     from kaspi_items i join kaspi_orders o on o.id = i.order_id
+     left join product_owner po on po.code = i.product_code
+     where o.state not in ('CANCELLED','CANCELLING') and o.total_price >= 1000
+       and coalesce(po.owner,'alisher') = 'alisher'
+     group by 1`);
+  const sold60 = {}, rev = {};
+  for (const row of r.rows) {
+    const key = (SNAP_KEYS.find(([, re]) => re.test(row.name)) || [])[0];
+    if (!key) continue;
+    sold60[key] = (sold60[key] || 0) + Number(row.units);
+    rev[key] = (rev[key] || 0) + Number(row.revenue);
+  }
+  const price = {};
+  for (const k of Object.keys(sold60)) if (sold60[k]) price[k] = Math.round(rev[k] / sold60[k]);
+  const op = await pool.query(
+    `select count(*) filter (where raw->'attributes'->>'assembled' = 'false') packing,
+            count(*) filter (where raw->'attributes'->>'assembled' = 'true'
+                              and (raw->'attributes'->'kaspiDelivery'->>'courierTransmissionDate') is not null) courier
+     from kaspi_orders where state <> 'ARCHIVE' and total_price >= 1000`);
+  console.log("SNAPSHOT", JSON.stringify({
+    asof: new Date().toISOString(), sold60, price,
+    packing: Number(op.rows[0].packing), courier: Number(op.rows[0].courier),
+  }));
 }
 
 let running = false;
