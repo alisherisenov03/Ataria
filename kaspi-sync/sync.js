@@ -115,6 +115,12 @@ async function run() {
      where (created_at at time zone 'Asia/Almaty')::date = (now() at time zone 'Asia/Almaty')::date
      group by state order by state`);
   console.log("Сегодня по статусам:", JSON.stringify(today.rows));
+  const days = await pool.query(
+    "select to_char(day,'YYYY-MM-DD') d, orders, units, revenue from daily_sales order by day desc limit 30");
+  console.log("Продажи по дням (заказы/штуки/выручка):", JSON.stringify(days.rows));
+  const open = await pool.query(
+    "select state, status, count(*) n from kaspi_orders where state <> 'ARCHIVE' group by 1,2 order by 1,2");
+  console.log("Открытые заказы по статусам:", JSON.stringify(open.rows));
 }
 
 async function main() {
