@@ -9,12 +9,14 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500&family=Cormorant+Garamond:wght@300;400&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
+<link rel="icon" href="img/icon.png">
+<link rel="apple-touch-icon" href="img/icon.png">
 </head>
 <body>
 
 <header class="nav">
   <div class="wrap nav-in">
-    <a class="logo" href="#top">ATARIA</a>
+    <a class="logo" href="#top"><img src="img/logo-text.png" alt="ATARIA" width="153" height="18"></a>
     <nav class="nav-links">
       <a href="#features">Возможности</a>
       <a href="#attachments">Насадки</a>
@@ -33,14 +35,12 @@
         <h1>Тесто, фарш и соусы.<br>Одна машина на всю кухню.</h1>
         <p class="lead">Планетарный миксер 2000 Вт с чашей 7 литров и пятью насадками. Спокойная работа, точный контроль, европейский дизайн.</p>
         <div class="hero-actions">
-          <a class="btn btn-dark" href="#order">Заказать</a>
-          <span class="price"><!-- TODO: цена -->Цена: <b>уточняется</b></span>
+          <a class="btn btn-gold" href="#order">Заказать</a>
+          <span class="price"><b>129 990 ₸</b><small>или в рассрочку на Kaspi</small></span>
         </div>
         <p class="note">Бесплатная доставка по Казахстану · Гарантия 12 месяцев</p>
       </div>
-      <figure class="ph ph-hero" data-label="Фото: машина на светлой кухне">
-        <!-- TODO: заменить на главное фото (светлая кухня, травертин) -->
-      </figure>
+      <figure class="ph ph-hero"><img src="img/dark-front.jpg" alt="Кухонная машина ATARIA AT-SM23" fetchpriority="high"></figure>
     </div>
   </section>
 
@@ -50,7 +50,7 @@
       <h2>Сделано для домашней выпечки каждый день</h2>
       <div class="grid-4">
         <div class="feat"><span class="num">2000</span><span class="unit">Вт</span><p>Мощный мотор справляется с крутым тестом для баурсаков и пельменей.</p></div>
-        <div class="feat"><span class="num">7</span><span class="unit">л</span><p>Чаша из нержавеющей стали на 2–3 кг теста за раз.</p></div>
+        <div class="feat"><span class="num">7</span><span class="unit">л</span><p>Чаша из нержавеющей стали с крышкой от брызг, на всю семью.</p></div>
         <div class="feat"><span class="num">6+P</span><span class="unit">скоростей</span><p>Плавная регулировка и импульсный режим, таймер до 15 минут.</p></div>
         <div class="feat"><span class="num">360°</span><span class="unit">планетарно</span><p>Насадка обходит всю чашу, ингредиенты смешиваются равномерно.</p></div>
       </div>
@@ -59,13 +59,13 @@
 
   <section class="section split">
     <div class="wrap split-in">
-      <figure class="ph ph-tall" data-label="Фото: крупно, хромированный регулятор и дисплей"></figure>
+      <figure class="ph ph-tall"><img src="img/detail.jpg" alt="Дисплей с таймером и хромированный регулятор" loading="lazy"></figure>
       <div>
         <p class="eyebrow">Детали</p>
         <h2>Тихая роскошь в деталях</h2>
         <ul class="list">
           <li>Хромированный регулятор с подсветкой и LED-дисплей с таймером</li>
-          <li>Матовый графитовый корпус, который не боится отпечатков</li>
+          <li>Матовый графитовый корпус</li>
           <li>Защита от перегрева и присоски на основании</li>
           <li>Прозрачная крышка от брызг с окном для добавления продуктов</li>
         </ul>
@@ -78,11 +78,11 @@
       <p class="eyebrow">В комплекте</p>
       <h2>Пять насадок вместо пяти приборов</h2>
       <div class="cards">
-        <article class="card"><figure class="ph" data-label="Фото: три насадки для теста"></figure><h3>Крюк, венчик, лопатка</h3><p>Для дрожжевого теста, крема и бисквита.</p></article>
-        <article class="card"><figure class="ph" data-label="Фото: мясорубка"></figure><h3>Мясорубка</h3><p>Три решётки и насадки для колбасок и кеббе.</p></article>
-        <article class="card"><figure class="ph" data-label="Фото: стеклянный блендер"></figure><h3>Блендер 1,5 л</h3><p>Стеклянная чаша для смузи и соусов.</p></article>
-        <article class="card"><figure class="ph" data-label="Фото: овощерезка"></figure><h3>Овощерезка</h3><p>Три барабана: крупная и мелкая тёрка, слайсы.</p></article>
-        <article class="card"><figure class="ph" data-label="Фото: раскатка и лапшерезка"></figure><h3>Раскатка и лапшерезка</h3><p>Восемь толщин теста и лапша шириной 5 мм.</p></article>
+        <article class="card"><figure class="ph"><img src="img/hero-light.jpg" alt="Чаша 7 литров" loading="lazy"></figure><h3>Чаша 7 л и три насадки</h3><p>Крюк, венчик и лопатка для теста, крема и бисквита.</p></article>
+        <article class="card"><figure class="ph"><img src="img/grinder.jpg" alt="Мясорубка" loading="lazy"></figure><h3>Мясорубка</h3><p>Три решётки и насадки для колбасок и кеббе.</p></article>
+        <article class="card"><figure class="ph"><img src="img/blender.jpg" alt="Блендер" loading="lazy"></figure><h3>Блендер 1,5 л</h3><p>Стеклянная чаша для смузи и соусов.</p></article>
+        <article class="card"><figure class="ph"><img src="img/slicer.jpg" alt="Овощерезка" loading="lazy"></figure><h3>Овощерезка</h3><p>Три барабана: крупная и мелкая тёрка, слайсы.</p></article>
+        <article class="card"><figure class="ph ph-empty" data-label="Фото скоро"></figure><h3>Раскатка и лапшерезка</h3><p>Восемь толщин теста и лапша шириной 5 мм.</p></article>
       </div>
     </div>
   </section>
@@ -106,15 +106,23 @@
     </div>
   </section>
 
+  <section class="band">
+    <img src="img/chefs.jpg" alt="Повара в фартуках ATARIA" loading="lazy">
+    <div class="band-text wrap">
+      <img class="band-emblem" src="img/emblem.png" alt="" width="96" height="48">
+      <h2>Готовить вместе — вкуснее</h2>
+    </div>
+  </section>
+
   <section id="order" class="section order">
     <div class="wrap order-in">
       <p class="eyebrow light">Заказ</p>
       <h2>Привезём бесплатно в любой город Казахстана</h2>
-      <p class="lead light">Оформите заказ на Kaspi или напишите нам в WhatsApp, ответим на любые вопросы.</p>
+      <p class="order-price">129 990 ₸</p>
+      <p class="lead light">Оформите заказ на Kaspi, в том числе в рассрочку, или напишите нам в WhatsApp.</p>
       <div class="order-actions">
-        <!-- TODO: реальные ссылки на Kaspi и WhatsApp -->
-        <a class="btn btn-light" href="#" data-todo="kaspi">Купить на Kaspi</a>
-        <a class="btn btn-ghost" href="#" data-todo="whatsapp">Написать в WhatsApp</a>
+        <a class="btn btn-gold" href="https://l.kaspi.kz/shop/7Ry2rkp6mkFUvK6" target="_blank" rel="noopener">Купить на Kaspi</a>
+        <a class="btn btn-ghost" href="https://clck.ru/3WGZeW" target="_blank" rel="noopener">Написать в WhatsApp</a>
       </div>
     </div>
   </section>
@@ -123,10 +131,9 @@
     <div class="wrap faq">
       <p class="eyebrow">Вопросы</p>
       <h2>Частые вопросы</h2>
-      <details><summary>Сколько идёт доставка?</summary><p>Уточняется. <!-- TODO --></p></details>
-      <details><summary>Можно ли купить в рассрочку?</summary><p>Да, через Kaspi. <!-- TODO: подтвердить --></p></details>
+      <details><summary>Сколько стоит доставка?</summary><p>Доставка бесплатная по всему Казахстану. Сроки для вашего города подскажем в WhatsApp.</p></details>
+      <details><summary>Можно ли купить в рассрочку?</summary><p>Да, рассрочка доступна при покупке через Kaspi.</p></details>
       <details><summary>Что входит в гарантию?</summary><p>12 месяцев на заводские дефекты.</p></details>
-      <details><summary>Сколько теста можно замесить за раз?</summary><p>Чаша 7 литров рассчитана примерно на 2–3 кг теста. <!-- TODO: подтвердить --></p></details>
     </div>
   </section>
 
@@ -134,7 +141,7 @@
 
 <footer class="footer">
   <div class="wrap footer-in">
-    <span class="logo">ATARIA</span>
+    <span class="logo"><img src="img/logo-text.png" alt="ATARIA" width="119" height="14"></span>
     <a href="https://instagram.com/ataria.kz" target="_blank" rel="noopener">Instagram @ataria.kz</a>
     <span>© 2026 ATARIA</span>
   </div>
