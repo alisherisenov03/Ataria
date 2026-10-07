@@ -199,6 +199,7 @@ async function snapshot() {
      left join product_owner po on po.code = i.product_code
      where o.state not in ('CANCELLED','CANCELLING') and o.total_price >= 1000
        and coalesce(po.owner,'alisher') = 'alisher'
+       and o.created_at >= now() - interval '60 days'
      group by 1`);
   const sold60 = {}, rev = {};
   for (const row of r.rows) {
