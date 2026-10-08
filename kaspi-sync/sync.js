@@ -215,6 +215,23 @@ async function snapshot() {
             count(*) filter (where raw->'attributes'->>'assembled' = 'true'
                               and (raw->'attributes'->'kaspiDelivery'->>'courierTransmissionDate') is not null) courier
      from kaspi_orders where state <> 'ARCHIVE' and total_price >= 1000`);
+  // Продажи с момента, когда Алишер называл остатки (6 октября, 07:00 UTC). Для расчёта остатков на складе.
+  const since = await pool.query(
+    `select i.product_name name, o.state, sum(i.qty) units, sum(i.total_price) revenue
+     from kaspi_items i join kaspi_orders o on o.id = i.order_id
+     left join product_owner po on po.code = i.product_code
+     where o.state not in ('CANCELLED','CANCELLING') and o.total_price >= 1000
+       and coalesce(po.owner,'alisher') = 'alisher'
+       and o.created_at >= '2026-10-06T07:00:00Z'
+     group by 1,2`);
+  const sinceOut = {};
+  for (const row of since.rows) {
+    const key = (SNAP_KEYS.find(([, re]) => re.test(row.name)) || ["other"])[0];
+    const e = (sinceOut[key] = sinceOut[key] || { units: 0, archive_units: 0, revenue: 0 });
+    e.units += Number(row.units); e.revenue += Number(row.revenue);
+    if (row.state === "ARCHIVE") e.archive_units += Number(row.units);
+  }
+  console.log("SINCE_OCT6", JSON.stringify(sinceOut));
   console.log("SNAPSHOT", JSON.stringify({
     asof: new Date().toISOString(), sold60, price,
     packing: Number(op.rows[0].packing), courier: Number(op.rows[0].courier),
