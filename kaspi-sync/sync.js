@@ -192,20 +192,23 @@ const SNAP_KEYS = [
   ["sm23", /AT-?SM23|комбайн/i], ["at2300", /AT-?2300/i], ["at1700", /AT-?1700/i], ["at1100", /AT-?1100/i],
   ["silk", /Ataria\s*2|40\s*[xх]\s*61|шёлк|шелк/i], ["btf", /ортопедическ|бабочк/i], ["wave", /35\s*[xх]\s*60|волн/i],
 ];
+// Наборы: код товара -> сколько подушек внутри. Набор списывается из общего остатка своего размера.
+const SET_PIECES = { "721517587": 4, "930510117": 3 };
+const pieces = (code) => SET_PIECES[String(code)] || 1;
 async function snapshot() {
   const r = await pool.query(
-    `select i.product_name name, sum(i.qty) units, sum(i.total_price) revenue
+    `select i.product_name name, i.product_code code, sum(i.qty) units, sum(i.total_price) revenue
      from kaspi_items i join kaspi_orders o on o.id = i.order_id
      left join product_owner po on po.code = i.product_code
      where o.state not in ('CANCELLED','CANCELLING') and o.total_price >= 1000
        and coalesce(po.owner,'alisher') = 'alisher'
        and o.created_at >= now() - interval '60 days'
-     group by 1`);
+     group by 1,2`);
   const sold60 = {}, rev = {};
   for (const row of r.rows) {
     const key = (SNAP_KEYS.find(([, re]) => re.test(row.name)) || [])[0];
     if (!key) continue;
-    sold60[key] = (sold60[key] || 0) + Number(row.units);
+    sold60[key] = (sold60[key] || 0) + Number(row.units) * pieces(row.code);
     rev[key] = (rev[key] || 0) + Number(row.revenue);
   }
   const price = {};
@@ -217,19 +220,21 @@ async function snapshot() {
      from kaspi_orders where state <> 'ARCHIVE' and total_price >= 1000`);
   // Продажи с момента, когда Алишер называл остатки (6 октября, 07:00 UTC). Для расчёта остатков на складе.
   const since = await pool.query(
-    `select i.product_name name, o.state, sum(i.qty) units, sum(i.total_price) revenue
+    `select i.product_name name, i.product_code code, o.state, sum(i.qty) units, sum(i.total_price) revenue
      from kaspi_items i join kaspi_orders o on o.id = i.order_id
      left join product_owner po on po.code = i.product_code
      where o.state not in ('CANCELLED','CANCELLING') and o.total_price >= 1000
        and coalesce(po.owner,'alisher') = 'alisher'
        and o.created_at >= '2026-10-06T07:00:00Z'
-     group by 1,2`);
+     group by 1,2,3`);
   const sinceOut = {};
   for (const row of since.rows) {
     const key = (SNAP_KEYS.find(([, re]) => re.test(row.name)) || ["other"])[0];
     const e = (sinceOut[key] = sinceOut[key] || { units: 0, archive_units: 0, revenue: 0 });
-    e.units += Number(row.units); e.revenue += Number(row.revenue);
-    if (row.state === "ARCHIVE") e.archive_units += Number(row.units);
+    const u = Number(row.units) * pieces(row.code);
+    e.units += u; e.revenue += Number(row.revenue);
+    if (row.state === "ARCHIVE") e.archive_units += u;
+    if (SET_PIECES[String(row.code)]) (e.sets = e.sets || []).push({ code: row.code, sets: Number(row.units), pcs: u });
   }
   console.log("SINCE_OCT6", JSON.stringify(sinceOut));
   console.log("SNAPSHOT", JSON.stringify({
