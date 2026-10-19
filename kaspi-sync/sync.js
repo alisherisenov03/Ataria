@@ -237,6 +237,25 @@ async function snapshot() {
     if (SET_PIECES[String(row.code)]) (e.sets = e.sets || []).push({ code: row.code, sets: Number(row.units), pcs: u });
   }
   console.log("SINCE_OCT6", JSON.stringify(sinceOut));
+  // Продажи по месяцам (время Алматы) для отчёта о прибыли: штуки (наборы в подушках), выручка, заказы.
+  const mon = await pool.query(
+    `select to_char(o.created_at at time zone 'Asia/Almaty','YYYY-MM') m, i.product_name name, i.product_code code,
+            sum(i.qty) units, sum(i.total_price) revenue, count(distinct o.id) orders
+     from kaspi_items i join kaspi_orders o on o.id = i.order_id
+     left join product_owner po on po.code = i.product_code
+     where o.state not in ('CANCELLED','CANCELLING') and o.total_price >= 1000
+       and coalesce(po.owner,'alisher') = 'alisher'
+     group by 1,2,3`);
+  const months = {};
+  for (const row of mon.rows) {
+    const key = (SNAP_KEYS.find(([, re]) => re.test(row.name)) || ["other"])[0];
+    const mm = (months[row.m] = months[row.m] || {});
+    const e = (mm[key] = mm[key] || { units: 0, revenue: 0, orders: 0 });
+    e.units += Number(row.units) * pieces(row.code);
+    e.revenue += Number(row.revenue);
+    e.orders += Number(row.orders);
+  }
+  console.log("MONTHS", JSON.stringify(months));
   console.log("SNAPSHOT", JSON.stringify({
     asof: new Date().toISOString(), sold60, price,
     packing: Number(op.rows[0].packing), courier: Number(op.rows[0].courier),
