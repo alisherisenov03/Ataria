@@ -66,7 +66,7 @@ async function init() {
              coalesce(sum(qty), 0) as units,
              coalesce(sum(total_price), 0) as revenue
       from kaspi_orders
-      where state not in ('CANCELLED', 'CANCELLING') and total_price >= 1000
+      where state not in ('CANCELLED', 'CANCELLING') and coalesce(status,'') not in ('CANCELLED','CANCELLING','RETURNED') and total_price >= 1000
       group by 1 order by 1;
   `);
 }
@@ -179,7 +179,7 @@ async function report() {
             round(sum(i.total_price)/nullif(sum(i.qty),0)) avg_price
      from kaspi_items i join kaspi_orders o on o.id = i.order_id
      left join product_owner po on po.code = i.product_code
-     where o.state not in ('CANCELLED','CANCELLING') and o.total_price >= 1000
+     where o.state not in ('CANCELLED','CANCELLING') and coalesce(o.status,'') not in ('CANCELLED','CANCELLING','RETURNED') and o.total_price >= 1000
      group by 1,2,3 order by 1, revenue desc nulls last limit 60`);
   console.log("Товары за 60 дней без самовыкупов:", JSON.stringify(prod.rows));
   const days = await pool.query(
@@ -201,7 +201,7 @@ async function snapshot() {
     `select i.product_name name, i.product_code code, sum(i.qty) units, sum(i.total_price) revenue
      from kaspi_items i join kaspi_orders o on o.id = i.order_id
      left join product_owner po on po.code = i.product_code
-     where o.state not in ('CANCELLED','CANCELLING') and o.total_price >= 1000
+     where o.state not in ('CANCELLED','CANCELLING') and coalesce(o.status,'') not in ('CANCELLED','CANCELLING','RETURNED') and o.total_price >= 1000
        and coalesce(po.owner,'alisher') = 'alisher'
        and o.created_at >= now() - interval '60 days'
      group by 1,2`);
@@ -224,7 +224,7 @@ async function snapshot() {
     `select i.product_name name, i.product_code code, o.state, sum(i.qty) units, sum(i.total_price) revenue
      from kaspi_items i join kaspi_orders o on o.id = i.order_id
      left join product_owner po on po.code = i.product_code
-     where o.state not in ('CANCELLED','CANCELLING') and o.total_price >= 1000
+     where o.state not in ('CANCELLED','CANCELLING') and coalesce(o.status,'') not in ('CANCELLED','CANCELLING','RETURNED') and o.total_price >= 1000
        and coalesce(po.owner,'alisher') = 'alisher'
        and o.created_at >= '2026-10-06T07:00:00Z'
      group by 1,2,3`);
@@ -238,13 +238,14 @@ async function snapshot() {
     if (SET_PIECES[String(row.code)]) (e.sets = e.sets || []).push({ code: row.code, sets: Number(row.units), pcs: u });
   }
   console.log("SINCE_OCT6", JSON.stringify(sinceOut));
+  // Отменённые и возвращённые заказы Kaspi хранит как state=ARCHIVE со status CANCELLED/RETURNED, поэтому фильтр по status.
   // Продажи по месяцам (время Алматы) для отчёта о прибыли: штуки (наборы в подушках), выручка, заказы.
   const mon = await pool.query(
     `select to_char(o.created_at at time zone 'Asia/Almaty','YYYY-MM') m, i.product_name name, i.product_code code,
             sum(i.qty) units, sum(i.total_price) revenue, count(distinct o.id) orders
      from kaspi_items i join kaspi_orders o on o.id = i.order_id
      left join product_owner po on po.code = i.product_code
-     where o.state not in ('CANCELLED','CANCELLING') and o.total_price >= 1000
+     where o.state not in ('CANCELLED','CANCELLING') and coalesce(o.status,'') not in ('CANCELLED','CANCELLING','RETURNED') and o.total_price >= 1000
        and coalesce(po.owner,'alisher') = 'alisher'
      group by 1,2,3`);
   const months = {};
