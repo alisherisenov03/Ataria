@@ -315,6 +315,7 @@ async function snapshot() {
 }
 
 let running = false;
+let lastDeep = 0;
 async function run() {
   if (running) return;
   running = true;
@@ -322,7 +323,10 @@ async function run() {
     const row = await pool.query("select value from sync_state where key='last_to'");
     const now = Date.now();
     // Каждый раз перечитываем последние 14 дней: заказы в пути меняют статус (выдан, отменён, возврат).
-    let from = row.rows[0] ? Math.min(Number(row.rows[0].value) - DAY, now - REFRESH_DAYS * DAY) : now - BACKFILL_DAYS * DAY;
+    // Раз в 6 часов перечитываем 90 дней: возвраты и споры по старым заказам тоже меняют статус.
+    const deep = now - lastDeep > 6 * 3600e3;
+    let from = row.rows[0] ? Math.min(Number(row.rows[0].value) - DAY, now - (deep ? 90 : REFRESH_DAYS) * DAY) : now - BACKFILL_DAYS * DAY;
+    if (deep) lastDeep = now;
     let total = 0;
     while (from < now) {
       const to = Math.min(from + WINDOW, now);
