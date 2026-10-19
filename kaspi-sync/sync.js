@@ -310,6 +310,17 @@ async function snapshot() {
     cancelled[k] = (cancelled[k] || 0) + Number(r.units) * pieces(r.code);
   }
   console.log("CANCELLED_SINCE_OCT6", JSON.stringify(cancelled));
+  // Дни, когда заказы Алишера передавали курьеру (значит, была поездка), за 60 дней.
+  const td = await pool.query(
+    `select to_char(to_timestamp((o.raw->'attributes'->'kaspiDelivery'->>'courierTransmissionDate')::bigint/1000.0) at time zone 'Asia/Almaty','YYYY-MM-DD') d,
+            count(distinct o.id) orders
+     from kaspi_orders o join kaspi_items i on i.order_id = o.id
+     left join product_owner po on po.code = i.product_code
+     where (o.raw->'attributes'->'kaspiDelivery'->>'courierTransmissionDate') is not null
+       and o.total_price >= 1000 and coalesce(po.owner,'alisher') = 'alisher'
+       and o.created_at >= now() - interval '60 days'
+     group by 1 order by 1`);
+  console.log("TRIPDAYS", JSON.stringify(Object.fromEntries(td.rows.map(r => [r.d, Number(r.orders)]))));
   console.log("SNAPSHOT", JSON.stringify({
     asof: new Date().toISOString(), sold60, price,
     packing: Number(op.rows[0].packing), courier: Number(op.rows[0].courier), cancelling: Number(op.rows[0].cancelling),
