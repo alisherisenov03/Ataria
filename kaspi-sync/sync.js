@@ -281,6 +281,33 @@ async function snapshot() {
     `select state, status, count(*) n, sum(total_price) s from kaspi_orders
      where total_price >= 1000 and created_at >= now() - interval '60 days' group by 1,2 order by 1,2`);
   console.log("STATUSES", JSON.stringify(st.rows));
+  // Возвраты (по каждому заказу) и отмены с 6 октября по моделям. Отменённый товар цел и возвращается в остаток.
+  const ret = await pool.query(
+    `select o.code, o.status, to_char(o.created_at at time zone 'Asia/Almaty','YYYY-MM-DD') d,
+            i.product_name name, i.product_code pcode, i.qty units, i.total_price total
+     from kaspi_orders o join kaspi_items i on i.order_id = o.id
+     left join product_owner po on po.code = i.product_code
+     where o.status in ('RETURNED','KASPI_DELIVERY_RETURN_REQUESTED','RETURN_ACCEPTED_BY_MERCHANT')
+       and o.total_price >= 1000 and coalesce(po.owner,'alisher') = 'alisher'
+       and o.created_at >= now() - interval '90 days'
+     order by o.created_at`);
+  console.log("RETURNS", JSON.stringify(ret.rows.map(r => ({
+    order: r.code, status: r.status, date: r.d, units: Number(r.units) * pieces(r.pcode), total: Number(r.total),
+    k: (SNAP_KEYS.find(([, re]) => re.test(r.name)) || ["other"])[0],
+  }))));
+  const can = await pool.query(
+    `select i.product_name name, i.product_code code, sum(i.qty) units
+     from kaspi_orders o join kaspi_items i on i.order_id = o.id
+     left join product_owner po on po.code = i.product_code
+     where coalesce(o.status,'') in ('CANCELLED','CANCELLING') and o.total_price >= 1000
+       and coalesce(po.owner,'alisher') = 'alisher' and o.created_at >= '2026-10-06T07:00:00Z'
+     group by 1,2`);
+  const cancelled = {};
+  for (const r of can.rows) {
+    const k = (SNAP_KEYS.find(([, re]) => re.test(r.name)) || ["other"])[0];
+    cancelled[k] = (cancelled[k] || 0) + Number(r.units) * pieces(r.code);
+  }
+  console.log("CANCELLED_SINCE_OCT6", JSON.stringify(cancelled));
   console.log("SNAPSHOT", JSON.stringify({
     asof: new Date().toISOString(), sold60, price,
     packing: Number(op.rows[0].packing), courier: Number(op.rows[0].courier),
