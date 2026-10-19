@@ -10,6 +10,7 @@ const BACKFILL_DAYS = Number(process.env.BACKFILL_DAYS || 60);
 const BASE = "https://kaspi.kz/shop/api/v2";
 const DAY = 864e5;
 const WINDOW = 14 * DAY; // Kaspi отдаёт заказы окнами не больше 14 дней
+const REFRESH_DAYS = Number(process.env.REFRESH_DAYS || 14);
 // Kaspi просит указать статус заказа; ARCHIVE нужен, чтобы видеть завершённые заказы
 const STATES = ["NEW", "SIGN_REQUIRED", "PICKUP", "DELIVERY", "KASPI_DELIVERY", "ARCHIVE"];
 
@@ -256,6 +257,29 @@ async function snapshot() {
     e.orders += Number(row.orders);
   }
   console.log("MONTHS", JSON.stringify(months));
+  // Деньги в пути: открытые заказы Алишера, деньги за которые придут, когда клиент получит товар.
+  const tr = await pool.query(
+    `select to_char(to_timestamp((o.raw->'attributes'->>'plannedDeliveryDate')::bigint/1000.0) at time zone 'Asia/Almaty','YYYY-MM-DD') d,
+            (o.raw->'attributes'->'kaspiDelivery'->>'courierTransmissionDate') is not null handed,
+            count(distinct o.id) orders, sum(i.total_price) sum
+     from kaspi_orders o join kaspi_items i on i.order_id = o.id
+     left join product_owner po on po.code = i.product_code
+     where o.state <> 'ARCHIVE' and o.total_price >= 1000
+       and coalesce(o.status,'') not in ('CANCELLED','CANCELLING','RETURNED','KASPI_DELIVERY_RETURN_REQUESTED','RETURN_ACCEPTED_BY_MERCHANT')
+       and coalesce(po.owner,'alisher') = 'alisher'
+     group by 1,2 order by 1`);
+  const intransit = { orders: 0, sum: 0, byDate: {} };
+  for (const row of tr.rows) {
+    const k = row.d || "без даты", e = (intransit.byDate[k] = intransit.byDate[k] || { orders: 0, sum: 0, handed: 0 });
+    e.orders += Number(row.orders); e.sum += Number(row.sum);
+    if (row.handed) e.handed += Number(row.orders);
+    intransit.orders += Number(row.orders); intransit.sum += Number(row.sum);
+  }
+  console.log("INTRANSIT", JSON.stringify(intransit));
+  const st = await pool.query(
+    `select state, status, count(*) n, sum(total_price) s from kaspi_orders
+     where total_price >= 1000 and created_at >= now() - interval '60 days' group by 1,2 order by 1,2`);
+  console.log("STATUSES", JSON.stringify(st.rows));
   console.log("SNAPSHOT", JSON.stringify({
     asof: new Date().toISOString(), sold60, price,
     packing: Number(op.rows[0].packing), courier: Number(op.rows[0].courier),
@@ -269,7 +293,8 @@ async function run() {
   try {
     const row = await pool.query("select value from sync_state where key='last_to'");
     const now = Date.now();
-    let from = row.rows[0] ? Number(row.rows[0].value) - DAY : now - BACKFILL_DAYS * DAY;
+    // Каждый раз перечитываем последние 14 дней: заказы в пути меняют статус (выдан, отменён, возврат).
+    let from = row.rows[0] ? Math.min(Number(row.rows[0].value) - DAY, now - REFRESH_DAYS * DAY) : now - BACKFILL_DAYS * DAY;
     let total = 0;
     while (from < now) {
       const to = Math.min(from + WINDOW, now);
