@@ -215,10 +215,12 @@ async function snapshot() {
   const price = {};
   for (const k of Object.keys(sold60)) if (sold60[k]) price[k] = Math.round(rev[k] / sold60[k]);
   const op = await pool.query(
-    `select count(*) filter (where raw->'attributes'->>'assembled' = 'false') packing,
-            count(*) filter (where raw->'attributes'->>'assembled' = 'true'
-                              and (raw->'attributes'->'kaspiDelivery'->>'courierTransmissionDate') is not null) courier
-     from kaspi_orders where state <> 'ARCHIVE' and total_price >= 1000`);
+    `select count(*) filter (where cx = false and raw->'attributes'->>'assembled' = 'false') packing,
+            count(*) filter (where cx = false and raw->'attributes'->>'assembled' = 'true'
+                              and (raw->'attributes'->'kaspiDelivery'->>'courierTransmissionDate') is not null) courier,
+            count(*) filter (where cx) cancelling
+     from (select *, coalesce(status,'') in ('CANCELLED','CANCELLING') cx from kaspi_orders) o
+     where state <> 'ARCHIVE' and total_price >= 1000`);
   // Продажи с момента, когда Алишер называл остатки (6 октября, 07:00 UTC). Для расчёта остатков на складе.
   const since = await pool.query(
     `select i.product_name name, i.product_code code, o.state, sum(i.qty) units, sum(i.total_price) revenue
@@ -310,7 +312,7 @@ async function snapshot() {
   console.log("CANCELLED_SINCE_OCT6", JSON.stringify(cancelled));
   console.log("SNAPSHOT", JSON.stringify({
     asof: new Date().toISOString(), sold60, price,
-    packing: Number(op.rows[0].packing), courier: Number(op.rows[0].courier),
+    packing: Number(op.rows[0].packing), courier: Number(op.rows[0].courier), cancelling: Number(op.rows[0].cancelling),
   }));
 }
 
