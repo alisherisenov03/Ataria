@@ -11,7 +11,9 @@ _client = None
 def _api():
     global _client
     if _client is None:
-        _client = anthropic.Anthropic()
+        # Keys not scoped to a workspace need the workspace id on every request.
+        headers = {"anthropic-workspace-id": config.ANTHROPIC_WORKSPACE_ID} if config.ANTHROPIC_WORKSPACE_ID else None
+        _client = anthropic.Anthropic(default_headers=headers)
     return _client
 
 
