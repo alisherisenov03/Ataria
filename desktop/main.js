@@ -1,5 +1,6 @@
 const { app, BrowserWindow, Tray, Menu, ipcMain, session, safeStorage, nativeImage } = require('electron');
 const fs = require('fs');
+const http = require('http');
 const path = require('path');
 
 const { uIOhook, UiohookKey } = require('uiohook-napi');
@@ -24,13 +25,34 @@ function saveConfig({ backendUrl, token }) {
   fs.writeFileSync(cfgPath(), JSON.stringify({ backendUrl, token: enc }));
 }
 
-function createWindow() {
+// The renderer is served from a tiny local server (127.0.0.1 only). From file:// the browser
+// refuses to load the audio worklet that the voice SDK needs for the microphone.
+function serveRenderer() {
+  const dir = path.join(__dirname, 'renderer');
+  const files = { '/': 'index.html', '/index.html': 'index.html', '/renderer.js': 'renderer.js' };
+  const types = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8' };
+  return new Promise((resolve) => {
+    const srv = http.createServer((req, res) => {
+      const name = files[(req.url || '/').split('?')[0]];
+      if (!name) { res.writeHead(404); return res.end(); }
+      fs.readFile(path.join(dir, name), (err, data) => {
+        if (err) { res.writeHead(500); return res.end(); }
+        res.writeHead(200, { 'Content-Type': types[path.extname(name)] });
+        res.end(data);
+      });
+    });
+    srv.listen(0, '127.0.0.1', () => resolve(srv.address().port));
+  });
+}
+
+async function createWindow() {
   win = new BrowserWindow({
     width: 340, height: 300, frame: false, alwaysOnTop: true, resizable: false,
     skipTaskbar: true, show: false, backgroundColor: '#0f1117',
     webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true, nodeIntegration: false },
   });
-  win.loadFile(path.join(__dirname, 'renderer', 'index.html'));
+  const port = await serveRenderer();
+  win.loadURL(`http://127.0.0.1:${port}/index.html`);
   win.on('close', (e) => { if (!app.isQuitting) { e.preventDefault(); win.hide(); } });
 }
 
@@ -43,12 +65,12 @@ function toggle() {
   win.webContents.send('start');
 }
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
   session.defaultSession.setPermissionRequestHandler((_wc, permission, cb) => cb(permission === 'media'));
   ipcMain.handle('config:get', loadConfig);
   ipcMain.handle('config:save', (_e, c) => { saveConfig(c); });
   ipcMain.on('hide', () => win.hide());
-  createWindow();
+  await createWindow();
   tray = new Tray(nativeImage.createFromPath(path.join(__dirname, 'icon.png')).resize({ width: 16, height: 16 }));
   tray.setToolTip('Jarvis (правый Ctrl)');
   tray.setContextMenu(Menu.buildFromTemplate([
