@@ -144,13 +144,16 @@ def _state(key: str):
     return r[0]["value"] if r else None
 
 
-def sync(deep: bool = False, budget_s: int = 50) -> dict:
+def sync(deep: bool = False, budget_s: int = 50, quick: bool = False) -> dict:
+    """quick = only the last 2 days, for the every-minute run (no progress bookkeeping)."""
     if not config.KASPI_TOKEN:
         return {"error": "KASPI_TOKEN is not set"}
-    deadline = time.time() + budget_s
+    deadline = time.time() + (40 if quick else budget_s)
     now = int(time.time() * 1000)
     last = _state("last_to")
-    if last:
+    if quick:
+        frm = now - 2 * DAY
+    elif last:
         frm = min(int(last) - DAY, now - (90 if deep else 14) * DAY)
     else:
         frm = now - config.KASPI_BACKFILL_DAYS * DAY
@@ -170,7 +173,9 @@ def sync(deep: bool = False, budget_s: int = 50) -> dict:
         except _OutOfTime:
             return {"complete": False, "orders_saved": total, "errors": errors,
                     "note": "time budget reached; call again to continue"}
-        backfilled = _backfill_items(http, deadline) if time.time() < deadline else 0
+        backfilled = _backfill_items(http, deadline) if time.time() < deadline and not quick else 0
+    if quick:
+        return {"complete": True, "quick": True, "orders_saved": total, "errors": errors}
     db.client().table("kaspi_sync_state").upsert({"key": "last_to", "value": str(now)}).execute()
     db.log_action("kaspi", "kaspi_sync", "sync", {"deep": deep}, {"orders": total, "errors": errors}, not errors)
     return {"complete": True, "orders_saved": total, "items_backfilled": backfilled, "errors": errors}
@@ -239,3 +244,8 @@ def set_cost(product: str, unit_cost: float) -> dict:
     db.client().table("kaspi_costs").upsert({"product_code": code, "product_name": name,
                                             "unit_cost": unit_cost, "updated_at": "now()"}).execute()
     return {"saved": {"code": code, "name": name, "unit_cost": unit_cost}}
+
+
+def last_synced_at():
+    rows = db.client().table("kaspi_orders").select("synced_at").order("synced_at", desc=True).limit(1).execute().data
+    return rows[0]["synced_at"] if rows else None

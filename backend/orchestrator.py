@@ -79,7 +79,12 @@ def _save(session_id: str, s: dict):
 def _kaspi_snapshot() -> str:
     try:
         rows = kaspi.daily_sales(7)
-        return "\n".join(f"- {r['day']}: {r['orders']} заказов, {r['units']} шт, {round(float(r['revenue']))} ₸" for r in rows)
+        synced = kaspi.last_synced_at()
+        when = ""
+        if synced:
+            t = datetime.fromisoformat(synced.replace("Z", "+00:00")) + timedelta(hours=5)
+            when = f"Данные Kaspi обновлены в {t:%H:%M} (Алматы); называя цифры, говори это время.\n"
+        return when + "\n".join(f"- {r['day']}: {r['orders']} заказов, {r['units']} шт, {round(float(r['revenue']))} ₸" for r in rows)
     except Exception as e:
         return f"- (сводка недоступна: {type(e).__name__})"
 

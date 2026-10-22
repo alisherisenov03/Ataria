@@ -136,10 +136,10 @@ def _briefing() -> str:
 
 
 @app.post("/kaspi/sync")
-def kaspi_sync(deep: bool = False, authorization: str = Header(default="")):
+def kaspi_sync(deep: bool = False, quick: bool = False, authorization: str = Header(default="")):
     """Called on a schedule by the database (pg_cron) or by hand."""
     _auth(authorization)
-    return kaspi.sync(deep=deep)
+    return kaspi.sync(deep=deep, quick=quick)
 
 
 # Desktop app UI, served from here so UI changes ship without a new download.
