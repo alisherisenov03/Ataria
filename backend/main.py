@@ -3,6 +3,8 @@ import os
 
 import httpx
 from fastapi import FastAPI, Header, HTTPException
+from fastapi.exception_handlers import request_validation_exception_handler
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
@@ -29,7 +31,17 @@ class ChatIn(BaseModel):
 def _auth(authorization: str):
     token = authorization.removeprefix("Bearer ").strip()
     if not config.BACKEND_TOKEN or not hmac.compare_digest(token, config.BACKEND_TOKEN):
+        # Diagnostics only: whether a header arrived and its length, never the value.
+        print(f"auth rejected: header_present={bool(authorization)} "
+              f"has_bearer_prefix={authorization.startswith('Bearer ')} token_len={len(token)} "
+              f"expected_len={len(config.BACKEND_TOKEN)}")
         raise HTTPException(status_code=401, detail="unauthorized")
+
+
+@app.exception_handler(RequestValidationError)
+async def _log_validation(request, exc):
+    print("bad request body:", [(e.get("loc"), e.get("type")) for e in exc.errors()])
+    return await request_validation_exception_handler(request, exc)
 
 
 @app.get("/health")
