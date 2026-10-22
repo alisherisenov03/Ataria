@@ -49,3 +49,13 @@ def test_signature_with_instagram_secret():
     body = b'{"object":"instagram"}'
     good = "sha256=" + hmac.new(b"igsecret", body, hashlib.sha256).hexdigest()
     assert meta.verify_signature(body, good)
+
+
+def test_instagram_dashboard_test_event(monkeypatch):
+    stored = []
+    monkeypatch.setattr(meta, "_store", lambda *a: stored.append(a))
+    payload = {"object": "instagram", "entry": [{"id": "0", "time": 0, "changes": [{"field": "messages", "value": {
+        "sender": {"id": "12334"}, "recipient": {"id": "23245"}, "timestamp": "1527459824",
+        "message": {"mid": "random_mid", "text": "random_text"}}}]}]}
+    assert meta.handle(payload) == {"handled": 1}
+    assert stored[0][:3] == ("instagram", "12334", "random_text")

@@ -50,7 +50,10 @@ def _handle_instagram(payload: dict) -> int:
     """Instagram DMs are stored for Alisher (no auto-replies to customers without his approval)."""
     n = 0
     for entry in payload.get("entry", []):
-        for ev in entry.get("messaging", []):
+        # Live events arrive in entry[].messaging; dashboard "Test" events in entry[].changes[].value
+        events = list(entry.get("messaging", []))
+        events += [c.get("value") or {} for c in entry.get("changes", []) if c.get("field") == "messages"]
+        for ev in events:
             msg = ev.get("message") or {}
             if not msg or msg.get("is_echo"):
                 continue
