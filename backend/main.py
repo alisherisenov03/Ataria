@@ -5,16 +5,17 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import httpx
-from fastapi import FastAPI, Header, HTTPException
+from fastapi import FastAPI, Header, HTTPException, Request
 from fastapi.exception_handlers import request_validation_exception_handler
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, RedirectResponse
+from fastapi.responses import FileResponse, PlainTextResponse, RedirectResponse
 from pydantic import BaseModel
 
 import config
 import db
 import kaspi
+import meta
 import orchestrator
 
 app = FastAPI(title="Jarvis backend")
@@ -161,3 +162,26 @@ def app_index():
 @app.get("/app/renderer.js")
 def app_script():
     return FileResponse(APP_DIR / "renderer.js", media_type="text/javascript; charset=utf-8", headers=NO_CACHE)
+
+
+@app.get("/webhooks/meta")
+def meta_verify(request: Request):
+    """Meta calls this once when the webhook is set up."""
+    q = request.query_params
+    if (q.get("hub.mode") == "subscribe" and config.META_VERIFY_TOKEN
+            and hmac.compare_digest(q.get("hub.verify_token", ""), config.META_VERIFY_TOKEN)):
+        return PlainTextResponse(q.get("hub.challenge", ""))
+    raise HTTPException(status_code=403, detail="verification failed")
+
+
+@app.post("/webhooks/meta")
+async def meta_webhook(request: Request):
+    body = await request.body()
+    if not meta.verify_signature(body, request.headers.get("x-hub-signature-256", "")):
+        print("meta webhook: bad or missing signature")
+        raise HTTPException(status_code=401, detail="bad signature")
+    try:
+        return meta.handle(await request.json())
+    except Exception as e:  # always 200 after a valid signature, or Meta keeps retrying
+        print(f"meta webhook failed: {type(e).__name__}: {str(e)[:300]}")
+        return {"handled": 0}
