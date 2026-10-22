@@ -193,3 +193,17 @@ async def meta_webhook(request: Request):
     except Exception as e:  # always 200 after a valid signature, or Meta keeps retrying
         print(f"meta webhook failed: {type(e).__name__}: {str(e)[:300]}")
         return {"handled": 0}
+
+
+# Public pages Meta requires before an app can go live.
+LEGAL_DIR = Path(__file__).parent / "static" / "legal"
+
+
+@app.get("/privacy")
+def privacy():
+    return FileResponse(LEGAL_DIR / "privacy.html", media_type="text/html; charset=utf-8")
+
+
+@app.get("/data-deletion")
+def data_deletion():
+    return FileResponse(LEGAL_DIR / "data-deletion.html", media_type="text/html; charset=utf-8")
