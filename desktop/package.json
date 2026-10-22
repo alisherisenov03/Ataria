@@ -27,6 +27,10 @@
       "renderer/index.html",
       "renderer/renderer.js"
     ],
+    "npmRebuild": false,
+    "asarUnpack": [
+      "node_modules/uiohook-napi/**"
+    ],
     "win": {
       "target": "portable"
     }
