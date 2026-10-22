@@ -121,18 +121,58 @@ def _unseen_dev_news() -> str:
         return ""
 
 
+def _yesterday() -> str:
+    """Yesterday's Kaspi business day: orders, revenue and an approximate profit from the cabinet's costs."""
+    day = ((datetime.now(timezone.utc) + timedelta(hours=5)).date() - timedelta(days=1)).isoformat()
+    rows = [r for r in kaspi.daily_sales(3) if r["day"] == day]
+    if not rows:
+        return "Вчера заказов не было. "
+    r = rows[0]
+    line = f"Вчера {r['orders']} заказов на {_money(r['revenue'])} тенге"
+    try:
+        p = kaspi.profit(day, day)
+        if p["counted_revenue"]:
+            line += f", прибыль до рекламы около {_money(p['profit_before_ads'])}"
+    except Exception as e:
+        print(f"briefing profit failed: {type(e).__name__}")
+    return line + ". "
+
+
+def _cabinet_line() -> str:
+    try:
+        c = kaspi.cabinet("money")["money"]
+        return f"На счёте компании {_money(c['cash'])} тенге. "
+    except Exception:
+        return ""
+
+
+def _tasks_line() -> str:
+    try:
+        today = (datetime.now(timezone.utc) + timedelta(hours=5)).date().isoformat()
+        rows = (db.client().table("tasks").select("title,payload").eq("agent", "alisher").eq("status", "todo")
+                .order("created_at").limit(50).execute().data)
+        due = [r["title"] for r in rows if (r["payload"] or {}).get("due") and r["payload"]["due"] <= today]
+        if due:
+            return "На сегодня в задачах: " + "; ".join(due[:4]) + ". "
+        if rows:
+            return f"Открытых задач {len(rows)}. "
+    except Exception as e:
+        print(f"briefing tasks failed: {type(e).__name__}")
+    return ""
+
+
 def _briefing() -> str:
-    """Opening line for a voice session: straight to the numbers instead of a generic greeting."""
+    """Opening line for a voice session: yesterday, today's shipment, money, tasks, then asks for today's goals."""
     try:
         today, later = orchestrator.kaspi_packaging()
-        money = _money(sum(float(o["total"] or 0) for o in today))
-        line = f"Сегодня в упаковке {len(today)} заказов на {money} тенге"
+        line = f"Сегодня в упаковке {len(today)} заказов на {_money(sum(float(o['total'] or 0) for o in today))} тенге"
         if later:
-            line += f", и ещё {len(later)} новых уже на завтра"
-        return "Слушаю, Алишер. " + line + ". " + _unseen_dev_news() + "Что делаем?"
+            line += f", и ещё {len(later)} уже на завтра"
+        return ("Слушаю, Алишер. " + _yesterday() + line + ". " + _cabinet_line() + _tasks_line()
+                + _unseen_dev_news() + "Какие цели на сегодня?")
     except Exception as e:
         print(f"briefing failed: {type(e).__name__}")
-        return "Слушаю, Алишер. Что делаем?"
+        return "Слушаю, Алишер. Какие цели на сегодня?"
 
 
 @app.post("/kaspi/sync")
