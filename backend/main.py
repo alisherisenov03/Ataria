@@ -1,16 +1,19 @@
 import hmac
-import time
 import os
+import time
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
 
 import httpx
 from fastapi import FastAPI, Header, HTTPException
 from fastapi.exception_handlers import request_validation_exception_handler
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse, RedirectResponse
 from pydantic import BaseModel
 
 import config
+import db
 import kaspi
 import orchestrator
 
@@ -97,6 +100,22 @@ def _money(x) -> str:
     return f"{round(float(x)):,}".replace(",", " ")
 
 
+def _unseen_dev_news() -> str:
+    """Latest developer report the user has not heard yet (marked as heard once spoken)."""
+    try:
+        seen = int(kaspi._setting("dev_log_seen_id") or 0)
+        rows = (db.client().table("dev_log").select("id,summary").gt("id", seen)
+                .order("id", desc=True).limit(1).execute().data)
+        if not rows:
+            return ""
+        kaspi.set_setting("dev_log_seen_id", rows[0]["id"])
+        first = rows[0]["summary"].split(". ")[0].rstrip(".")
+        return f"Новости от разработчика: {first[:220]}. "
+    except Exception as e:
+        print(f"dev news failed: {type(e).__name__}")
+        return ""
+
+
 def _briefing() -> str:
     """Opening line for a voice session: straight to the numbers instead of a generic greeting."""
     try:
@@ -109,7 +128,8 @@ def _briefing() -> str:
             parts.append(f"вчера {by_day[yday]['orders']} заказов на {_money(by_day[yday]['revenue'])} тенге")
         if today in by_day:
             parts.append(f"сегодня пока {by_day[today]['orders']} на {_money(by_day[today]['revenue'])}")
-        return "Слушаю, Алишер. " + (", ".join(parts).capitalize() + ". " if parts else "") + "Что делаем?"
+        return ("Слушаю, Алишер. " + (", ".join(parts).capitalize() + ". " if parts else "")
+                + _unseen_dev_news() + "Что делаем?")
     except Exception as e:
         print(f"briefing failed: {type(e).__name__}")
         return "Слушаю, Алишер. Что делаем?"
@@ -120,3 +140,24 @@ def kaspi_sync(deep: bool = False, authorization: str = Header(default="")):
     """Called on a schedule by the database (pg_cron) or by hand."""
     _auth(authorization)
     return kaspi.sync(deep=deep)
+
+
+# Desktop app UI, served from here so UI changes ship without a new download.
+# Rebuild with `npm run publish-ui` in desktop/.
+APP_DIR = Path(__file__).parent / "static" / "app"
+NO_CACHE = {"Cache-Control": "no-cache"}
+
+
+@app.get("/app")
+def app_redirect():
+    return RedirectResponse("/app/")
+
+
+@app.get("/app/")
+def app_index():
+    return FileResponse(APP_DIR / "index.html", media_type="text/html; charset=utf-8", headers=NO_CACHE)
+
+
+@app.get("/app/renderer.js")
+def app_script():
+    return FileResponse(APP_DIR / "renderer.js", media_type="text/javascript; charset=utf-8", headers=NO_CACHE)

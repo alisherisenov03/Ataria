@@ -97,7 +97,8 @@ def chat(session_id: str, text: str) -> str:
                 "workspace_id": db.workspace_id(s["workspace"]),
                 "title": args["title"][:200], "description": args["details"],
             }).execute().data[0]
-            return {"saved": row["id"], "status": "proposed"}
+            return {"saved": row["id"], "status": "proposed",
+                    "say": "Записал. Разработчик проверяет очередь раз в час, о готовности скажу в начале разговора."}
         if name == "list_development_requests":
             return db.client().table("improvement_proposals").select("title,status,created_at") \
                 .order("created_at", desc=True).limit(10).execute().data

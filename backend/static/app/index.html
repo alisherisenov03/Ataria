@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src * wss: https: blob: data:; style-src 'unsafe-inline'; script-src 'self' blob: data:; worklet-src 'self' blob: data:; media-src 'self' blob: data:">
+<style>
+  body{margin:0;font:14px system-ui,sans-serif;background:#0f1117;color:#e8eaf0;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;-webkit-app-region:drag;user-select:none}
+  button,input{-webkit-app-region:no-drag}
+  #orb{width:110px;height:110px;border-radius:50%;border:0;background:#2a2f3d;color:#fff;font-size:15px;cursor:pointer;transition:.2s}
+  #orb.listening{background:#1f7a4d;box-shadow:0 0 0 10px #1f7a4d33}
+  #orb.speaking{background:#3b5bdb;box-shadow:0 0 0 10px #3b5bdb33}
+  #status{margin-top:16px;color:#9aa3b5;min-height:20px;text-align:center;padding:0 12px}
+  #setup{display:none;width:280px}
+  #setup input{width:100%;box-sizing:border-box;margin:4px 0 10px;padding:8px;border-radius:6px;border:1px solid #3a4052;background:#171a23;color:#fff}
+  #setup button{width:100%;padding:9px;border:0;border-radius:6px;background:#3b5bdb;color:#fff;cursor:pointer}
+  #gear{position:fixed;top:8px;right:10px;background:none;border:0;color:#6b7387;cursor:pointer;font-size:16px}
+</style></head>
+<body>
+  <button id="gear" title="Настройки">⚙</button>
+  <div id="main"><button id="orb">Нажми</button><div id="status"></div></div>
+  <div id="setup">
+    <label>Адрес бэкенда</label><input id="url" placeholder="https://....up.railway.app">
+    <label>Пароль (BACKEND_TOKEN)</label><input id="token" type="password">
+    <button id="save">Сохранить</button>
+  </div>
+  <script src="renderer.js"></script>
+</body></html>

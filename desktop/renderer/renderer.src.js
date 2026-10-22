@@ -12,9 +12,11 @@ async function start() {
   busy = true;
   try {
     const cfg = await window.jarvis.getConfig();
-    if (!cfg.backendUrl || !cfg.token) { showSetup(); return; }
+    // Served by the backend itself (https): call it on the same origin.
+    const base = location.protocol === 'https:' ? location.origin : (cfg.backendUrl || '').replace(/\/$/, '');
+    if (!base || !cfg.token) { showSetup(); return; }
     setStatus('Подключаюсь…');
-    const r = await fetch(cfg.backendUrl.replace(/\/$/, '') + '/voice/session', {
+    const r = await fetch(base + '/voice/session', {
       headers: { Authorization: 'Bearer ' + cfg.token },
     });
     if (!r.ok) throw new Error('Бэкенд ответил ' + r.status);
@@ -56,5 +58,6 @@ $('save').onclick = async () => {
   $('setup').style.display = 'none'; $('main').style.display = 'block';
   setStatus('Сохранено');
 };
+if (new URLSearchParams(location.search).has('offline')) setStatus('Нет связи с бэкендом, работаю в запасном режиме');
 window.jarvis.onStart(start);
 window.jarvis.onStop(stop);

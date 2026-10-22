@@ -6,7 +6,8 @@
   "scripts": {
     "bundle": "esbuild renderer/renderer.src.js --bundle --outfile=renderer/renderer.js --format=iife",
     "start": "npm run bundle && electron .",
-    "dist": "npm run bundle && electron-builder --win portable"
+    "dist": "npm run bundle && electron-builder --win portable",
+    "publish-ui": "npm run bundle && cp renderer/index.html renderer/renderer.js ../backend/static/app/"
   },
   "dependencies": {
     "@elevenlabs/client": "^0.5.0",
