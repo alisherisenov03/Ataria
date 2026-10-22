@@ -5,6 +5,7 @@ from datetime import datetime, timedelta, timezone
 
 import db
 import kaspi
+import kaspi_market
 from agents.runner import run_agent
 
 SYSTEM = (
@@ -13,6 +14,8 @@ SYSTEM = (
     "Сегодня {today} (Алматы), вчера {yesterday}. Даты для инструментов: ГГГГ-ММ-ДД.\n"
     "Прибыль Kaspi считай через kaspi_profit. Если у товаров нет себестоимости или не задана комиссия Kaspi, "
     "назови выручку и прямо скажи, каких данных не хватает (какие товары), чтобы Алишер их назвал. "
+    "Для анализа цен, рекламы, закупа и маржи сначала бери точные цифры из kaspi_cabinet (себестоимость, прибыль со штуки, ДРР), цены конкурентов из kaspi_search; "
+    "считай через calculate и давай конкретный совет с числами. Данные кабинета только читай. "
     "Себестоимость сохраняй через set_product_cost, комиссию через set_kaspi_fee_percent, только со слов Алишера."
 )
 
@@ -39,6 +42,10 @@ TOOLS = [
          "product": {"type": "string"}, "unit_cost": {"type": "number"}}, "required": ["product", "unit_cost"]}},
     {"name": "set_kaspi_fee_percent", "description": "Сохранить комиссию Kaspi в процентах от выручки.",
      "input_schema": {"type": "object", "properties": {"percent": {"type": "number"}}, "required": ["percent"]}},
+    {"name": "kaspi_cabinet", "description": "Цифры из «Ataria кабинет» (главный учёт): себестоимость, прибыль и маржа по товарам, прибыль месяца, деньги, платежи, закуп, остатки, реклама, расходы, возвраты. Без раздела — сводка.",
+     "input_schema": {"type": "object", "properties": {"section": {"type": "string", "enum": list(kaspi.CABINET_SECTIONS)}}}},
+    {"name": "kaspi_search", "description": "Поиск товаров на Kaspi: цены конкурентов, рейтинг, отзывы.",
+     "input_schema": {"type": "object", "properties": {"text": {"type": "string"}}, "required": ["text"]}},
     {"name": "list_calculations", "description": "Последние сохранённые расчёты.",
      "input_schema": {"type": "object", "properties": {"limit": {"type": "integer"}}}},
 ]
@@ -85,6 +92,10 @@ def handle(workspace: str, task: str) -> str:
             return kaspi.set_cost(args["product"], float(args["unit_cost"]))
         if name == "set_kaspi_fee_percent":
             return kaspi.set_setting("kaspi_fee_percent", float(args["percent"]))
+        if name == "kaspi_cabinet":
+            return kaspi.cabinet(args.get("section"))
+        if name == "kaspi_search":
+            return kaspi_market.search(args["text"])
         if name == "list_calculations":
             return db.client().table("calculations").select("title,inputs,result,created_at") \
                 .eq("workspace_id", db.workspace_id(workspace)) \
