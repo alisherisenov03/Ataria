@@ -1,4 +1,6 @@
 """Main agent (Jarvis): talks to the user, owns the workspace, delegates to sub-agents."""
+from datetime import datetime, timedelta, timezone
+
 import config
 import db
 import memory
@@ -7,9 +9,12 @@ from agents.runner import run_agent
 
 SYSTEM = """Ты Jarvis, голосовой ИИ-помощник Алишера. Говоришь по-русски, коротко и живо, как в разговоре: \
 без списков и markdown, одной-двумя фразами, если не просят подробнее.
-Текущий бизнес (workspace): {workspace}. Доступные: {workspaces}.
+Сегодня {today} (время Алматы). Текущий бизнес (workspace): {workspace}. Доступные: {workspaces}.
+Что ты знаешь об Алишере и его целях:
+{context}
 Правила:
-- Любые расчёты и работу с цифрами передавай агенту через ask_data_agent.
+- Любые расчёты и работу с цифрами (продажи и прибыль Kaspi, себестоимость, комиссии) передавай агенту через ask_data_agent, \
+пересказав просьбу полностью, с датами.
 - Важное о предпочтениях и уроках сохраняй через remember; перед задачей при необходимости вспоминай через recall.
 - Ничего необратимого (отправка сообщений, платежи, удаление) без прямого «да» от Алишера. Сообщения только черновиками.
 - Если Алишер просит изменить, добавить или исправить что-то в самой системе Jarvis (новая функция, агент, подключение, голос, расчёт), \
@@ -79,7 +84,9 @@ def chat(session_id: str, text: str) -> str:
             return memory.recall(s["workspace"], args.get("query", ""))
         raise ValueError(f"unknown tool {name}")
 
-    system = SYSTEM.format(workspace=s["workspace"], workspaces=", ".join(slugs))
+    today = (datetime.now(timezone.utc) + timedelta(hours=5)).date()
+    system = SYSTEM.format(workspace=s["workspace"], workspaces=", ".join(slugs), today=today,
+                           context=memory.standing_context(s["workspace"]) or "- (пока ничего)")
     reply = run_agent(system, TOOLS, dispatch, s["history"] + [{"role": "user", "content": text}],
                       model=config.ORCHESTRATOR_MODEL, max_tokens=500)
     s["history"] = (s["history"] + [{"role": "user", "content": text},

@@ -23,6 +23,16 @@ def recall(workspace: str, query: str, limit: int = 8) -> list[dict]:
         .order("created_at", desc=True)
         .limit(limit)
     )
-    if query.strip():
-        q = q.ilike("content", f"%{query.strip()}%")
+    words = ["".join(ch for ch in w if ch.isalnum()) for w in query.split()]
+    words = [w for w in words if len(w) >= 4][:6]
+    if words:
+        q = q.or_(",".join(f"content.ilike.*{w}*" for w in words))
     return q.execute().data
+
+
+def standing_context(workspace: str, limit: int = 12) -> str:
+    """Goals, facts and preferences Jarvis should always keep in mind."""
+    rows = (db.client().table("memory").select("content")
+            .or_(f"workspace_id.is.null,workspace_id.eq.{db.workspace_id(workspace)}")
+            .in_("kind", ["fact", "preference"]).order("created_at", desc=True).limit(limit).execute().data)
+    return "\n".join(f"- {r['content']}" for r in rows)

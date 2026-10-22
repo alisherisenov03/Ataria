@@ -1,6 +1,7 @@
 """Data & calculations agent: numbers, saved calculations."""
 import ast
 import operator as op
+from datetime import datetime, timedelta, timezone
 
 import db
 import kaspi
@@ -8,8 +9,16 @@ from agents.runner import run_agent
 
 SYSTEM = (
     "Ты агент «Данные и расчёты». Считаешь точно: любое вычисление делай через инструмент calculate, "
-    "не в уме. Важные расчёты сохраняй через save_calculation. Отвечай коротко, по-русски, с итоговыми числами."
+    "не в уме. Важные расчёты сохраняй через save_calculation. Отвечай коротко, по-русски, с итоговыми числами.\n"
+    "Сегодня {today} (Алматы), вчера {yesterday}. Даты для инструментов: ГГГГ-ММ-ДД.\n"
+    "Прибыль Kaspi считай через kaspi_profit. Если у товаров нет себестоимости или не задана комиссия Kaspi, "
+    "назови выручку и прямо скажи, каких данных не хватает (какие товары), чтобы Алишер их назвал. "
+    "Себестоимость сохраняй через set_product_cost, комиссию через set_kaspi_fee_percent, только со слов Алишера."
 )
+
+
+def _almaty_today():
+    return (datetime.now(timezone.utc) + timedelta(hours=5)).date()
 
 TOOLS = [
     {"name": "calculate", "description": "Вычислить арифметическое выражение (+ - * / ** % //, скобки).",
@@ -20,6 +29,16 @@ TOOLS = [
          "required": ["title", "result"]}},
     {"name": "kaspi_daily_sales", "description": "Продажи Kaspi по дням (заказы, штуки, выручка в ₸, без отмен и самовыкупов).",
      "input_schema": {"type": "object", "properties": {"days": {"type": "integer"}}}},
+    {"name": "kaspi_profit", "description": "Выручка, себестоимость, комиссия Kaspi и прибыль за период по товарам.",
+     "input_schema": {"type": "object", "properties": {
+         "date_from": {"type": "string"}, "date_to": {"type": "string"},
+         "include_partner": {"type": "boolean", "description": "true = включить товары партнёра"}},
+         "required": ["date_from", "date_to"]}},
+    {"name": "set_product_cost", "description": "Сохранить себестоимость одной единицы товара (по коду или части названия).",
+     "input_schema": {"type": "object", "properties": {
+         "product": {"type": "string"}, "unit_cost": {"type": "number"}}, "required": ["product", "unit_cost"]}},
+    {"name": "set_kaspi_fee_percent", "description": "Сохранить комиссию Kaspi в процентах от выручки.",
+     "input_schema": {"type": "object", "properties": {"percent": {"type": "number"}}, "required": ["percent"]}},
     {"name": "list_calculations", "description": "Последние сохранённые расчёты.",
      "input_schema": {"type": "object", "properties": {"limit": {"type": "integer"}}}},
 ]
@@ -60,12 +79,20 @@ def handle(workspace: str, task: str) -> str:
             return {"saved": row["id"]}
         if name == "kaspi_daily_sales":
             return kaspi.daily_sales(args.get("days", 14))
+        if name == "kaspi_profit":
+            return kaspi.profit(args["date_from"], args["date_to"], args.get("include_partner", False))
+        if name == "set_product_cost":
+            return kaspi.set_cost(args["product"], float(args["unit_cost"]))
+        if name == "set_kaspi_fee_percent":
+            return kaspi.set_setting("kaspi_fee_percent", float(args["percent"]))
         if name == "list_calculations":
             return db.client().table("calculations").select("title,inputs,result,created_at") \
                 .eq("workspace_id", db.workspace_id(workspace)) \
                 .order("created_at", desc=True).limit(args.get("limit", 10)).execute().data
         raise ValueError(f"unknown tool {name}")
 
-    out = run_agent(SYSTEM, TOOLS, dispatch, [{"role": "user", "content": task}])
+    today = _almaty_today()
+    system = SYSTEM.format(today=today, yesterday=today - timedelta(days=1))
+    out = run_agent(system, TOOLS, dispatch, [{"role": "user", "content": task}])
     db.log_action(workspace, "data", "task", {"task": task}, {"answer": out})
     return out

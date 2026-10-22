@@ -179,3 +179,63 @@ def sync(deep: bool = False, budget_s: int = 50) -> dict:
 def daily_sales(days: int = 14) -> list[dict]:
     return (db.client().table("kaspi_daily_sales").select("*")
             .order("day", desc=True).limit(max(1, min(days, 120))).execute().data)
+
+
+PARTNER_NOTE = "товары партнёра (owner ≠ alisher) не включены"
+
+
+def _setting(key: str):
+    rows = db.client().table("settings").select("value").eq("key", key).execute().data
+    return rows[0]["value"] if rows else None
+
+
+def set_setting(key: str, value: str) -> dict:
+    db.client().table("settings").upsert({"key": key, "value": str(value), "updated_at": "now()"}).execute()
+    return {"saved": key, "value": value}
+
+
+def profit(date_from: str, date_to: str, include_partner: bool = False) -> dict:
+    """Revenue, cost and gross profit for Almaty dates [date_from, date_to] (YYYY-MM-DD)."""
+    rows = db.client().rpc("kaspi_product_sales", {"p_from": date_from, "p_to": date_to}).execute().data
+    partner = [r for r in rows if r["owner"] != "alisher"]
+    mine = rows if include_partner else [r for r in rows if r["owner"] == "alisher"]
+    revenue = sum(float(r["revenue"] or 0) for r in mine)
+    with_cost = [r for r in mine if r["unit_cost"] is not None]
+    missing = [{"code": r["product_code"], "name": r["product_name"], "units": r["units"], "revenue": float(r["revenue"])}
+               for r in mine if r["unit_cost"] is None]
+    cost = sum(float(r["unit_cost"]) * r["units"] for r in with_cost)
+    fee_pct = _setting("kaspi_fee_percent")
+    fee = revenue * float(fee_pct) / 100 if fee_pct is not None else None
+    complete = not missing and fee is not None
+    return {
+        "period": [date_from, date_to],
+        "orders_revenue": round(revenue),
+        "cost_of_goods_known": round(cost),
+        "kaspi_fee_percent": float(fee_pct) if fee_pct is not None else None,
+        "kaspi_fee": round(fee) if fee is not None else None,
+        "gross_profit": round(revenue - cost - fee) if complete else None,
+        "products": [{"name": r["product_name"], "code": r["product_code"], "units": r["units"],
+                      "revenue": round(float(r["revenue"])), "unit_cost": r["unit_cost"]} for r in mine[:10]],
+        "missing_cost": missing,
+        "excluded_partner_products": [r["product_name"] for r in partner] if not include_partner else [],
+        "notes": ("Реклама и доставка не вычтены. " + (PARTNER_NOTE if partner and not include_partner else "")
+                  + ("" if complete else " Прибыль не посчитана: не хватает себестоимости товаров или комиссии Kaspi.")).strip(),
+    }
+
+
+def set_cost(product: str, unit_cost: float) -> dict:
+    """Find the product by code or by part of its name, then store its unit cost."""
+    q = product.strip()
+    rows = db.client().table("kaspi_items").select("product_code,product_name").eq("product_code", q).limit(1).execute().data
+    if not rows:
+        rows = db.client().table("kaspi_items").select("product_code,product_name").ilike("product_name", f"%{q}%").limit(200).execute().data
+    found = {r["product_code"]: r["product_name"] for r in rows if r["product_code"]}
+    if not found:
+        return {"error": f"не нашёл товар «{product}»"}
+    if len(found) > 1:
+        return {"ambiguous": [{"code": c, "name": n} for c, n in found.items()],
+                "hint": "уточни, какой из товаров (по коду или точному названию)"}
+    code, name = next(iter(found.items()))
+    db.client().table("kaspi_costs").upsert({"product_code": code, "product_name": name,
+                                            "unit_cost": unit_cost, "updated_at": "now()"}).execute()
+    return {"saved": {"code": code, "name": name, "unit_cost": unit_cost}}
