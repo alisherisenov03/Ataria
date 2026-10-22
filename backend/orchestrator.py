@@ -17,6 +17,8 @@ SYSTEM = """Ты Jarvis, голосовой ИИ-помощник Алишера
 Свежая сводка Kaspi по дням (без отмен и самовыкупов; на вопросы о заказах и выручке отвечай сразу из неё, без инструментов):
 {kaspi}
 Правила:
+- Себестоимость, прибыль и маржа по товарам, прибыль месяца, деньги компании, платежи, закуп, партии, остатки, реклама, расходы, возвраты: \
+бери из кабинета Алишера инструментом kaspi_cabinet (это его главный учёт Kaspi, цифры точные). Данные кабинета только читай, не меняй.
 - Заказы и выручку за последние дни бери из сводки выше. Прибыль, себестоимость и комиссию Kaspi считай сам \
 инструментами kaspi_profit, set_product_cost, set_kaspi_fee_percent. Сложные расчёты и анализ передавай в ask_data_agent.
 - На вопрос «что сделал Claude / разработчик» вызывай developer_updates и перескажи коротко.
@@ -42,6 +44,9 @@ TOOLS = [
          "required": ["title", "details"]}},
     {"name": "list_development_requests", "description": "Показать последние задачи на доработку системы и их статус.",
      "input_schema": {"type": "object", "properties": {}}},
+    {"name": "kaspi_cabinet", "description": "Цифры из «Ataria кабинет» (главный учёт Kaspi): без раздела — сводка по товарам, прибыль месяца, деньги; "
+     "или один раздел подробно.",
+     "input_schema": {"type": "object", "properties": {"section": {"type": "string", "enum": list(kaspi.CABINET_SECTIONS)}}}},
     *[t for t in data.TOOLS if t["name"] in ("kaspi_profit", "set_product_cost", "set_kaspi_fee_percent")],
     {"name": "developer_updates", "description": "Последние итоги работы разработчика (Claude Code) над системой.",
      "input_schema": {"type": "object", "properties": {}}},
@@ -136,6 +141,8 @@ def chat(session_id: str, text: str) -> str:
             return {"workspace": args["slug"]}
         if name == "ask_data_agent":
             return {"answer": data.handle(s["workspace"], args["task"])}
+        if name == "kaspi_cabinet":
+            return kaspi.cabinet(args.get("section"))
         if name == "kaspi_profit":
             return kaspi.profit(args["date_from"], args["date_to"], args.get("include_partner", False))
         if name == "set_product_cost":

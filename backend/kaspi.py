@@ -3,6 +3,7 @@
 One call = one bounded pass, so it works on serverless too. Progress is kept in
 jarvis.kaspi_sync_state; if the time budget runs out the next call continues.
 """
+import re
 import time
 from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeout, as_completed
 from datetime import datetime, timezone
@@ -199,6 +200,45 @@ def set_setting(key: str, value: str) -> dict:
     return {"saved": key, "value": value}
 
 
+# "Ataria кабинет" (artifact) mirrors its numbers into jarvis.cabinet_snapshot; it is the source of truth for costs.
+CABINET_CODES = {"sm23": "656185779", "wave": "951207053", "btf": "142491246", "silk": "915172632",
+                 "at2300": "142189136", "at1700": "142189149_083685321", "at1100": "142189143_009710382"}
+CABINET_SECTIONS = ("products", "pnl_month", "money", "kaspi", "purchases", "settings", "plan", "ads", "expenses", "returns")
+
+
+def cabinet(section: str | None = None) -> dict:
+    rows = db.client().table("cabinet_snapshot").select("data,updated_at").eq("id", "ataria").limit(1).execute().data
+    if not rows:
+        return {"error": "кабинет ещё не передал цифры: откройте «Ataria кабинет» в Claude"}
+    data, updated = rows[0]["data"], rows[0]["updated_at"]
+    if section in CABINET_SECTIONS:
+        return {"updated_at": updated, section: data.get(section)}
+    return {"updated_at": updated, "asof": data.get("asof"), "products": data.get("products"),
+            "pnl_month": data.get("pnl_month"), "money": {k: v for k, v in (data.get("money") or {}).items()
+                                                          if k in ("cash", "reserve", "min_balance", "free_today", "mode")},
+            "kaspi": data.get("kaspi")}
+
+
+def _cabinet_costs() -> dict:
+    """product_code -> {unit_cost, fee_percent, pack_cost, return_percent, estimate} from the cabinet mirror."""
+    try:
+        rows = db.client().table("cabinet_snapshot").select("data").eq("id", "ataria").limit(1).execute().data
+    except Exception:
+        return {}
+    out = {}
+    for p in ((rows[0]["data"] or {}).get("products") or []) if rows else []:
+        code = CABINET_CODES.get(p.get("k"))
+        if not code:
+            continue
+        rows_ = {r[0].split(" ")[0]: r for r in p.get("cost_rows") or []}
+        fee = re.search(r"([\d.]+)%", next((r[0] for r in p.get("cost_rows") or [] if r[0].startswith("Комиссия")), ""))
+        ret = re.search(r"([\d.]+)%", next((r[0] for r in p.get("cost_rows") or [] if r[0].startswith("Возвраты")), ""))
+        out[code] = {"unit_cost": p["purchase"] + p["logistics"], "fee_percent": float(fee.group(1)) if fee else None,
+                     "pack_cost": (rows_.get("Упаковка") or [0, 0])[1], "return_percent": float(ret.group(1)) if ret else 0,
+                     "cost_is_estimate": bool(p.get("purchase_is_estimate"))}
+    return out
+
+
 # Kaspi delivery tariffs from 2026-01-01 (excl. VAT), same table as the "Ataria кабинет" page.
 KASPI_VAT = 0.16
 WEIGHT_KG = {"656185779": 12}  # everything else ships as 1.5–3 kg
@@ -217,6 +257,8 @@ def profit(date_from: str, date_to: str, include_partner: bool = False) -> dict:
     rows = db.client().rpc("kaspi_product_economics", {"p_from": date_from, "p_to": date_to}).execute().data
     partner = [r for r in rows if r["owner"] != "alisher"]
     mine = rows if include_partner else [r for r in rows if r["owner"] == "alisher"]
+    live = _cabinet_costs()
+    mine = [{**r, **live[r["product_code"]]} if r["product_code"] in live else r for r in mine]
     tax_pct = float(_setting("tax_percent") or 0)
     default_fee = _setting("kaspi_fee_percent")
     products, missing = [], []
