@@ -249,3 +249,17 @@ def set_cost(product: str, unit_cost: float) -> dict:
 def last_synced_at():
     rows = db.client().table("kaspi_orders").select("synced_at").order("synced_at", desc=True).limit(1).execute().data
     return rows[0]["synced_at"] if rows else None
+
+
+def open_orders() -> list[dict]:
+    """Accepted orders not yet handed to the courier (what the Kaspi cabinet shows as in progress)."""
+    rows = (db.client().table("kaspi_orders").select("code,created_at,total_price,raw")
+            .neq("state", "ARCHIVE").eq("status", "ACCEPTED_BY_MERCHANT")
+            .order("created_at").limit(200).execute().data)
+    out = []
+    for r in rows:
+        delivery = ((r.get("raw") or {}).get("attributes") or {}).get("kaspiDelivery") or {}
+        if delivery.get("courierTransmissionDate"):
+            continue
+        out.append({"code": r["code"], "created_at": r["created_at"], "total": r["total_price"]})
+    return out

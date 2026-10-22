@@ -84,7 +84,12 @@ def _kaspi_snapshot() -> str:
         if synced:
             t = datetime.fromisoformat(synced.replace("Z", "+00:00")) + timedelta(hours=5)
             when = f"Данные Kaspi обновлены в {t:%H:%M} (Алматы); называя цифры, говори это время.\n"
-        return when + "\n".join(f"- {r['day']}: {r['orders']} заказов, {r['units']} шт, {round(float(r['revenue']))} ₸" for r in rows)
+        opened = kaspi.open_orders()
+        in_work = (f"Сейчас в работе (приняты, ждут передачи курьеру): {len(opened)} заказов на "
+                   f"{round(sum(float(o['total'] or 0) for o in opened))} ₸. На вопрос «сколько заказов сегодня» "
+                   "называй оба числа: сколько создано сегодня и сколько всего в работе.\n")
+        return when + in_work + "Создано по дням:\n" + "\n".join(
+            f"- {r['day']}: {r['orders']} заказов, {r['units']} шт, {round(float(r['revenue']))} ₸" for r in rows)
     except Exception as e:
         return f"- (сводка недоступна: {type(e).__name__})"
 
