@@ -1,4 +1,5 @@
 import hmac
+import os
 
 import httpx
 from fastapi import FastAPI, Header, HTTPException
@@ -24,7 +25,16 @@ def _auth(authorization: str):
 
 @app.get("/health")
 def health():
-    return {"ok": True}
+    """Shows which settings are present (true/false only, never the values)."""
+    configured = {
+        "supabase": bool(config.SUPABASE_URL and config.SUPABASE_SERVICE_KEY),
+        "anthropic": bool(os.getenv("ANTHROPIC_API_KEY")),
+        "backend_token": bool(config.BACKEND_TOKEN),
+        "elevenlabs": bool(config.ELEVENLABS_API_KEY),
+        "elevenlabs_agent": bool(config.ELEVENLABS_AGENT_ID),
+        "kaspi": bool(config.KASPI_TOKEN),
+    }
+    return {"ok": True, "configured": configured}
 
 
 @app.post("/chat")
