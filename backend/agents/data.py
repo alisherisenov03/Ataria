@@ -3,6 +3,7 @@ import ast
 import operator as op
 
 import db
+import kaspi
 from agents.runner import run_agent
 
 SYSTEM = (
@@ -17,6 +18,8 @@ TOOLS = [
      "input_schema": {"type": "object", "properties": {
          "title": {"type": "string"}, "inputs": {"type": "object"}, "result": {"type": "object"}},
          "required": ["title", "result"]}},
+    {"name": "kaspi_daily_sales", "description": "Продажи Kaspi по дням (заказы, штуки, выручка в ₸, без отмен и самовыкупов).",
+     "input_schema": {"type": "object", "properties": {"days": {"type": "integer"}}}},
     {"name": "list_calculations", "description": "Последние сохранённые расчёты.",
      "input_schema": {"type": "object", "properties": {"limit": {"type": "integer"}}}},
 ]
@@ -55,6 +58,8 @@ def handle(workspace: str, task: str) -> str:
                 "inputs": args.get("inputs", {}), "result": args["result"],
             }).execute().data[0]
             return {"saved": row["id"]}
+        if name == "kaspi_daily_sales":
+            return kaspi.daily_sales(args.get("days", 14))
         if name == "list_calculations":
             return db.client().table("calculations").select("title,inputs,result,created_at") \
                 .eq("workspace_id", db.workspace_id(workspace)) \

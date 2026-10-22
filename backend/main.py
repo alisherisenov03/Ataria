@@ -5,6 +5,7 @@ from fastapi import FastAPI, Header, HTTPException
 from pydantic import BaseModel
 
 import config
+import kaspi
 import orchestrator
 
 app = FastAPI(title="Jarvis backend")
@@ -47,3 +48,10 @@ def voice_session(authorization: str = Header(default="")):
     if r.status_code != 200:
         raise HTTPException(status_code=502, detail="ElevenLabs refused the request")
     return {"signed_url": r.json()["signed_url"]}
+
+
+@app.post("/kaspi/sync")
+def kaspi_sync(deep: bool = False, authorization: str = Header(default="")):
+    """Called on a schedule by the database (pg_cron) or by hand."""
+    _auth(authorization)
+    return kaspi.sync(deep=deep)

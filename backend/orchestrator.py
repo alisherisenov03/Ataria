@@ -28,11 +28,19 @@ TOOLS = [
      "input_schema": {"type": "object", "properties": {"query": {"type": "string"}}}},
 ]
 
-_sessions: dict[str, dict] = {}
-
-
 def _session(session_id: str) -> dict:
-    return _sessions.setdefault(session_id, {"workspace": config.DEFAULT_WORKSPACE, "history": []})
+    """Stored in the DB so any server instance (serverless or not) can continue the dialog."""
+    rows = db.client().table("sessions").select("workspace,history").eq("session_id", session_id).execute().data
+    if rows:
+        return {"workspace": rows[0]["workspace"], "history": rows[0]["history"] or []}
+    return {"workspace": config.DEFAULT_WORKSPACE, "history": []}
+
+
+def _save(session_id: str, s: dict):
+    db.client().table("sessions").upsert({
+        "session_id": session_id, "workspace": s["workspace"], "history": s["history"],
+        "updated_at": "now()",
+    }).execute()
 
 
 def chat(session_id: str, text: str) -> str:
@@ -57,5 +65,6 @@ def chat(session_id: str, text: str) -> str:
     reply = run_agent(system, TOOLS, dispatch, s["history"] + [{"role": "user", "content": text}])
     s["history"] = (s["history"] + [{"role": "user", "content": text},
                                     {"role": "assistant", "content": reply}])[-20:]
+    _save(session_id, s)
     db.log_action(s["workspace"], "orchestrator", "chat", {"text": text}, {"reply": reply})
     return reply
