@@ -14,10 +14,13 @@ import orchestrator
 
 
 def verify_signature(body: bytes, header: str) -> bool:
-    if not config.META_APP_SECRET:
-        return False
-    expected = "sha256=" + hmac.new(config.META_APP_SECRET.encode(), body, hashlib.sha256).hexdigest()
-    return hmac.compare_digest(expected, header or "")
+    """Signed with the Meta app secret (WhatsApp) or the Instagram app secret (Instagram Login)."""
+    for secret in (config.META_APP_SECRET, config.INSTAGRAM_APP_SECRET):
+        if secret:
+            expected = "sha256=" + hmac.new(secret.encode(), body, hashlib.sha256).hexdigest()
+            if hmac.compare_digest(expected, header or ""):
+                return True
+    return False
 
 
 def _digits(s: str) -> str:
@@ -43,7 +46,23 @@ def _store(channel: str, sender: str, text: str, meta: dict):
     }).execute()
 
 
+def _handle_instagram(payload: dict) -> int:
+    """Instagram DMs are stored for Alisher (no auto-replies to customers without his approval)."""
+    n = 0
+    for entry in payload.get("entry", []):
+        for ev in entry.get("messaging", []):
+            msg = ev.get("message") or {}
+            if not msg or msg.get("is_echo"):
+                continue
+            text = msg.get("text") or ("[вложение]" if msg.get("attachments") else "")
+            _store("instagram", (ev.get("sender") or {}).get("id", ""), text, {"ig_mid": msg.get("mid")})
+            n += 1
+    return n
+
+
 def handle(payload: dict) -> dict:
+    if payload.get("object") == "instagram":
+        return {"handled": _handle_instagram(payload)}
     handled = 0
     for entry in payload.get("entry", []):
         for change in entry.get("changes", []):
@@ -63,3 +82,10 @@ def handle(payload: dict) -> dict:
                     send_whatsapp_text(sender, reply)
                 handled += 1
     return {"handled": handled}
+
+
+def inbox(limit: int = 15) -> list[dict]:
+    rows = (db.client().table("messages").select("channel,body,metadata,created_at")
+            .eq("direction", "in").order("created_at", desc=True).limit(limit).execute().data)
+    return [{"channel": r["channel"], "from": (r["metadata"] or {}).get("from"), "text": r["body"],
+             "at": r["created_at"]} for r in rows]

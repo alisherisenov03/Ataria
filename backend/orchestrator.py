@@ -20,6 +20,7 @@ SYSTEM = """Ты Jarvis, голосовой ИИ-помощник Алишера
 инструментами kaspi_profit, set_product_cost, set_kaspi_fee_percent. Сложные расчёты и анализ передавай в ask_data_agent.
 - На вопрос «что сделал Claude / разработчик» вызывай developer_updates и перескажи коротко.
 - Задачи и напоминания Алишера: add_task, list_tasks, complete_task. Даты в формате ГГГГ-ММ-ДД.
+- «Что пишут в WhatsApp/Директ»: inbox. Клиентам сам не отвечай: предложи текст ответа, отправка только после «да» Алишера.
 - Поиск в интернете (рынок, конкуренты, цены, ниши, поставщики, новости): ask_research, сформулируй вопрос подробно.
 - Важное о предпочтениях и уроках сохраняй через remember; перед задачей при необходимости вспоминай через recall.
 - Ничего необратимого (отправка сообщений, платежи, удаление) без прямого «да» от Алишера. Сообщения только черновиками.
@@ -52,6 +53,8 @@ TOOLS = [
      "input_schema": {"type": "object", "properties": {"title": {"type": "string"}}, "required": ["title"]}},
     {"name": "ask_research", "description": "Исследование в интернете: рынок Казахстана, конкуренты, цены, ниши, поставщики. Занимает до минуты.",
      "input_schema": {"type": "object", "properties": {"question": {"type": "string"}}, "required": ["question"]}},
+    {"name": "inbox", "description": "Последние входящие сообщения из WhatsApp и Instagram Direct.",
+     "input_schema": {"type": "object", "properties": {"limit": {"type": "integer"}}}},
     {"name": "remember", "description": "Запомнить предпочтение, факт, урок или навык.",
      "input_schema": {"type": "object", "properties": {
          "kind": {"type": "string", "enum": list(memory.KINDS)}, "content": {"type": "string"},
@@ -137,6 +140,9 @@ def chat(session_id: str, text: str) -> str:
             return {"done": rows[0]["title"]}
         if name == "ask_research":
             return {"answer": research.handle(s["workspace"], args["question"])}
+        if name == "inbox":
+            import meta  # local import: meta imports orchestrator
+            return meta.inbox(args.get("limit", 15))
         if name == "request_development":
             row = db.client().table("improvement_proposals").insert({
                 "workspace_id": db.workspace_id(s["workspace"]),

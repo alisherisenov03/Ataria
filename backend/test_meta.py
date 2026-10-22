@@ -28,3 +28,24 @@ def test_owner_gets_reply_others_only_stored(monkeypatch):
     assert meta.handle(payload) == {"handled": 2}
     assert len(stored) == 2
     assert sent == [("77011234567", "ответ на сколько заказов?")]
+
+
+def test_instagram_dm_is_stored_not_answered(monkeypatch):
+    stored, sent = [], []
+    monkeypatch.setattr(meta, "_store", lambda *a: stored.append(a))
+    monkeypatch.setattr(meta, "send_whatsapp_text", lambda to, text: sent.append(to))
+    payload = {"object": "instagram", "entry": [{"messaging": [
+        {"sender": {"id": "123"}, "message": {"mid": "m1", "text": "Сколько стоит подушка?"}},
+        {"sender": {"id": "999"}, "message": {"mid": "m2", "text": "эхо", "is_echo": True}},
+    ]}]}
+    assert meta.handle(payload) == {"handled": 1}
+    assert stored[0][:3] == ("instagram", "123", "Сколько стоит подушка?")
+    assert sent == []
+
+
+def test_signature_with_instagram_secret():
+    config.META_APP_SECRET = ""
+    config.INSTAGRAM_APP_SECRET = "igsecret"
+    body = b'{"object":"instagram"}'
+    good = "sha256=" + hmac.new(b"igsecret", body, hashlib.sha256).hexdigest()
+    assert meta.verify_signature(body, good)
