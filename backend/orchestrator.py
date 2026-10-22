@@ -6,6 +6,7 @@ import db
 import memory
 import kaspi
 import kaspi_market
+import crm
 from agents import data, research
 from agents.runner import run_agent
 
@@ -28,6 +29,8 @@ SYSTEM = """Ты Jarvis, голосовой ИИ-помощник Алишера
 - Цены конкурентов, рынок и ниши на Kaspi: kaspi_search (и kaspi_offers для продавцов товара). Товары Ataria: подушки 35x60/40x60/40x61, комбайн AT-SM23, измельчители AT-1100/1700/2300.
 - Поиск в интернете (рынок, конкуренты, цены, ниши, поставщики, новости): ask_research, сформулируй вопрос подробно.
 - Важное о предпочтениях и уроках сохраняй через remember; перед задачей при необходимости вспоминай через recall.
+- Поиск креаторов и клиентов: найди через ask_research, каждого запиши add_contact (ник, платформа, подписчики, цена, почему подходит), \
+текст сообщения сохрани draft_message. Показывай Алишеру черновики и отправляй только после его «да».
 - Ничего необратимого (отправка сообщений, платежи, удаление) без прямого «да» от Алишера. Сообщения только черновиками.
 - Если Алишер просит изменить, добавить или исправить что-то в самой системе Jarvis (новая функция, агент, подключение, голос, расчёт), \
 запиши это через request_development: подробно, со всем, что он сказал. Скажи, что записал задачу разработчику; без одобрения Алишера ничего не применяется.
@@ -65,6 +68,23 @@ TOOLS = [
      "input_schema": {"type": "object", "properties": {"text": {"type": "string"}}, "required": ["text"]}},
     {"name": "kaspi_offers", "description": "Продавцы и их цены по конкретному товару Kaspi (id из kaspi_search).",
      "input_schema": {"type": "object", "properties": {"product_id": {"type": "string"}}, "required": ["product_id"]}},
+    {"name": "add_contact", "description": "Записать в базу контактов человека: UGC-креатор, лид, поставщик, блогер.",
+     "input_schema": {"type": "object", "properties": {
+         "name": {"type": "string"}, "platform": {"type": "string", "description": "instagram, tiktok, whatsapp, telegram, 1688..."},
+         "handle": {"type": "string"}, "phone": {"type": "string"}, "email": {"type": "string"},
+         "source": {"type": "string", "description": "где нашёл"}, "notes": {"type": "string", "description": "подписчики, цены, ниша, почему подходит"}},
+         "required": ["name"]}},
+    {"name": "list_contacts", "description": "Показать базу контактов (фильтр по статусу new/contacted/replied/won/lost или по слову).",
+     "input_schema": {"type": "object", "properties": {"status": {"type": "string"}, "query": {"type": "string"}}}},
+    {"name": "update_contact", "description": "Сменить статус контакта или заметку (по имени или нику).",
+     "input_schema": {"type": "object", "properties": {"who": {"type": "string"},
+         "status": {"type": "string", "enum": ["new", "contacted", "replied", "won", "lost", "blocked"]}, "notes": {"type": "string"}},
+         "required": ["who"]}},
+    {"name": "draft_message", "description": "Сохранить ЧЕРНОВИК сообщения контакту. Ничего не отправляется.",
+     "input_schema": {"type": "object", "properties": {"who": {"type": "string"}, "channel": {"type": "string"},
+         "body": {"type": "string"}}, "required": ["who", "channel", "body"]}},
+    {"name": "list_drafts", "description": "Черновики сообщений, которые ждут решения Алишера.",
+     "input_schema": {"type": "object", "properties": {}}},
     {"name": "inbox", "description": "Последние входящие сообщения из WhatsApp и Instagram Direct.",
      "input_schema": {"type": "object", "properties": {"limit": {"type": "integer"}}}},
     {"name": "remember", "description": "Запомнить предпочтение, факт, урок или навык.",
@@ -179,6 +199,16 @@ def chat(session_id: str, text: str) -> str:
             return kaspi_market.search(args["text"])
         if name == "kaspi_offers":
             return kaspi_market.offers(args["product_id"])
+        if name == "add_contact":
+            return crm.add_contact(s["workspace"], **args)
+        if name == "list_contacts":
+            return crm.list_contacts(s["workspace"], args.get("status"), args.get("query"))
+        if name == "update_contact":
+            return crm.update_contact(s["workspace"], args["who"], args.get("status"), args.get("notes"))
+        if name == "draft_message":
+            return crm.draft_message(s["workspace"], args["who"], args["channel"], args["body"])
+        if name == "list_drafts":
+            return crm.list_drafts(s["workspace"])
         if name == "inbox":
             import meta  # local import: meta imports orchestrator
             return meta.inbox(args.get("limit", 15))
