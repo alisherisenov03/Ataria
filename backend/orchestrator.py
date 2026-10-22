@@ -5,7 +5,7 @@ import config
 import db
 import memory
 import kaspi
-from agents import data
+from agents import data, research
 from agents.runner import run_agent
 
 SYSTEM = """Ты Jarvis, голосовой ИИ-помощник Алишера. Говоришь по-русски, коротко и живо, как в разговоре: \
@@ -19,6 +19,8 @@ SYSTEM = """Ты Jarvis, голосовой ИИ-помощник Алишера
 - Заказы и выручку за последние дни бери из сводки выше. Прибыль, себестоимость и комиссию Kaspi считай сам \
 инструментами kaspi_profit, set_product_cost, set_kaspi_fee_percent. Сложные расчёты и анализ передавай в ask_data_agent.
 - На вопрос «что сделал Claude / разработчик» вызывай developer_updates и перескажи коротко.
+- Задачи и напоминания Алишера: add_task, list_tasks, complete_task. Даты в формате ГГГГ-ММ-ДД.
+- Поиск в интернете (рынок, конкуренты, цены, ниши, поставщики, новости): ask_research, сформулируй вопрос подробно.
 - Важное о предпочтениях и уроках сохраняй через remember; перед задачей при необходимости вспоминай через recall.
 - Ничего необратимого (отправка сообщений, платежи, удаление) без прямого «да» от Алишера. Сообщения только черновиками.
 - Если Алишер просит изменить, добавить или исправить что-то в самой системе Jarvis (новая функция, агент, подключение, голос, расчёт), \
@@ -40,6 +42,16 @@ TOOLS = [
     *[t for t in data.TOOLS if t["name"] in ("kaspi_profit", "set_product_cost", "set_kaspi_fee_percent")],
     {"name": "developer_updates", "description": "Последние итоги работы разработчика (Claude Code) над системой.",
      "input_schema": {"type": "object", "properties": {}}},
+    {"name": "add_task", "description": "Записать задачу или напоминание Алишера.",
+     "input_schema": {"type": "object", "properties": {
+         "title": {"type": "string"}, "due": {"type": "string", "description": "ГГГГ-ММ-ДД, если назван срок"},
+         "details": {"type": "string"}}, "required": ["title"]}},
+    {"name": "list_tasks", "description": "Открытые задачи Алишера (по умолчанию все; due_until = до этой даты включительно).",
+     "input_schema": {"type": "object", "properties": {"due_until": {"type": "string"}}}},
+    {"name": "complete_task", "description": "Отметить задачу выполненной (по части названия).",
+     "input_schema": {"type": "object", "properties": {"title": {"type": "string"}}, "required": ["title"]}},
+    {"name": "ask_research", "description": "Исследование в интернете: рынок Казахстана, конкуренты, цены, ниши, поставщики. Занимает до минуты.",
+     "input_schema": {"type": "object", "properties": {"question": {"type": "string"}}, "required": ["question"]}},
     {"name": "remember", "description": "Запомнить предпочтение, факт, урок или навык.",
      "input_schema": {"type": "object", "properties": {
          "kind": {"type": "string", "enum": list(memory.KINDS)}, "content": {"type": "string"},
@@ -92,6 +104,29 @@ def chat(session_id: str, text: str) -> str:
             return kaspi.set_setting("kaspi_fee_percent", float(args["percent"]))
         if name == "developer_updates":
             return db.client().table("dev_log").select("summary,created_at").order("created_at", desc=True).limit(5).execute().data
+        if name == "add_task":
+            row = db.client().table("tasks").insert({
+                "workspace_id": db.workspace_id(s["workspace"]), "title": args["title"], "agent": "alisher",
+                "payload": {"due": args.get("due"), "details": args.get("details", "")},
+            }).execute().data[0]
+            return {"saved": row["id"]}
+        if name == "list_tasks":
+            rows = (db.client().table("tasks").select("title,payload,created_at").eq("agent", "alisher")
+                    .eq("status", "todo").order("created_at").limit(50).execute().data)
+            until = args.get("due_until")
+            if until:
+                rows = [r for r in rows if (r["payload"] or {}).get("due") and r["payload"]["due"] <= until]
+            return [{"title": r["title"], "due": (r["payload"] or {}).get("due"),
+                     "details": (r["payload"] or {}).get("details")} for r in rows]
+        if name == "complete_task":
+            rows = (db.client().table("tasks").select("id,title").eq("agent", "alisher").eq("status", "todo")
+                    .ilike("title", f"%{args['title'].strip()}%").execute().data)
+            if len(rows) != 1:
+                return {"matches": [r["title"] for r in rows], "hint": "уточни, какую именно задачу"}
+            db.client().table("tasks").update({"status": "done"}).eq("id", rows[0]["id"]).execute()
+            return {"done": rows[0]["title"]}
+        if name == "ask_research":
+            return {"answer": research.handle(s["workspace"], args["question"])}
         if name == "request_development":
             row = db.client().table("improvement_proposals").insert({
                 "workspace_id": db.workspace_id(s["workspace"]),

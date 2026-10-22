@@ -39,6 +39,8 @@ def run_agent(system: str, tools: list[dict], dispatch: Callable[[str, dict], ob
         resp = _create(model or config.ANTHROPIC_MODEL, max_tokens=max_tokens,
                        system=system, tools=tools, messages=messages)
         messages.append({"role": "assistant", "content": resp.content})
+        if resp.stop_reason == "pause_turn":  # long server-tool turn (web search): let it continue
+            continue
         if resp.stop_reason != "tool_use":
             return "".join(b.text for b in resp.content if b.type == "text").strip()
         results = []
