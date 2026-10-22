@@ -1,5 +1,6 @@
 import hmac
 
+import httpx
 from fastapi import FastAPI, Header, HTTPException
 from pydantic import BaseModel
 
@@ -29,3 +30,20 @@ def health():
 def chat(body: ChatIn, authorization: str = Header(default="")):
     _auth(authorization)
     return {"reply": orchestrator.chat(body.session_id, body.text)}
+
+
+@app.get("/voice/session")
+def voice_session(authorization: str = Header(default="")):
+    """Short-lived signed URL so the desktop app never holds the ElevenLabs key."""
+    _auth(authorization)
+    if not config.ELEVENLABS_API_KEY or not config.ELEVENLABS_AGENT_ID:
+        raise HTTPException(status_code=503, detail="ElevenLabs is not configured")
+    r = httpx.get(
+        "https://api.elevenlabs.io/v1/convai/conversation/get-signed-url",
+        params={"agent_id": config.ELEVENLABS_AGENT_ID},
+        headers={"xi-api-key": config.ELEVENLABS_API_KEY},
+        timeout=15,
+    )
+    if r.status_code != 200:
+        raise HTTPException(status_code=502, detail="ElevenLabs refused the request")
+    return {"signed_url": r.json()["signed_url"]}

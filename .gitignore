@@ -3,3 +3,6 @@
 !.env.example
 __pycache__/
 .pytest_cache/
+node_modules/
+desktop/dist/
+desktop/renderer/renderer.js

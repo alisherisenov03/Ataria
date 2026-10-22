@@ -1,0 +1,25 @@
+{
+  "name": "jarvis-desktop",
+  "version": "0.1.0",
+  "description": "Jarvis voice assistant",
+  "main": "main.js",
+  "scripts": {
+    "bundle": "esbuild renderer/renderer.src.js --bundle --outfile=renderer/renderer.js --format=iife",
+    "start": "npm run bundle && electron .",
+    "dist": "npm run bundle && electron-builder --win portable"
+  },
+  "dependencies": {
+    "@elevenlabs/client": "^0.5.0"
+  },
+  "devDependencies": {
+    "electron": "^33.2.0",
+    "electron-builder": "^25.1.8",
+    "esbuild": "^0.24.0"
+  },
+  "build": {
+    "appId": "kz.ataria.jarvis",
+    "productName": "Jarvis",
+    "files": ["main.js", "preload.js", "icon.png", "renderer/index.html", "renderer/renderer.js"],
+    "win": { "target": "portable" }
+  }
+}
