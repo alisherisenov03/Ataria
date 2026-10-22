@@ -12,6 +12,8 @@ SYSTEM = """Ты Jarvis, голосовой ИИ-помощник Алишера
 - Любые расчёты и работу с цифрами передавай агенту через ask_data_agent.
 - Важное о предпочтениях и уроках сохраняй через remember; перед задачей при необходимости вспоминай через recall.
 - Ничего необратимого (отправка сообщений, платежи, удаление) без прямого «да» от Алишера. Сообщения только черновиками.
+- Если Алишер просит изменить, добавить или исправить что-то в самой системе Jarvis (новая функция, агент, подключение, голос, расчёт), \
+запиши это через request_development: подробно, со всем, что он сказал. Скажи, что записал задачу разработчику; без одобрения Алишера ничего не применяется.
 - Не выдумывай данные: если инструмента нет, честно скажи, что этого пока не умеешь."""
 
 TOOLS = [
@@ -19,6 +21,13 @@ TOOLS = [
      "input_schema": {"type": "object", "properties": {"slug": {"type": "string"}}, "required": ["slug"]}},
     {"name": "ask_data_agent", "description": "Поручить расчёт или работу с цифрами агенту «Данные и расчёты».",
      "input_schema": {"type": "object", "properties": {"task": {"type": "string"}}, "required": ["task"]}},
+    {"name": "request_development", "description": "Записать задачу на доработку самой системы Jarvis. Её возьмёт в работу разработчик (Claude Code).",
+     "input_schema": {"type": "object", "properties": {
+         "title": {"type": "string", "description": "Короткое название"},
+         "details": {"type": "string", "description": "Что именно нужно, со всеми подробностями из слов Алишера"}},
+         "required": ["title", "details"]}},
+    {"name": "list_development_requests", "description": "Показать последние задачи на доработку системы и их статус.",
+     "input_schema": {"type": "object", "properties": {}}},
     {"name": "remember", "description": "Запомнить предпочтение, факт, урок или навык.",
      "input_schema": {"type": "object", "properties": {
          "kind": {"type": "string", "enum": list(memory.KINDS)}, "content": {"type": "string"},
@@ -55,6 +64,15 @@ def chat(session_id: str, text: str) -> str:
             return {"workspace": args["slug"]}
         if name == "ask_data_agent":
             return {"answer": data.handle(s["workspace"], args["task"])}
+        if name == "request_development":
+            row = db.client().table("improvement_proposals").insert({
+                "workspace_id": db.workspace_id(s["workspace"]),
+                "title": args["title"][:200], "description": args["details"],
+            }).execute().data[0]
+            return {"saved": row["id"], "status": "proposed"}
+        if name == "list_development_requests":
+            return db.client().table("improvement_proposals").select("title,status,created_at") \
+                .order("created_at", desc=True).limit(10).execute().data
         if name == "remember":
             return memory.remember(s["workspace"], args["kind"], args["content"], args.get("shared", False))
         if name == "recall":
@@ -62,7 +80,8 @@ def chat(session_id: str, text: str) -> str:
         raise ValueError(f"unknown tool {name}")
 
     system = SYSTEM.format(workspace=s["workspace"], workspaces=", ".join(slugs))
-    reply = run_agent(system, TOOLS, dispatch, s["history"] + [{"role": "user", "content": text}])
+    reply = run_agent(system, TOOLS, dispatch, s["history"] + [{"role": "user", "content": text}],
+                      model=config.ORCHESTRATOR_MODEL, max_tokens=500)
     s["history"] = (s["history"] + [{"role": "user", "content": text},
                                     {"role": "assistant", "content": reply}])[-20:]
     _save(session_id, s)

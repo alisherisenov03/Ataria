@@ -1,1 +1,1 @@
-{ "functions": { "main.py": { "maxDuration": 60 } } }
+{ "regions": ["icn1"], "functions": { "main.py": { "maxDuration": 60 } } }

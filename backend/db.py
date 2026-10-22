@@ -23,6 +23,7 @@ def workspace_id(slug: str) -> str:
     return rows[0]["id"]
 
 
+@lru_cache(maxsize=1)
 def workspace_slugs() -> list[str]:
     return [r["slug"] for r in client().table("workspaces").select("slug").execute().data]
 

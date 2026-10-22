@@ -15,15 +15,23 @@ def _api():
     return _client
 
 
+def _create(model: str, **kw):
+    try:
+        return _api().messages.create(model=model, **kw)
+    except (anthropic.NotFoundError, anthropic.PermissionDeniedError):
+        if model == config.ANTHROPIC_MODEL:
+            raise
+        return _api().messages.create(model=config.ANTHROPIC_MODEL, **kw)
+
+
 def run_agent(system: str, tools: list[dict], dispatch: Callable[[str, dict], object],
-              messages: list[dict], max_steps: int = 8) -> str:
+              messages: list[dict], max_steps: int = 8, model: str | None = None,
+              max_tokens: int = 1500) -> str:
     """Tool-use loop shared by the orchestrator and every sub-agent."""
     messages = list(messages)
     for _ in range(max_steps):
-        resp = _api().messages.create(
-            model=config.ANTHROPIC_MODEL, max_tokens=1500,
-            system=system, tools=tools, messages=messages,
-        )
+        resp = _create(model or config.ANTHROPIC_MODEL, max_tokens=max_tokens,
+                       system=system, tools=tools, messages=messages)
         messages.append({"role": "assistant", "content": resp.content})
         if resp.stop_reason != "tool_use":
             return "".join(b.text for b in resp.content if b.type == "text").strip()
