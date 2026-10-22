@@ -1,0 +1,2 @@
+-- Applied as migration jarvis_kaspi_unit_economics: per-product fee/packaging/returns on kaspi_costs,
+-- costs from the "Ataria кабинет" purchase batches, tax 3%, RPC jarvis.kaspi_product_economics(date,date).

@@ -199,32 +199,67 @@ def set_setting(key: str, value: str) -> dict:
     return {"saved": key, "value": value}
 
 
+# Kaspi delivery tariffs from 2026-01-01 (excl. VAT), same table as the "Ataria кабинет" page.
+KASPI_VAT = 0.16
+WEIGHT_KG = {"656185779": 12}  # everything else ships as 1.5–3 kg
+
+
+def kaspi_delivery(price: float, kg: float = 3) -> float:
+    if price < 10000:
+        t = 49 if price <= 1000 else 149 if price <= 3000 else 199 if price <= 5000 else 799
+    else:
+        t = 1299 if kg <= 5 else 1699 if kg <= 15 else 3599 if kg <= 30 else 5649 if kg <= 60 else 8549 if kg <= 100 else 11999
+    return t * (1 + KASPI_VAT)
+
+
 def profit(date_from: str, date_to: str, include_partner: bool = False) -> dict:
-    """Revenue, cost and gross profit for Almaty dates [date_from, date_to] (YYYY-MM-DD)."""
-    rows = db.client().rpc("kaspi_product_sales", {"p_from": date_from, "p_to": date_to}).execute().data
+    """Profit for Kaspi business days [date_from, date_to] (YYYY-MM-DD), per-product economics from jarvis.kaspi_costs."""
+    rows = db.client().rpc("kaspi_product_economics", {"p_from": date_from, "p_to": date_to}).execute().data
     partner = [r for r in rows if r["owner"] != "alisher"]
     mine = rows if include_partner else [r for r in rows if r["owner"] == "alisher"]
-    revenue = sum(float(r["revenue"] or 0) for r in mine)
-    with_cost = [r for r in mine if r["unit_cost"] is not None]
-    missing = [{"code": r["product_code"], "name": r["product_name"], "units": r["units"], "revenue": float(r["revenue"])}
-               for r in mine if r["unit_cost"] is None]
-    cost = sum(float(r["unit_cost"]) * r["units"] for r in with_cost)
-    fee_pct = _setting("kaspi_fee_percent")
-    fee = revenue * float(fee_pct) / 100 if fee_pct is not None else None
-    complete = not missing and fee is not None
+    tax_pct = float(_setting("tax_percent") or 0)
+    default_fee = _setting("kaspi_fee_percent")
+    products, missing = [], []
+    tot = dict(revenue=0.0, cost=0.0, fee=0.0, tax=0.0, returns=0.0, pack=0.0, delivery=0.0)
+    for r in mine:
+        units, revenue = int(r["units"] or 0), float(r["revenue"] or 0)
+        fee_pct = r["fee_percent"] if r["fee_percent"] is not None else default_fee
+        if r["unit_cost"] is None or fee_pct is None or not units:
+            missing.append({"code": r["product_code"], "name": r["product_name"], "units": units, "revenue": round(revenue)})
+            continue
+        price = revenue / units
+        line = dict(revenue=revenue, cost=float(r["unit_cost"]) * units, fee=revenue * float(fee_pct) / 100,
+                    tax=revenue * tax_pct / 100, returns=revenue * float(r["return_percent"] or 0) / 100,
+                    pack=float(r["pack_cost"] or 0) * units,
+                    delivery=kaspi_delivery(price, WEIGHT_KG.get(r["product_code"], 3)) * units)
+        for k, v in line.items():
+            tot[k] += v
+        p = revenue - sum(v for k, v in line.items() if k != "revenue")
+        products.append({"name": r["product_name"], "code": r["product_code"], "units": units, "revenue": round(revenue),
+                         "unit_cost": float(r["unit_cost"]), "cost_is_estimate": r["cost_is_estimate"],
+                         "profit": round(p), "profit_per_unit": round(p / units)})
+    gross = tot["revenue"] - sum(v for k, v in tot.items() if k != "revenue")
+    estimates = [p["name"] for p in products if p["cost_is_estimate"]]
     return {
         "period": [date_from, date_to],
-        "orders_revenue": round(revenue),
-        "cost_of_goods_known": round(cost),
-        "kaspi_fee_percent": float(fee_pct) if fee_pct is not None else None,
-        "kaspi_fee": round(fee) if fee is not None else None,
-        "gross_profit": round(revenue - cost - fee) if complete else None,
-        "products": [{"name": r["product_name"], "code": r["product_code"], "units": r["units"],
-                      "revenue": round(float(r["revenue"])), "unit_cost": r["unit_cost"]} for r in mine[:10]],
+        "orders_revenue": round(tot["revenue"] + sum(m["revenue"] for m in missing)),
+        "counted_revenue": round(tot["revenue"]),
+        "cost_of_goods": round(tot["cost"]),
+        "kaspi_fee": round(tot["fee"]),
+        "kaspi_delivery": round(tot["delivery"]),
+        "tax": round(tot["tax"]),
+        "returns_reserve": round(tot["returns"]),
+        "packaging": round(tot["pack"]),
+        "profit_before_ads": round(gross),
+        "products": products[:12],
         "missing_cost": missing,
         "excluded_partner_products": [r["product_name"] for r in partner] if not include_partner else [],
-        "notes": ("Реклама и доставка не вычтены. " + (PARTNER_NOTE if partner and not include_partner else "")
-                  + ("" if complete else " Прибыль не посчитана: не хватает себестоимости товаров или комиссии Kaspi.")).strip(),
+        "notes": " ".join(filter(None, [
+            "Себестоимость из «Ataria кабинет» (партии закупа). Реклама, аренда склада и своя доставка до Kaspi не вычтены.",
+            ("Закуп оценочный у: " + ", ".join(estimates) + ".") if estimates else "",
+            PARTNER_NOTE if partner and not include_partner else "",
+            "Без себестоимости не посчитаны: " + ", ".join(m["name"] for m in missing) + "." if missing else "",
+        ])),
     }
 
 
