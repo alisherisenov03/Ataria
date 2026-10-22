@@ -56,7 +56,8 @@ def voice_session(authorization: str = Header(default="")):
         timeout=15,
     )
     if r.status_code != 200:
-        raise HTTPException(status_code=502, detail="ElevenLabs refused the request")
+        print(f"elevenlabs get-signed-url {r.status_code}: {r.text[:300]}")
+        raise HTTPException(status_code=502, detail=f"ElevenLabs {r.status_code}: {r.text[:200]}")
     return {"signed_url": r.json()["signed_url"]}
 
 
