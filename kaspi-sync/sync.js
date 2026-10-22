@@ -7,6 +7,7 @@ const TOKEN = process.env.KASPI_TOKEN;
 const DB = process.env.DATABASE_URL;
 const EVERY_MIN = Number(process.env.SYNC_MINUTES || 10);
 const BACKFILL_DAYS = Number(process.env.BACKFILL_DAYS || 60);
+const HISTORY_FROM = process.env.HISTORY_FROM || "2026-01-01";
 const BASE = "https://kaspi.kz/shop/api/v2";
 const DAY = 864e5;
 const WINDOW = 14 * DAY; // Kaspi отдаёт заказы окнами не больше 14 дней
@@ -340,6 +341,12 @@ async function run() {
     const deep = now - lastDeep > 6 * 3600e3;
     let from = row.rows[0] ? Math.min(Number(row.rows[0].value) - DAY, now - (deep ? 90 : REFRESH_DAYS) * DAY) : now - BACKFILL_DAYS * DAY;
     if (deep) lastDeep = now;
+    // Один раз догружаем историю с HISTORY_FROM (по умолчанию 1 января 2026): при запуске взяли только 60 дней.
+    const hist = await pool.query("select value from sync_state where key='history_from'");
+    if (!hist.rows[0] || hist.rows[0].value !== HISTORY_FROM) {
+      from = Math.min(from, Date.parse(HISTORY_FROM + "T00:00:00+05:00"));
+      console.log("История заказов догружается с", HISTORY_FROM);
+    }
     let total = 0;
     while (from < now) {
       const to = Math.min(from + WINDOW, now);
@@ -355,6 +362,9 @@ async function run() {
     await pool.query(
       "insert into sync_state (key, value) values ('last_to',$1) on conflict (key) do update set value=excluded.value",
       [String(now)]);
+    await pool.query(
+      "insert into sync_state (key, value) values ('history_from',$1) on conflict (key) do update set value=excluded.value",
+      [HISTORY_FROM]);
     console.log(new Date().toISOString(), "заказов обновлено:", total);
     await backfillItems();
     await report();
