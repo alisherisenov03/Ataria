@@ -1,8 +1,11 @@
-const { app, BrowserWindow, globalShortcut, Tray, Menu, ipcMain, session, safeStorage, nativeImage } = require('electron');
+const { app, BrowserWindow, Tray, Menu, ipcMain, session, safeStorage, nativeImage } = require('electron');
 const fs = require('fs');
 const path = require('path');
 
-const HOTKEY = 'Control+Shift+J';
+const { uIOhook, UiohookKey } = require('uiohook-napi');
+
+// Right Ctrl pressed and released on its own (no other key in between) toggles Jarvis.
+const MAX_TAP_MS = 500;
 const cfgPath = () => path.join(app.getPath('userData'), 'config.json');
 let win, tray;
 
@@ -47,14 +50,24 @@ app.whenReady().then(() => {
   ipcMain.on('hide', () => win.hide());
   createWindow();
   tray = new Tray(nativeImage.createFromPath(path.join(__dirname, 'icon.png')));
-  tray.setToolTip(`Jarvis (${HOTKEY})`);
+  tray.setToolTip('Jarvis (правый Ctrl)');
   tray.setContextMenu(Menu.buildFromTemplate([
     { label: 'Открыть', click: toggle },
     { label: 'Выход', click: () => { app.isQuitting = true; app.quit(); } },
   ]));
   tray.on('click', toggle);
-  if (!globalShortcut.register(HOTKEY, toggle)) console.error('hotkey unavailable');
+  let down = 0, clean = false;
+  uIOhook.on('keydown', (e) => {
+    if (e.keycode === UiohookKey.CtrlRight) { if (!down) { down = Date.now(); clean = true; } }
+    else clean = false;
+  });
+  uIOhook.on('keyup', (e) => {
+    if (e.keycode !== UiohookKey.CtrlRight) return;
+    if (down && clean && Date.now() - down < MAX_TAP_MS) toggle();
+    down = 0;
+  });
+  uIOhook.start();
 });
 
-app.on('will-quit', () => globalShortcut.unregisterAll());
+app.on('will-quit', () => uIOhook.stop());
 app.on('window-all-closed', (e) => e.preventDefault());

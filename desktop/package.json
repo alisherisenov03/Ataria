@@ -9,7 +9,8 @@
     "dist": "npm run bundle && electron-builder --win portable"
   },
   "dependencies": {
-    "@elevenlabs/client": "^0.5.0"
+    "@elevenlabs/client": "^0.5.0",
+    "uiohook-napi": "^1.5.5"
   },
   "devDependencies": {
     "electron": "^33.2.0",
@@ -19,7 +20,15 @@
   "build": {
     "appId": "kz.ataria.jarvis",
     "productName": "Jarvis",
-    "files": ["main.js", "preload.js", "icon.png", "renderer/index.html", "renderer/renderer.js"],
-    "win": { "target": "portable" }
+    "files": [
+      "main.js",
+      "preload.js",
+      "icon.png",
+      "renderer/index.html",
+      "renderer/renderer.js"
+    ],
+    "win": {
+      "target": "portable"
+    }
   }
 }
