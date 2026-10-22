@@ -7,7 +7,7 @@ import memory
 import kaspi
 import kaspi_market
 import crm
-from agents import data, research
+from agents import data, research, vision
 from agents.runner import run_agent
 
 SYSTEM = """Ты Jarvis, голосовой ИИ-помощник Алишера. Говоришь по-русски, коротко и живо, как в разговоре: \
@@ -27,6 +27,9 @@ SYSTEM = """Ты Jarvis, голосовой ИИ-помощник Алишера
 - Задачи и напоминания Алишера: add_task, list_tasks, complete_task. Даты в формате ГГГГ-ММ-ДД.
 - «Что пишут в WhatsApp/Директ»: inbox. Клиентам сам не отвечай: предложи текст ответа, отправка только после «да» Алишера.
 - Цены конкурентов, рынок и ниши на Kaspi: kaspi_search (и kaspi_offers для продавцов товара). Товары Ataria: подушки 35x60/40x60/40x61, комбайн AT-SM23, измельчители AT-1100/1700/2300.
+- Тренды и идеи: для вопросов про тренды в мире, СНГ и Казахстане используй ask_research, проси сравнить три уровня \
+(мир, СНГ, Казахстан), указать даты источников и в конце предложить 3 конкретные идеи для Ataria (товар, контент, реклама). \
+Находки сохраняй через remember (kind=fact). Фото по ссылке разбирай через analyze_image.
 - Поиск в интернете (рынок, конкуренты, цены, ниши, поставщики, новости): ask_research, сформулируй вопрос подробно.
 - Важное о предпочтениях и уроках сохраняй через remember; перед задачей при необходимости вспоминай через recall.
 - Поиск креаторов и клиентов: найди через ask_research, каждого запиши add_contact (ник, платформа, подписчики, цена, почему подходит), \
@@ -90,6 +93,9 @@ TOOLS = [
          "body": {"type": "string"}}, "required": ["who", "channel", "body"]}},
     {"name": "list_drafts", "description": "Черновики сообщений, которые ждут решения Алишера.",
      "input_schema": {"type": "object", "properties": {}}},
+    {"name": "analyze_image", "description": "Разобрать фото по ссылке: свои товары, конкуренты, посты Instagram. Что хорошо, что улучшить, идеи для похожего кадра.",
+     "input_schema": {"type": "object", "properties": {"image_url": {"type": "string", "description": "прямая https-ссылка на картинку"},
+         "question": {"type": "string"}}, "required": ["image_url"]}},
     {"name": "inbox", "description": "Последние входящие сообщения из WhatsApp и Instagram Direct.",
      "input_schema": {"type": "object", "properties": {"limit": {"type": "integer"}}}},
     {"name": "remember", "description": "Запомнить предпочтение, факт, урок или навык.",
@@ -214,6 +220,8 @@ def chat(session_id: str, text: str) -> str:
             return crm.draft_message(s["workspace"], args["who"], args["channel"], args["body"])
         if name == "list_drafts":
             return crm.list_drafts(s["workspace"])
+        if name == "analyze_image":
+            return {"answer": vision.handle(s["workspace"], args["image_url"], args.get("question", ""))}
         if name == "inbox":
             import meta  # local import: meta imports orchestrator
             return meta.inbox(args.get("limit", 15))
