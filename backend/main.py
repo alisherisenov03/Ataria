@@ -207,3 +207,11 @@ def privacy():
 @app.get("/data-deletion")
 def data_deletion():
     return FileResponse(LEGAL_DIR / "data-deletion.html", media_type="text/html; charset=utf-8")
+
+
+@app.post("/meta/instagram/subscribe")
+def instagram_subscribe(authorization: str = Header(default="")):
+    _auth(authorization)
+    result = meta.instagram_subscribe()
+    print(f"instagram subscribe: {result}")
+    return result

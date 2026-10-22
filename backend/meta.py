@@ -92,3 +92,13 @@ def inbox(limit: int = 15) -> list[dict]:
             .eq("direction", "in").order("created_at", desc=True).limit(limit).execute().data)
     return [{"channel": r["channel"], "from": (r["metadata"] or {}).get("from"), "text": r["body"],
              "at": r["created_at"]} for r in rows]
+
+
+def instagram_subscribe() -> dict:
+    """Subscribe Alisher's Instagram business account to this app's webhooks (needed once per account)."""
+    base = f"https://graph.instagram.com/{config.META_GRAPH_VERSION}"
+    tok = {"access_token": config.INSTAGRAM_ACCESS_TOKEN}
+    me = httpx.get(f"{base}/me", params={"fields": "user_id,username", **tok}, timeout=20)
+    sub = httpx.post(f"{base}/me/subscribed_apps", params={"subscribed_fields": "messages", **tok}, timeout=20)
+    return {"me_status": me.status_code, "me": me.json() if me.status_code == 200 else me.text[:300],
+            "subscribe_status": sub.status_code, "subscribe": sub.text[:300]}
