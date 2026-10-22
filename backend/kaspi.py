@@ -4,6 +4,7 @@ One call = one bounded pass, so it works on serverless too. Progress is kept in
 jarvis.kaspi_sync_state; if the time budget runs out the next call continues.
 """
 import time
+from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeout, as_completed
 from datetime import datetime, timezone
 
 import httpx
@@ -14,6 +15,7 @@ import db
 BASE = "https://kaspi.kz/shop/api/v2"
 DAY = 86_400_000
 WINDOW = 14 * DAY  # Kaspi returns orders in windows of at most 14 days
+WORKERS = 5
 STATES = ["NEW", "SIGN_REQUIRED", "PICKUP", "DELIVERY", "KASPI_DELIVERY", "ARCHIVE"]
 
 
@@ -40,8 +42,8 @@ def _get(http: httpx.Client, path: str, params: dict) -> dict:
     return r.json()
 
 
-def _fetch_items(http, order_id: str):
-    """Order lines → kaspi_items. Returns total qty, or None if the call failed."""
+def _entries(http, order_id: str):
+    """Order lines as kaspi_items rows, or None if the call failed. No DB writes."""
     try:
         j = _get(http, f"/orders/{order_id}/entries", {"include[entries]": "product"})
     except Exception:
@@ -61,9 +63,32 @@ def _fetch_items(http, order_id: str):
             "unit_price": a.get("basePrice") if a.get("basePrice") is not None else a.get("unitPrice"),
             "total_price": a.get("totalPrice"),
         })
+    return rows
+
+
+def _fetch_many(http, order_ids: list[str], deadline: float) -> dict[str, list[dict]]:
+    """Fetch order lines concurrently; orders not finished before the deadline are simply absent."""
+    out: dict[str, list[dict]] = {}
+    if not order_ids:
+        return out
+    ex = ThreadPoolExecutor(max_workers=WORKERS)
+    futs = {ex.submit(_entries, http, oid): oid for oid in order_ids}
+    try:
+        for f in as_completed(futs, timeout=max(1.0, deadline - time.time())):
+            rows = f.result()
+            if rows is not None:
+                out[futs[f]] = rows
+    except FuturesTimeout:
+        pass
+    finally:
+        ex.shutdown(wait=False, cancel_futures=True)
+    return out
+
+
+def _save_items(fetched: dict[str, list[dict]]):
+    rows = [r for items in fetched.values() for r in items]
     if rows:
         db.client().table("kaspi_items").upsert(rows, on_conflict="entry_id").execute()
-    return sum(r["qty"] for r in rows)
 
 
 def _sync_window(http, frm: int, to: int, state: str, deadline: float) -> int:
@@ -80,14 +105,15 @@ def _sync_window(http, frm: int, to: int, state: str, deadline: float) -> int:
             ids = [o["id"] for o in rows]
             known = {r["id"]: r["qty"] for r in
                      db.client().table("kaspi_orders").select("id,qty").in_("id", ids).execute().data}
+            need = [i for i in ids if known.get(i) is None]
+            fetched = _fetch_many(http, need, deadline)
+            _save_items(fetched)
             batch = []
             for o in rows:
-                if time.time() > deadline:
-                    raise _OutOfTime
                 a = o.get("attributes") or {}
                 qty = known.get(o["id"])
-                if qty is None:
-                    qty = _fetch_items(http, o["id"])
+                if qty is None and o["id"] in fetched:
+                    qty = sum(r["qty"] for r in fetched[o["id"]])
                 batch.append({
                     "id": o["id"], "code": a.get("code"), "state": a.get("state"), "status": a.get("status"),
                     "created_at": _iso(a["creationDate"]) if a.get("creationDate") else None,
@@ -100,6 +126,17 @@ def _sync_window(http, frm: int, to: int, state: str, deadline: float) -> int:
         page += 1
         if page >= (j.get("meta") or {}).get("pageCount", 1) or not rows:
             return saved
+
+
+def _backfill_items(http, deadline: float) -> int:
+    """Orders saved without their lines (budget ran out earlier): fill them in, newest first."""
+    ids = [r["id"] for r in db.client().table("kaspi_orders").select("id")
+           .is_("qty", "null").order("created_at", desc=True).limit(150).execute().data]
+    fetched = _fetch_many(http, ids, deadline)
+    _save_items(fetched)
+    for oid, items in fetched.items():
+        db.client().table("kaspi_orders").update({"qty": sum(r["qty"] for r in items)}).eq("id", oid).execute()
+    return len(fetched)
 
 
 def _state(key: str):
@@ -133,9 +170,10 @@ def sync(deep: bool = False, budget_s: int = 50) -> dict:
         except _OutOfTime:
             return {"complete": False, "orders_saved": total, "errors": errors,
                     "note": "time budget reached; call again to continue"}
+        backfilled = _backfill_items(http, deadline) if time.time() < deadline else 0
     db.client().table("kaspi_sync_state").upsert({"key": "last_to", "value": str(now)}).execute()
     db.log_action("kaspi", "kaspi_sync", "sync", {"deep": deep}, {"orders": total, "errors": errors}, not errors)
-    return {"complete": True, "orders_saved": total, "errors": errors}
+    return {"complete": True, "orders_saved": total, "items_backfilled": backfilled, "errors": errors}
 
 
 def daily_sales(days: int = 14) -> list[dict]:
