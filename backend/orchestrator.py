@@ -79,20 +79,41 @@ def _save(session_id: str, s: dict):
     }).execute()
 
 
+def _kaspi_day(dt_utc: datetime) -> "date":
+    """Kaspi shipping day: orders after 16:00 Almaty ship the next day."""
+    return (dt_utc + timedelta(hours=5) + timedelta(hours=8)).date()
+
+
+def kaspi_packaging():
+    """Orders in packaging split into today's shipment and the next day's (created after 16:00)."""
+    today = (datetime.now(timezone.utc) + timedelta(hours=5)).date()
+    ship_today, ship_later = [], []
+    for o in kaspi.open_orders():
+        day = _kaspi_day(datetime.fromisoformat(o["created_at"].replace("Z", "+00:00")))
+        (ship_today if day <= today else ship_later).append(o)
+    return ship_today, ship_later
+
+
 def _kaspi_snapshot() -> str:
     try:
+        now = datetime.now(timezone.utc)
+        today = (now + timedelta(hours=5)).date()  # calendar day in Almaty
         rows = kaspi.daily_sales(7)
         synced = kaspi.last_synced_at()
         when = ""
         if synced:
             t = datetime.fromisoformat(synced.replace("Z", "+00:00")) + timedelta(hours=5)
             when = f"Данные Kaspi обновлены в {t:%H:%M} (Алматы); называя цифры, говори это время.\n"
-        opened = kaspi.open_orders()
-        in_work = (f"В упаковке сейчас (приняты, ждут передачи курьеру): {len(opened)} заказов на "
-                   f"{round(sum(float(o['total'] or 0) for o in opened))} ₸. «Сегодняшние заказы» для Алишера = заказы "
-                   "в упаковке; называй это число первым.\n")
-        return when + in_work + "По дням Kaspi (заказы после 16:00 относятся к следующему дню):\n" + "\n".join(
-            f"- {r['day']}: {r['orders']} заказов, {r['units']} шт, {round(float(r['revenue']))} ₸" for r in rows)
+        ship_today, ship_later = kaspi_packaging()
+        total = lambda xs: round(sum(float(x["total"] or 0) for x in xs))
+        packaging = (
+            f"СЕГОДНЯШНИЕ ЗАКАЗЫ (в упаковке, отгрузка сегодня {today}): {len(ship_today)} на {total(ship_today)} ₸. "
+            f"Новые после 16:00, отгрузка завтра: {len(ship_later)} на {total(ship_later)} ₸. "
+            "На «сколько заказов сегодня» называй сначала сегодняшние в упаковке, потом новые на завтра.\n")
+        days = "\n".join(f"- день отгрузки {r['day']}: {r['orders']} заказов, {r['units']} шт, {round(float(r['revenue']))} ₸"
+                         for r in rows)
+        return (when + packaging + "Заказы по дням отгрузки Kaspi (созданные после 16:00 относятся к следующему дню; "
+                "отменённые и самовыкупы не считаются):\n" + days)
     except Exception as e:
         return f"- (сводка недоступна: {type(e).__name__})"
 

@@ -124,17 +124,12 @@ def _unseen_dev_news() -> str:
 def _briefing() -> str:
     """Opening line for a voice session: straight to the numbers instead of a generic greeting."""
     try:
-        rows = kaspi.daily_sales(2)
-        today = (datetime.now(timezone.utc) + timedelta(hours=5)).date().isoformat()
-        by_day = {str(r["day"]): r for r in rows}
-        yday = (datetime.now(timezone.utc) + timedelta(hours=5) - timedelta(days=1)).date().isoformat()
-        parts = []
-        if yday in by_day:
-            parts.append(f"вчера {by_day[yday]['orders']} заказов на {_money(by_day[yday]['revenue'])} тенге")
-        if today in by_day:
-            parts.append(f"сегодня пока {by_day[today]['orders']} на {_money(by_day[today]['revenue'])}")
-        return ("Слушаю, Алишер. " + (", ".join(parts).capitalize() + ". " if parts else "")
-                + _unseen_dev_news() + "Что делаем?")
+        today, later = orchestrator.kaspi_packaging()
+        money = _money(sum(float(o["total"] or 0) for o in today))
+        line = f"Сегодня в упаковке {len(today)} заказов на {money} тенге"
+        if later:
+            line += f", и ещё {len(later)} новых уже на завтра"
+        return "Слушаю, Алишер. " + line + ". " + _unseen_dev_news() + "Что делаем?"
     except Exception as e:
         print(f"briefing failed: {type(e).__name__}")
         return "Слушаю, Алишер. Что делаем?"
