@@ -29,14 +29,15 @@ class ChatIn(BaseModel):
 
 
 def _auth(authorization: str, token_q: str = ""):
-    # The token comes from the Authorization header, or from ?token= for tools that cannot set headers.
-    token = (authorization.removeprefix("Bearer ").strip() or token_q).strip()
-    if not config.BACKEND_TOKEN or not hmac.compare_digest(token, config.BACKEND_TOKEN):
-        # Diagnostics only: whether a header arrived and its length, never the value.
-        print(f"auth rejected: header_present={bool(authorization)} "
-              f"has_bearer_prefix={authorization.startswith('Bearer ')} token_len={len(token)} "
-              f"expected_len={len(config.BACKEND_TOKEN)}")
-        raise HTTPException(status_code=401, detail="unauthorized")
+    # Accepted if EITHER the Authorization header OR ?token= matches (some tools cannot set headers).
+    header_token = authorization.removeprefix("Bearer ").strip()
+    candidates = [t.strip() for t in (header_token, token_q) if t and t.strip()]
+    if config.BACKEND_TOKEN and any(hmac.compare_digest(t, config.BACKEND_TOKEN) for t in candidates):
+        return
+    # Diagnostics only: lengths, never values.
+    print(f"auth rejected: header_len={len(header_token)} query_len={len(token_q.strip())} "
+          f"expected_len={len(config.BACKEND_TOKEN)}")
+    raise HTTPException(status_code=401, detail="unauthorized")
 
 
 @app.exception_handler(RequestValidationError)
