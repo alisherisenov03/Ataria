@@ -3,6 +3,7 @@ import os
 
 import httpx
 from fastapi import FastAPI, Header, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 import config
@@ -10,6 +11,14 @@ import kaspi
 import orchestrator
 
 app = FastAPI(title="Jarvis backend")
+# The desktop app's window is served from http://127.0.0.1:<random port>; allow only that origin.
+# Every call still needs the BACKEND_TOKEN, so this does not open anything up.
+app.add_middleware(
+    CORSMiddleware,
+    allow_origin_regex=r"^http://127\.0\.0\.1:\d+$",
+    allow_methods=["GET", "POST"],
+    allow_headers=["Authorization", "Content-Type"],
+)
 
 
 class ChatIn(BaseModel):
