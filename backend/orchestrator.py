@@ -5,6 +5,7 @@ import config
 import db
 import memory
 import kaspi
+import kaspi_market
 from agents import data, research
 from agents.runner import run_agent
 
@@ -21,6 +22,7 @@ SYSTEM = """Ты Jarvis, голосовой ИИ-помощник Алишера
 - На вопрос «что сделал Claude / разработчик» вызывай developer_updates и перескажи коротко.
 - Задачи и напоминания Алишера: add_task, list_tasks, complete_task. Даты в формате ГГГГ-ММ-ДД.
 - «Что пишут в WhatsApp/Директ»: inbox. Клиентам сам не отвечай: предложи текст ответа, отправка только после «да» Алишера.
+- Цены конкурентов, рынок и ниши на Kaspi: kaspi_search (и kaspi_offers для продавцов товара). Товары Ataria: подушки 35x60/40x60/40x61, комбайн AT-SM23, измельчители AT-1100/1700/2300.
 - Поиск в интернете (рынок, конкуренты, цены, ниши, поставщики, новости): ask_research, сформулируй вопрос подробно.
 - Важное о предпочтениях и уроках сохраняй через remember; перед задачей при необходимости вспоминай через recall.
 - Ничего необратимого (отправка сообщений, платежи, удаление) без прямого «да» от Алишера. Сообщения только черновиками.
@@ -53,6 +55,10 @@ TOOLS = [
      "input_schema": {"type": "object", "properties": {"title": {"type": "string"}}, "required": ["title"]}},
     {"name": "ask_research", "description": "Исследование в интернете: рынок Казахстана, конкуренты, цены, ниши, поставщики. Занимает до минуты.",
      "input_schema": {"type": "object", "properties": {"question": {"type": "string"}}, "required": ["question"]}},
+    {"name": "kaspi_search", "description": "Поиск товаров на Kaspi (Алматы): цены, рейтинг, число отзывов. Для конкурентов, ниш и рынка.",
+     "input_schema": {"type": "object", "properties": {"text": {"type": "string"}}, "required": ["text"]}},
+    {"name": "kaspi_offers", "description": "Продавцы и их цены по конкретному товару Kaspi (id из kaspi_search).",
+     "input_schema": {"type": "object", "properties": {"product_id": {"type": "string"}}, "required": ["product_id"]}},
     {"name": "inbox", "description": "Последние входящие сообщения из WhatsApp и Instagram Direct.",
      "input_schema": {"type": "object", "properties": {"limit": {"type": "integer"}}}},
     {"name": "remember", "description": "Запомнить предпочтение, факт, урок или навык.",
@@ -161,6 +167,10 @@ def chat(session_id: str, text: str) -> str:
             return {"done": rows[0]["title"]}
         if name == "ask_research":
             return {"answer": research.handle(s["workspace"], args["question"])}
+        if name == "kaspi_search":
+            return kaspi_market.search(args["text"])
+        if name == "kaspi_offers":
+            return kaspi_market.offers(args["product_id"])
         if name == "inbox":
             import meta  # local import: meta imports orchestrator
             return meta.inbox(args.get("limit", 15))
