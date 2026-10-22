@@ -17,11 +17,15 @@ def _api():
 
 def _create(model: str, **kw):
     try:
-        return _api().messages.create(model=model, **kw)
-    except (anthropic.NotFoundError, anthropic.PermissionDeniedError):
-        if model == config.ANTHROPIC_MODEL:
-            raise
-        return _api().messages.create(model=config.ANTHROPIC_MODEL, **kw)
+        try:
+            return _api().messages.create(model=model, **kw)
+        except (anthropic.NotFoundError, anthropic.PermissionDeniedError):
+            if model == config.ANTHROPIC_MODEL:
+                raise
+            return _api().messages.create(model=config.ANTHROPIC_MODEL, **kw)
+    except anthropic.APIStatusError as e:
+        print(f"anthropic error {e.status_code}: {str(e.message)[:300]}")
+        raise
 
 
 def run_agent(system: str, tools: list[dict], dispatch: Callable[[str, dict], object],

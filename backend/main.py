@@ -63,7 +63,11 @@ def health():
 @app.post("/chat")
 def chat(body: ChatIn, authorization: str = Header(default=""), token: str = ""):
     _auth(authorization, token)
-    return {"reply": orchestrator.chat(body.session_id, body.text)}
+    try:
+        return {"reply": orchestrator.chat(body.session_id, body.text)}
+    except Exception as e:
+        print(f"chat failed: {type(e).__name__}: {str(e)[:300]}")
+        return {"reply": f"Не получилось обработать запрос: {type(e).__name__}. Подробности в логах бэкенда."}
 
 
 @app.get("/voice/session")
