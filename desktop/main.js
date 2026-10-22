@@ -49,7 +49,7 @@ app.whenReady().then(() => {
   ipcMain.handle('config:save', (_e, c) => { saveConfig(c); });
   ipcMain.on('hide', () => win.hide());
   createWindow();
-  tray = new Tray(nativeImage.createFromPath(path.join(__dirname, 'icon.png')));
+  tray = new Tray(nativeImage.createFromPath(path.join(__dirname, 'icon.png')).resize({ width: 16, height: 16 }));
   tray.setToolTip('Jarvis (правый Ctrl)');
   tray.setContextMenu(Menu.buildFromTemplate([
     { label: 'Открыть', click: toggle },
