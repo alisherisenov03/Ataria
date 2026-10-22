@@ -4,6 +4,7 @@ from datetime import datetime, timedelta, timezone
 import config
 import db
 import memory
+import kaspi
 from agents import data
 from agents.runner import run_agent
 
@@ -12,9 +13,12 @@ SYSTEM = """Ты Jarvis, голосовой ИИ-помощник Алишера
 Сегодня {today} (время Алматы). Текущий бизнес (workspace): {workspace}. Доступные: {workspaces}.
 Что ты знаешь об Алишере и его целях:
 {context}
+Свежая сводка Kaspi по дням (без отмен и самовыкупов; на вопросы о заказах и выручке отвечай сразу из неё, без инструментов):
+{kaspi}
 Правила:
-- Любые расчёты и работу с цифрами (продажи и прибыль Kaspi, себестоимость, комиссии) передавай агенту через ask_data_agent, \
-пересказав просьбу полностью, с датами.
+- Заказы и выручку за последние дни бери из сводки выше. Прибыль, себестоимость и комиссию Kaspi считай сам \
+инструментами kaspi_profit, set_product_cost, set_kaspi_fee_percent. Сложные расчёты и анализ передавай в ask_data_agent.
+- На вопрос «что сделал Claude / разработчик» вызывай developer_updates и перескажи коротко.
 - Важное о предпочтениях и уроках сохраняй через remember; перед задачей при необходимости вспоминай через recall.
 - Ничего необратимого (отправка сообщений, платежи, удаление) без прямого «да» от Алишера. Сообщения только черновиками.
 - Если Алишер просит изменить, добавить или исправить что-то в самой системе Jarvis (новая функция, агент, подключение, голос, расчёт), \
@@ -32,6 +36,9 @@ TOOLS = [
          "details": {"type": "string", "description": "Что именно нужно, со всеми подробностями из слов Алишера"}},
          "required": ["title", "details"]}},
     {"name": "list_development_requests", "description": "Показать последние задачи на доработку системы и их статус.",
+     "input_schema": {"type": "object", "properties": {}}},
+    *[t for t in data.TOOLS if t["name"] in ("kaspi_profit", "set_product_cost", "set_kaspi_fee_percent")],
+    {"name": "developer_updates", "description": "Последние итоги работы разработчика (Claude Code) над системой.",
      "input_schema": {"type": "object", "properties": {}}},
     {"name": "remember", "description": "Запомнить предпочтение, факт, урок или навык.",
      "input_schema": {"type": "object", "properties": {
@@ -57,6 +64,14 @@ def _save(session_id: str, s: dict):
     }).execute()
 
 
+def _kaspi_snapshot() -> str:
+    try:
+        rows = kaspi.daily_sales(7)
+        return "\n".join(f"- {r['day']}: {r['orders']} заказов, {r['units']} шт, {round(float(r['revenue']))} ₸" for r in rows)
+    except Exception as e:
+        return f"- (сводка недоступна: {type(e).__name__})"
+
+
 def chat(session_id: str, text: str) -> str:
     s = _session(session_id)
     slugs = db.workspace_slugs()
@@ -69,6 +84,14 @@ def chat(session_id: str, text: str) -> str:
             return {"workspace": args["slug"]}
         if name == "ask_data_agent":
             return {"answer": data.handle(s["workspace"], args["task"])}
+        if name == "kaspi_profit":
+            return kaspi.profit(args["date_from"], args["date_to"], args.get("include_partner", False))
+        if name == "set_product_cost":
+            return kaspi.set_cost(args["product"], float(args["unit_cost"]))
+        if name == "set_kaspi_fee_percent":
+            return kaspi.set_setting("kaspi_fee_percent", float(args["percent"]))
+        if name == "developer_updates":
+            return db.client().table("dev_log").select("summary,created_at").order("created_at", desc=True).limit(5).execute().data
         if name == "request_development":
             row = db.client().table("improvement_proposals").insert({
                 "workspace_id": db.workspace_id(s["workspace"]),
@@ -86,7 +109,8 @@ def chat(session_id: str, text: str) -> str:
 
     today = (datetime.now(timezone.utc) + timedelta(hours=5)).date()
     system = SYSTEM.format(workspace=s["workspace"], workspaces=", ".join(slugs), today=today,
-                           context=memory.standing_context(s["workspace"]) or "- (пока ничего)")
+                           context=memory.standing_context(s["workspace"]) or "- (пока ничего)",
+                           kaspi=_kaspi_snapshot())
     reply = run_agent(system, TOOLS, dispatch, s["history"] + [{"role": "user", "content": text}],
                       model=config.ORCHESTRATOR_MODEL, max_tokens=500)
     s["history"] = (s["history"] + [{"role": "user", "content": text},

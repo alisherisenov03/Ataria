@@ -1,4 +1,5 @@
 import hmac
+import time
 import os
 from datetime import datetime, timedelta, timezone
 
@@ -64,8 +65,11 @@ def health():
 @app.post("/chat")
 def chat(body: ChatIn, authorization: str = Header(default=""), token: str = ""):
     _auth(authorization, token)
+    started = time.monotonic()
     try:
-        return {"reply": orchestrator.chat(body.session_id, body.text)}
+        reply = orchestrator.chat(body.session_id, body.text)
+        print(f"chat ok in {time.monotonic() - started:.1f}s")
+        return {"reply": reply}
     except Exception as e:
         print(f"chat failed: {type(e).__name__}: {str(e)[:300]}")
         return {"reply": f"Не получилось обработать запрос: {type(e).__name__}. Подробности в логах бэкенда."}
