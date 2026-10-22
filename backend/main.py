@@ -1,5 +1,6 @@
 import hmac
 import os
+from datetime import datetime, timedelta, timezone
 
 import httpx
 from fastapi import FastAPI, Header, HTTPException
@@ -85,7 +86,29 @@ def voice_session(authorization: str = Header(default="")):
     if r.status_code != 200:
         print(f"elevenlabs get-signed-url {r.status_code}: {r.text[:300]}")
         raise HTTPException(status_code=502, detail=f"ElevenLabs {r.status_code}: {r.text[:200]}")
-    return {"signed_url": r.json()["signed_url"]}
+    return {"signed_url": r.json()["signed_url"], "briefing": _briefing()}
+
+
+def _money(x) -> str:
+    return f"{round(float(x)):,}".replace(",", " ")
+
+
+def _briefing() -> str:
+    """Opening line for a voice session: straight to the numbers instead of a generic greeting."""
+    try:
+        rows = kaspi.daily_sales(2)
+        today = (datetime.now(timezone.utc) + timedelta(hours=5)).date().isoformat()
+        by_day = {str(r["day"]): r for r in rows}
+        yday = (datetime.now(timezone.utc) + timedelta(hours=5) - timedelta(days=1)).date().isoformat()
+        parts = []
+        if yday in by_day:
+            parts.append(f"вчера {by_day[yday]['orders']} заказов на {_money(by_day[yday]['revenue'])} тенге")
+        if today in by_day:
+            parts.append(f"сегодня пока {by_day[today]['orders']} на {_money(by_day[today]['revenue'])}")
+        return "Слушаю, Алишер. " + (", ".join(parts).capitalize() + ". " if parts else "") + "Что делаем?"
+    except Exception as e:
+        print(f"briefing failed: {type(e).__name__}")
+        return "Слушаю, Алишер. Что делаем?"
 
 
 @app.post("/kaspi/sync")

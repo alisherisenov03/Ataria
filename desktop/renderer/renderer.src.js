@@ -18,9 +18,11 @@ async function start() {
       headers: { Authorization: 'Bearer ' + cfg.token },
     });
     if (!r.ok) throw new Error('Бэкенд ответил ' + r.status);
-    const { signed_url } = await r.json();
+    const { signed_url, briefing } = await r.json();
     conv = await Conversation.startSession({
       signedUrl: signed_url,
+      // Used by the agent's first message ({{briefing}}): today's numbers instead of a greeting.
+      dynamicVariables: { briefing: briefing || 'Слушаю, Алишер. Что делаем?' },
       onModeChange: ({ mode }) => {
         if (mode === 'speaking') { setOrb('speaking', 'Говорю'); setStatus(''); }
         else { setOrb('listening', 'Слушаю'); setStatus(''); }
