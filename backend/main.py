@@ -28,8 +28,9 @@ class ChatIn(BaseModel):
     session_id: str = "default"
 
 
-def _auth(authorization: str):
-    token = authorization.removeprefix("Bearer ").strip()
+def _auth(authorization: str, token_q: str = ""):
+    # The token comes from the Authorization header, or from ?token= for tools that cannot set headers.
+    token = (authorization.removeprefix("Bearer ").strip() or token_q).strip()
     if not config.BACKEND_TOKEN or not hmac.compare_digest(token, config.BACKEND_TOKEN):
         # Diagnostics only: whether a header arrived and its length, never the value.
         print(f"auth rejected: header_present={bool(authorization)} "
@@ -59,8 +60,8 @@ def health():
 
 
 @app.post("/chat")
-def chat(body: ChatIn, authorization: str = Header(default="")):
-    _auth(authorization)
+def chat(body: ChatIn, authorization: str = Header(default=""), token: str = ""):
+    _auth(authorization, token)
     return {"reply": orchestrator.chat(body.session_id, body.text)}
 
 
