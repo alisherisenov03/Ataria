@@ -62,6 +62,10 @@ def health():
         "elevenlabs": bool(config.ELEVENLABS_API_KEY),
         "elevenlabs_agent": bool(config.ELEVENLABS_AGENT_ID),
         "kaspi": bool(config.KASPI_TOKEN),
+        "meta_verify_token": bool(config.META_VERIFY_TOKEN),
+        "whatsapp": bool(config.META_ACCESS_TOKEN and config.WHATSAPP_PHONE_NUMBER_ID and config.META_APP_SECRET),
+        "instagram_token": bool(config.INSTAGRAM_ACCESS_TOKEN),
+        "instagram_app_secret": bool(config.INSTAGRAM_APP_SECRET),
     }
     return {"ok": True, "configured": configured}
 
@@ -170,7 +174,9 @@ def meta_verify(request: Request):
     q = request.query_params
     if (q.get("hub.mode") == "subscribe" and config.META_VERIFY_TOKEN
             and hmac.compare_digest(q.get("hub.verify_token", ""), config.META_VERIFY_TOKEN)):
+        print("meta webhook verified")
         return PlainTextResponse(q.get("hub.challenge", ""))
+    print(f"meta webhook verification failed: mode={q.get('hub.mode')} token_len={len(q.get('hub.verify_token', ''))}")
     raise HTTPException(status_code=403, detail="verification failed")
 
 
@@ -181,7 +187,9 @@ async def meta_webhook(request: Request):
         print("meta webhook: bad or missing signature")
         raise HTTPException(status_code=401, detail="bad signature")
     try:
-        return meta.handle(await request.json())
+        payload = await request.json()
+        print(f"meta webhook event: object={payload.get('object')}")
+        return meta.handle(payload)
     except Exception as e:  # always 200 after a valid signature, or Meta keeps retrying
         print(f"meta webhook failed: {type(e).__name__}: {str(e)[:300]}")
         return {"handled": 0}
