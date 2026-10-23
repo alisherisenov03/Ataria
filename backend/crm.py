@@ -55,3 +55,14 @@ def list_drafts(workspace: str, limit: int = 20) -> list[dict]:
             .eq("workspace_id", db.workspace_id(workspace)).eq("direction", "out").eq("status", "draft")
             .order("created_at", desc=True).limit(limit).execute().data)
     return rows
+
+
+def link_clicks(days: int = 7) -> dict:
+    """Clicks on the WhatsApp tracking link, by source (reel, bio, ad)."""
+    from datetime import datetime, timedelta, timezone
+    since = (datetime.now(timezone.utc) - timedelta(days=max(1, min(int(days or 7), 90)))).isoformat()
+    rows = db.client().table("link_clicks").select("src,created_at").gte("created_at", since).limit(5000).execute().data
+    by = {}
+    for r in rows:
+        by[r["src"]] = by.get(r["src"], 0) + 1
+    return {"days": days, "total": len(rows), "by_source": dict(sorted(by.items(), key=lambda x: -x[1]))}

@@ -108,6 +108,8 @@ TOOLS = [
      "input_schema": {"type": "object", "properties": {"days": {"type": "integer", "description": "длина периода в днях, по умолчанию 7"}}}},
     {"name": "instagram_stats", "description": "Статистика Instagram @ataria.kz: подписчики и посты за период с охватом, просмотрами, сохранениями. Лучшие посты первыми.",
      "input_schema": {"type": "object", "properties": {"days": {"type": "integer"}}}},
+    {"name": "whatsapp_clicks", "description": "Сколько людей перешли в WhatsApp по ссылке из Instagram (из био, роликов, рекламы), по источникам.",
+     "input_schema": {"type": "object", "properties": {"days": {"type": "integer"}}}},
     {"name": "inbox", "description": "Последние входящие сообщения из WhatsApp и Instagram Direct.",
      "input_schema": {"type": "object", "properties": {"limit": {"type": "integer"}}}},
     {"name": "remember", "description": "Запомнить предпочтение, факт, урок или навык.",
@@ -251,6 +253,8 @@ def chat(session_id: str, text: str) -> str:
             return kaspi.analytics(args.get("days", 7))
         if name == "instagram_stats":
             return instagram.stats(args.get("days", 30))
+        if name == "whatsapp_clicks":
+            return crm.link_clicks(args.get("days", 7))
         if name == "inbox":
             import meta  # local import: meta imports orchestrator
             return meta.inbox(args.get("limit", 15))

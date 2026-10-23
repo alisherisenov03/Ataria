@@ -1,6 +1,7 @@
 import hmac
 import os
 import time
+from urllib.parse import quote
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
@@ -181,6 +182,24 @@ def _briefing() -> str:
     except Exception as e:
         print(f"briefing failed: {type(e).__name__}")
         return "Слушаю, Алишер. Какие цели на сегодня?"
+
+
+WA_TEXTS = {
+    "sm23": "Здравствуйте! Хочу комбайн ATARIA AT-SM23. Подскажите, пожалуйста, по наличию и доставке.",
+}
+
+
+@app.get("/go/wa")
+def go_whatsapp(src: str = "instagram", p: str = "sm23", user_agent: str = Header(default="")):
+    """Public link for Instagram bios and ads: counts the click, then opens WhatsApp with a prefilled message."""
+    src, p = src[:40], p[:20]
+    try:
+        db.client().table("link_clicks").insert({"src": src, "target": f"whatsapp:{p}",
+                                                 "user_agent": user_agent[:200]}).execute()
+    except Exception as e:
+        print(f"click log failed: {type(e).__name__}")
+    text = WA_TEXTS.get(p, WA_TEXTS["sm23"]) + f" ({src})"
+    return RedirectResponse(f"https://wa.me/{config.WHATSAPP_BUSINESS_NUMBER}?text={quote(text)}", status_code=302)
 
 
 @app.post("/kaspi/sync")
