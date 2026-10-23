@@ -66,6 +66,7 @@ def health():
         "whatsapp": bool(config.META_ACCESS_TOKEN and config.WHATSAPP_PHONE_NUMBER_ID and config.META_APP_SECRET),
         "instagram_token": bool(config.INSTAGRAM_ACCESS_TOKEN),
         "instagram_app_secret": bool(config.INSTAGRAM_APP_SECRET),
+        "windsor": bool(config.WINDSOR_API_KEY),
     }
     return {"ok": True, "configured": configured}
 

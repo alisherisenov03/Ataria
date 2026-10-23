@@ -340,3 +340,52 @@ def open_orders() -> list[dict]:
             continue
         out.append({"code": r["code"], "created_at": r["created_at"], "total": r["total_price"]})
     return out
+
+
+def analytics(days: int = 7) -> dict:
+    """Week-over-week product analytics with plain-language flags. Uses full Kaspi business days only."""
+    from datetime import date, timedelta as td
+    days = max(3, min(int(days or 7), 30))
+    biz_today = (datetime.now(timezone.utc) + td(hours=13)).date()  # Almaty +5h, Kaspi day cut-off 16:00
+    end = biz_today - td(days=1)
+    start = end - td(days=days - 1)
+    p_end, p_start = start - td(days=1), start - td(days=days)
+    cur = profit(start.isoformat(), end.isoformat())
+    prev = profit(p_start.isoformat(), p_end.isoformat())
+    prev_by = {p["code"]: p for p in prev["products"]}
+    ads_by_day = {}
+    try:
+        for a in cabinet("ads")["ads"] or []:
+            if a.get("date"):
+                ads_by_day[a["date"]] = float(a["total"]) / (a.get("days") or 1)
+    except Exception:
+        pass
+    ads_total = sum(v for d, v in ads_by_day.items() if start.isoformat() <= d <= end.isoformat())
+    rows, notes = [], []
+    for p in cur["products"]:
+        q = prev_by.get(p["code"], {})
+        du = (p["units"] - q.get("units", 0))
+        dr = ((p["revenue"] / q["revenue"] - 1) * 100) if q.get("revenue") else None
+        row = {"name": p["name"], "units": p["units"], "units_prev": q.get("units", 0), "units_delta": du,
+               "revenue": p["revenue"], "revenue_change_pct": round(dr) if dr is not None else None,
+               "profit_per_unit": p["profit_per_unit"], "profit_before_ads": p["profit"]}
+        rows.append(row)
+        if q.get("units", 0) >= 5 and p["units"] <= q["units"] * 0.7:
+            notes.append(f"{p['name']}: продажи упали на {round((1 - p['units'] / q['units']) * 100)}% ({q['units']} → {p['units']} шт.)")
+        if p["units"] >= 5 and p["profit_per_unit"] < 1000:
+            notes.append(f"{p['name']}: прибыль со штуки всего {p['profit_per_unit']} ₸ до рекламы")
+    profit_total = cur["profit_before_ads"]
+    out = {
+        "period": [start.isoformat(), end.isoformat()], "previous": [p_start.isoformat(), p_end.isoformat()],
+        "revenue": cur["orders_revenue"], "revenue_prev": prev["orders_revenue"],
+        "profit_before_ads": profit_total, "profit_before_ads_prev": prev["profit_before_ads"],
+        "ads_spend_known": round(ads_total) if ads_total else None,
+        "profit_after_ads": round(profit_total - ads_total) if ads_total else None,
+        "products": sorted(rows, key=lambda r: -r["revenue"])[:12], "flags": notes,
+        "missing_cost": cur["missing_cost"],
+    }
+    if ads_total and cur["orders_revenue"]:
+        out["drr_percent"] = round(ads_total / cur["orders_revenue"] * 100, 1)
+        if out["drr_percent"] > 15:
+            notes.append(f"Реклама съела {out['drr_percent']}% выручки (норма в кабинете 15%)")
+    return out

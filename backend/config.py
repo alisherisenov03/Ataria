@@ -20,3 +20,5 @@ WHATSAPP_PHONE_NUMBER_ID = os.getenv("WHATSAPP_PHONE_NUMBER_ID", "")
 OWNER_WHATSAPP = os.getenv("OWNER_WHATSAPP", "")  # Alisher's personal number, digits only, e.g. 77011234567
 INSTAGRAM_ACCESS_TOKEN = os.getenv("INSTAGRAM_ACCESS_TOKEN", "")
 INSTAGRAM_APP_SECRET = os.getenv("INSTAGRAM_APP_SECRET", "")
+
+WINDSOR_API_KEY = os.getenv("WINDSOR_API_KEY", "")

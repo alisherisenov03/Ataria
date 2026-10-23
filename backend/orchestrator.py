@@ -1,4 +1,5 @@
 """Main agent (Jarvis): talks to the user, owns the workspace, delegates to sub-agents."""
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta, timezone
 
 import config
@@ -7,16 +8,12 @@ import memory
 import kaspi
 import kaspi_market
 import crm
+import instagram
 from agents import data, research, vision
 from agents.runner import run_agent
 
 SYSTEM = """Ты Jarvis, голосовой ИИ-помощник Алишера. Говоришь по-русски, коротко и живо, как в разговоре: \
 без списков и markdown, одной-двумя фразами, если не просят подробнее.
-Сегодня {today} (время Алматы). Текущий бизнес (workspace): {workspace}. Доступные: {workspaces}.
-Что ты знаешь об Алишере и его целях:
-{context}
-Свежая сводка Kaspi по дням (без отмен и самовыкупов; на вопросы о заказах и выручке отвечай сразу из неё, без инструментов):
-{kaspi}
 Правила:
 - Себестоимость, прибыль и маржа по товарам, прибыль месяца, деньги компании, платежи, закуп, партии, остатки, реклама, расходы, возвраты: \
 бери из кабинета Алишера инструментом kaspi_cabinet (это его главный учёт Kaspi, цифры точные). Данные кабинета только читай, не меняй. \
@@ -42,7 +39,18 @@ SYSTEM = """Ты Jarvis, голосовой ИИ-помощник Алишера
 запиши это через request_development: подробно, со всем, что он сказал. Скажи, что записал задачу разработчику; без одобрения Алишера ничего не применяется.
 - Если Алишер просит то, чего у тебя нет (фото, видео, монтаж, отправка в WhatsApp или Instagram, автоответчик Kaspi), честно скажи, что сам это пока не делаешь, \
 и сразу запиши request_development с подробностями. Не отказывай молча.
+- Как идут продажи, что просело, где слабая маржа или реклама, что улучшить на Kaspi: kaspi_analytics, потом конкретный совет с цифрами. \
+Как идёт Instagram, какие посты зашли: instagram_stats.
+- Любой вопрос про интернет, новости, цены, тренды, конкурентов, «найди», «что сейчас» решай сам инструментом web_search, \
+не отправляй такие вопросы дальше. Глубокие многошаговые исследования отдавай ask_research.
+- Отвечай сразу и коротко: на простое не вызывай инструменты, цифры дня бери из сводки ниже, несколько независимых инструментов вызывай одновременно.
 - Не выдумывай данные: если инструмента нет, честно скажи, что этого пока не умеешь."""
+
+DYNAMIC = """Сегодня {today} (время Алматы). Текущий бизнес (workspace): {workspace}. Доступные: {workspaces}.
+Что ты знаешь об Алишере и его целях:
+{context}
+Свежая сводка Kaspi по дням (без отмен и самовыкупов; на вопросы о заказах и выручке отвечай сразу из неё, без инструментов):
+{kaspi}"""
 
 TOOLS = [
     {"name": "switch_workspace", "description": "Переключиться на другой бизнес.",
@@ -96,6 +104,10 @@ TOOLS = [
     {"name": "analyze_image", "description": "Разобрать фото по ссылке: свои товары, конкуренты, посты Instagram. Что хорошо, что улучшить, идеи для похожего кадра.",
      "input_schema": {"type": "object", "properties": {"image_url": {"type": "string", "description": "прямая https-ссылка на картинку"},
          "question": {"type": "string"}}, "required": ["image_url"]}},
+    {"name": "kaspi_analytics", "description": "Аналитика Kaspi: продажи и прибыль за период против прошлого такого же, падения продаж, слабая маржа, доля рекламы, по товарам.",
+     "input_schema": {"type": "object", "properties": {"days": {"type": "integer", "description": "длина периода в днях, по умолчанию 7"}}}},
+    {"name": "instagram_stats", "description": "Статистика Instagram @ataria.kz: подписчики и посты за период с охватом, просмотрами, сохранениями. Лучшие посты первыми.",
+     "input_schema": {"type": "object", "properties": {"days": {"type": "integer"}}}},
     {"name": "inbox", "description": "Последние входящие сообщения из WhatsApp и Instagram Direct.",
      "input_schema": {"type": "object", "properties": {"limit": {"type": "integer"}}}},
     {"name": "remember", "description": "Запомнить предпочтение, факт, урок или навык.",
@@ -106,6 +118,12 @@ TOOLS = [
     {"name": "recall", "description": "Найти в памяти записи по слову или фразе (пусто = последние).",
      "input_schema": {"type": "object", "properties": {"query": {"type": "string"}}}},
 ]
+
+TOOLS.append({
+    "type": "web_search_20260209", "name": "web_search", "max_uses": 2,
+    "user_location": {"type": "approximate", "country": "KZ", "city": "Almaty", "timezone": "Asia/Almaty"},
+})
+
 
 def _session(session_id: str) -> dict:
     """Stored in the DB so any server instance (serverless or not) can continue the dialog."""
@@ -141,13 +159,15 @@ def _kaspi_snapshot() -> str:
     try:
         now = datetime.now(timezone.utc)
         today = (now + timedelta(hours=5)).date()  # calendar day in Almaty
-        rows = kaspi.daily_sales(7)
-        synced = kaspi.last_synced_at()
+        with ThreadPoolExecutor(max_workers=3) as pool:
+            f_rows = pool.submit(kaspi.daily_sales, 7)
+            f_sync = pool.submit(kaspi.last_synced_at)
+            f_pack = pool.submit(kaspi_packaging)
+            rows, synced, (ship_today, ship_later) = f_rows.result(), f_sync.result(), f_pack.result()
         when = ""
         if synced:
             t = datetime.fromisoformat(synced.replace("Z", "+00:00")) + timedelta(hours=5)
             when = f"Данные Kaspi обновлены в {t:%H:%M} (Алматы); называя цифры, говори это время.\n"
-        ship_today, ship_later = kaspi_packaging()
         total = lambda xs: round(sum(float(x["total"] or 0) for x in xs))
         packaging = (
             f"СЕГОДНЯШНИЕ ЗАКАЗЫ (в упаковке, отгрузка сегодня {today}): {len(ship_today)} на {total(ship_today)} ₸. "
@@ -162,8 +182,13 @@ def _kaspi_snapshot() -> str:
 
 
 def chat(session_id: str, text: str) -> str:
-    s = _session(session_id)
-    slugs = db.workspace_slugs()
+    with ThreadPoolExecutor(max_workers=3) as pool:
+        f_session = pool.submit(_session, session_id)
+        f_snapshot = pool.submit(_kaspi_snapshot)
+        s = f_session.result()
+        f_context = pool.submit(memory.standing_context, s["workspace"])
+        slugs = db.workspace_slugs()
+        snapshot, context = f_snapshot.result(), f_context.result()
 
     def dispatch(name, args):
         if name == "switch_workspace":
@@ -222,6 +247,10 @@ def chat(session_id: str, text: str) -> str:
             return crm.list_drafts(s["workspace"])
         if name == "analyze_image":
             return {"answer": vision.handle(s["workspace"], args["image_url"], args.get("question", ""))}
+        if name == "kaspi_analytics":
+            return kaspi.analytics(args.get("days", 7))
+        if name == "instagram_stats":
+            return instagram.stats(args.get("days", 30))
         if name == "inbox":
             import meta  # local import: meta imports orchestrator
             return meta.inbox(args.get("limit", 15))
@@ -242,13 +271,19 @@ def chat(session_id: str, text: str) -> str:
         raise ValueError(f"unknown tool {name}")
 
     today = (datetime.now(timezone.utc) + timedelta(hours=5)).date()
-    system = SYSTEM.format(workspace=s["workspace"], workspaces=", ".join(slugs), today=today,
-                           context=memory.standing_context(s["workspace"]) or "- (пока ничего)",
-                           kaspi=_kaspi_snapshot())
+    system = [{"type": "text", "text": SYSTEM},
+              {"type": "text", "text": DYNAMIC.format(workspace=s["workspace"], workspaces=", ".join(slugs), today=today,
+                                                      context=context or "- (пока ничего)", kaspi=snapshot)}]
     reply = run_agent(system, TOOLS, dispatch, s["history"] + [{"role": "user", "content": text}],
                       model=config.ORCHESTRATOR_MODEL, max_tokens=500)
     s["history"] = (s["history"] + [{"role": "user", "content": text},
                                     {"role": "assistant", "content": reply}])[-20:]
-    _save(session_id, s)
-    db.log_action(s["workspace"], "orchestrator", "chat", {"text": text}, {"reply": reply})
+    with ThreadPoolExecutor(max_workers=2) as pool:  # save and log side by side
+        futs = [pool.submit(_save, session_id, s),
+                pool.submit(db.log_action, s["workspace"], "orchestrator", "chat", {"text": text}, {"reply": reply})]
+        for f in futs:
+            try:
+                f.result()
+            except Exception as e:
+                print(f"post-chat write failed: {type(e).__name__}")
     return reply
