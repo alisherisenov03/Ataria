@@ -148,6 +148,7 @@ function buildSite(lang) {
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/style.css">
 ${extraHead}
+<script>document.documentElement.classList.add("anim")</script>
 </head>
 <body>
 ${header(active, url)}
@@ -155,7 +156,9 @@ ${header(active, url)}
 ${body}
 </main>
 ${footer()}
+<script src="/motion.js" defer></script>
 <script src="/site.js" defer></script>
+<script src="/anim.js" defer></script>
 </body>
 </html>
 `);
@@ -371,7 +374,7 @@ ${footer()}
         active: "attachments",
         body: `<div class="wrap">${crumbs([[HOME, `${P}/`], [sm.kind, `${P}/sm23/`], [L.attachments, `${P}/sm23/attachments/`], [a.name, ""]])}${layout(sm, "attachments", `
         <div class="split top">
-          <div class="ph sticky">${media(a)}</div>
+          <div class="sticky-col"><div class="ph sticky">${media(a)}</div>${a.photo ? `<figure class="live"><img src="/${esc(a.photo)}" alt="${esc(a.name)}" loading="lazy"><figcaption>${T("Вживую на вашей кухне", "Асүйде тікелей")}</figcaption></figure>` : ""}</div>
           <div>
             <p class="eyebrow">${esc(a.group)}</p><h1>${esc(a.name)}</h1><div class="rule"></div>
             <p class="lead">${esc(a.what)}</p>

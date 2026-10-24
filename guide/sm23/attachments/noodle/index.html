@@ -22,6 +22,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/style.css">
 
+<script>document.documentElement.classList.add("anim")</script>
 </head>
 <body>
 <header class="top">
@@ -67,7 +68,7 @@
     <nav class="tabs" aria-label="Разделы"><a href="/sm23/" class="">Обзор</a><a href="/sm23/start/" class="">С чего начать</a><a href="/sm23/speeds/" class="">Скорости</a><a href="/sm23/attachments/" class="on">Насадки</a><a href="/sm23/recipes/" class="">Рецепты</a><a href="/sm23/care/" class="">Уход</a><a href="/sm23/help/" class="">Помощь</a></nav>
     
         <div class="split top">
-          <div class="ph sticky"><img src="/img/noodle.jpg" alt="Лапшерезка" loading="lazy"></div>
+          <div class="sticky-col"><div class="ph sticky"><img src="/img/noodle.jpg" alt="Лапшерезка" loading="lazy"></div></div>
           <div>
             <p class="eyebrow">Сбоку</p><h1>Лапшерезка</h1><div class="rule"></div>
             <p class="lead">Нарезает раскатанный пласт на ровную лапшу.</p>
@@ -95,6 +96,8 @@
   </div>
   <p class="copy">© ATARIA</p>
 </footer>
+<script src="/motion.js" defer></script>
 <script src="/site.js" defer></script>
+<script src="/anim.js" defer></script>
 </body>
 </html>
