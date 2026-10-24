@@ -1,6 +1,8 @@
-// Menu, search, recipe filter and step-by-step cook mode. All page content is pre-rendered HTML.
+// Menu, language, search, recipe filter and step-by-step cook mode. All page content is pre-rendered HTML.
 const $ = (s, r = document) => r.querySelector(s);
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const LANG = document.documentElement.lang === "kk" ? "kk" : "ru";
+const PREFIX = LANG === "kk" ? "/kk" : "";
 
 // ---- old #/ links (from the first version) -> real pages ----
 if (location.hash.startsWith("#/")) {
@@ -8,6 +10,13 @@ if (location.hash.startsWith("#/")) {
   const map = { att: "attachments", rec: "recipes", a: "attachments", r: "recipes" };
   if (pid) location.replace("/" + [pid, map[kind] || kind, id].filter(Boolean).join("/") + "/");
 }
+
+// ---- language: remember the choice, open the home page in the saved language ----
+try {
+  document.querySelectorAll(".lang a").forEach((a) => a.addEventListener("click", () => localStorage.setItem("lang", a.dataset.lang)));
+  const saved = localStorage.getItem("lang");
+  if (location.pathname === "/" && saved === "kk" && !document.referrer.includes(location.host)) location.replace("/kk/");
+} catch (e) { /* storage may be blocked */ }
 
 // ---- drawer ----
 const drawer = $("#drawer");
@@ -17,8 +26,9 @@ drawer?.addEventListener("click", (e) => { if (e.target === drawer) drawer.hidde
 
 // ---- search ----
 let INDEX = null;
-const load = () => INDEX ? Promise.resolve(INDEX) : fetch("/search-index.json").then((r) => r.json()).then((d) => (INDEX = d)).catch(() => (INDEX = []));
-const norm = (s) => s.toLowerCase().replace(/ё/g, "е");
+const indexUrl = LANG === "kk" ? "/search-index-kk.json" : "/search-index.json";
+const load = () => INDEX ? Promise.resolve(INDEX) : fetch(indexUrl).then((r) => r.json()).then((d) => (INDEX = d)).catch(() => (INDEX = []));
+const norm = (s) => s.toLowerCase().replace(/ё/g, "е").replace(/ү/g, "у").replace(/ұ/g, "у").replace(/қ/g, "к").replace(/ғ/g, "г").replace(/ң/g, "н").replace(/ө/g, "о").replace(/і/g, "и").replace(/ә/g, "а").replace(/һ/g, "х");
 function find(q) {
   const words = norm(q).split(/\s+/).filter((w) => w.length > 1);
   if (!words.length) return [];
@@ -32,7 +42,7 @@ function find(q) {
     return { e, score };
   }).filter(Boolean).sort((a, b) => b.score - a.score).slice(0, 12).map((x) => x.e);
 }
-function bind(input, box) {
+function bind(input, box, emptyText) {
   input.addEventListener("input", async () => {
     await load();
     const q = input.value.trim();
@@ -40,31 +50,32 @@ function bind(input, box) {
     const res = find(q);
     box.innerHTML = res.length
       ? res.map((e) => `<a href="${esc(e.u)}"><span class="k">${esc(e.k)}</span><span class="t">${esc(e.t)}</span></a>`).join("")
-      : `<p class="empty">Ничего не нашли. Напишите нам в WhatsApp, подскажем.</p>`;
+      : `<p class="empty">${esc(emptyText)}</p>`;
   });
 }
 const search = $("#search");
 if (search) {
-  bind($("#q"), $("#results"));
+  bind($("#q"), $("#results"), search.dataset.empty);
   $("#open-search").addEventListener("click", () => { search.hidden = false; $("#q").focus(); });
   $("#hero-search")?.addEventListener("click", () => { search.hidden = false; $("#q").focus(); });
   $("#close-search").addEventListener("click", () => { search.hidden = true; });
   addEventListener("keydown", (e) => { if (e.key === "Escape") { search.hidden = true; drawer.hidden = true; } });
 }
-if ($("#q2")) { bind($("#q2"), $("#results2")); const q = new URLSearchParams(location.search).get("q"); if (q) { $("#q2").value = q; $("#q2").dispatchEvent(new Event("input")); } }
+if ($("#q2")) { bind($("#q2"), $("#results2"), $("#search2").dataset.empty); const q = new URLSearchParams(location.search).get("q"); if (q) { $("#q2").value = q; $("#q2").dispatchEvent(new Event("input")); } }
 
 // ---- recipe filter ----
 const filters = $("#filters");
 if (filters) filters.addEventListener("click", (e) => {
   const b = e.target.closest("button"); if (!b) return;
   filters.querySelectorAll("button").forEach((x) => x.classList.toggle("on", x === b));
-  document.querySelectorAll("#rgrid .card").forEach((c) => { c.hidden = b.dataset.tag !== "Все" && c.dataset.tag !== b.dataset.tag; });
+  document.querySelectorAll("#rgrid .card").forEach((c) => { c.hidden = b.dataset.all !== "1" && c.dataset.tag !== b.dataset.tag; });
 });
 
 // ---- cook mode ----
 const cookBtn = $("#cook");
 if (cookBtn) cookBtn.addEventListener("click", () => {
   const r = JSON.parse($("#recipe-data").textContent);
+  const t = r.labels;
   let i = 0, left = 0, timer = null, wake = null;
   const el = document.createElement("div");
   el.className = "cook";
@@ -77,26 +88,26 @@ if (cookBtn) cookBtn.addEventListener("click", () => {
   const draw = () => {
     const s = r.steps[i];
     el.innerHTML = `
-      <div class="bar"><span class="eyebrow">${esc(r.title)} · шаг ${i + 1} из ${r.steps.length}</span><button class="x" id="cx">Закрыть</button></div>
+      <div class="bar"><span class="eyebrow">${esc(r.title)} · ${esc(t.step)} ${i + 1} ${esc(t.of)} ${r.steps.length}</span><button class="x" id="cx">${esc(t.close)}</button></div>
       <div class="prog"><i style="width:${((i + 1) / r.steps.length) * 100}%"></i></div>
       <div class="main">
         <p class="txt">${esc(s.text)}</p>
-        <div class="chips">${s.attachmentName ? `<span class="chip">${esc(s.attachmentName)}</span>` : ""}${s.speed ? `<span class="chip">скорость ${esc(s.speed)}</span>` : ""}</div>
-        ${s.minutes ? `<div class="timer"><span class="t" id="tt">${fmt(left || s.minutes * 60)}</span><button class="btn ghost" id="tgo">${timer ? "Пауза" : "Запустить таймер"}</button></div>` : ""}
+        <div class="chips">${s.attachmentName ? `<span class="chip">${esc(s.attachmentName)}</span>` : ""}${s.speed ? `<span class="chip">${esc(t.speed)} ${esc(s.speed)}</span>` : ""}</div>
+        ${s.minutes ? `<div class="timer"><span class="t" id="tt">${fmt(left || s.minutes * 60)}</span><button class="btn ghost" id="tgo">${esc(timer ? t.pause : t.start)}</button></div>` : ""}
       </div>
-      <div class="nav"><button class="btn ghost" id="prev" ${i === 0 ? "disabled" : ""}>Назад</button>
-        <button class="btn" id="next">${i === r.steps.length - 1 ? "Готово" : "Дальше"}</button></div>`;
+      <div class="nav"><button class="btn ghost" id="prev" ${i === 0 ? "disabled" : ""}>${esc(t.back)}</button>
+        <button class="btn" id="next">${esc(i === r.steps.length - 1 ? t.done : t.next)}</button></div>`;
     $("#cx", el).onclick = close;
     $("#prev", el).onclick = () => { if (i > 0) { stop(); left = 0; i--; draw(); } };
-    $("#next", el).onclick = () => { stop(); left = 0; if (i < r.steps.length - 1) { i++; draw(); } else { close(); location.href = `/sm23/recipes/${r.id}/done/`; } };
+    $("#next", el).onclick = () => { stop(); left = 0; if (i < r.steps.length - 1) { i++; draw(); } else { close(); location.href = r.doneUrl; } };
     const go = $("#tgo", el);
     if (go) go.onclick = () => {
       if (timer) { stop(); draw(); return; }
       if (!left) left = s.minutes * 60;
       timer = setInterval(() => {
         left--;
-        const t = $("#tt", el); if (t) t.textContent = fmt(Math.max(0, left));
-        if (left <= 0) { stop(); left = 0; navigator.vibrate?.([300, 150, 300]); const t2 = $("#tt", el); if (t2) t2.textContent = "Готово"; }
+        const tt = $("#tt", el); if (tt) tt.textContent = fmt(Math.max(0, left));
+        if (left <= 0) { stop(); left = 0; navigator.vibrate?.([300, 150, 300]); const t2 = $("#tt", el); if (t2) t2.textContent = t.done; }
       }, 1000);
       draw();
     };
