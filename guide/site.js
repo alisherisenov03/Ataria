@@ -47,6 +47,7 @@ const search = $("#search");
 if (search) {
   bind($("#q"), $("#results"));
   $("#open-search").addEventListener("click", () => { search.hidden = false; $("#q").focus(); });
+  $("#hero-search")?.addEventListener("click", () => { search.hidden = false; $("#q").focus(); });
   $("#close-search").addEventListener("click", () => { search.hidden = true; });
   addEventListener("keydown", (e) => { if (e.key === "Escape") { search.hidden = true; drawer.hidden = true; } });
 }

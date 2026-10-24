@@ -52,7 +52,7 @@ function header(active) {
   const nav = productNav(sm, active).filter((x) => ["", "attachments", "recipes", "care", "help"].includes(x.k));
   return `<header class="top">
   <div class="top-in">
-    <a href="/" class="logo" aria-label="ATARIA, на главную">ATARIA</a>
+    <a href="/" class="logo" aria-label="ATARIA, на главную"><img src="/img/logo-mark.png" alt="" width="40" height="20"><span>ATARIA</span></a>
     <nav class="topnav" aria-label="Разделы">
       <div class="dd">
         <a href="/sm23/" class="${active !== null && active !== "recipes" && active !== "attachments" ? "on" : ""}">Кухонная машина</a>
@@ -92,7 +92,7 @@ function header(active) {
 function footer() {
   return `<footer class="foot">
   <div class="foot-in">
-    <div class="foot-brand"><a href="/" class="logo">ATARIA</a><p>Рецепты, насадки и простые советы для вашей техники. Казахстан.</p></div>
+    <div class="foot-brand"><a href="/" class="logo-full" aria-label="ATARIA"><img src="/img/logo.png" alt="ATARIA" width="120" height="83"></a><p>Рецепты, насадки и простые советы для вашей техники. Казахстан.</p></div>
     <div><p class="eyebrow">Кухонная машина</p>${productNav(sm, "").map((x) => `<a href="${x.href}">${x.l}</a>`).join("")}</div>
     <div><p class="eyebrow">Рецепты</p>${sm.recipes.slice(0, 5).map((r) => `<a href="/sm23/recipes/${r.id}/">${esc(r.title)}</a>`).join("")}<a href="/sm23/recipes/">Все рецепты</a></div>
     <div><p class="eyebrow">Связь</p><a href="${esc(WA)}" target="_blank" rel="noopener">Поддержка в WhatsApp</a>${KASPI_CARD ? `<a href="${esc(KASPI_CARD)}" target="_blank" rel="noopener">Карточка на Kaspi</a>` : ""}${KASPI_REVIEW ? `<a href="${esc(KASPI_REVIEW)}" target="_blank" rel="noopener">Оставить отзыв</a>` : ""}</div>
@@ -188,11 +188,20 @@ page({
   body: `
 <section class="hero">
   <div class="hero-txt">
-    <p class="eyebrow">ATARIA</p>
-    <h1>Готовим вместе</h1>
-    <div class="rule"></div>
-    <p class="lead">Рецепты, насадки и простые советы для вашей техники. Выберите, что у вас дома, и мы покажем, с чего начать.</p>
-    <div class="actions"><a class="btn" href="/sm23/start/">С чего начать</a><a class="btn ghost" href="/sm23/recipes/">Рецепты</a></div>
+    <p class="eyebrow">Инструкция и рецепты · ATARIA AT-SM23</p>
+    <h1>Как готовить на вашей кухонной машине</h1>
+    <p class="lead">Какую насадку поставить, на какой скорости включать и что приготовить. Всё по шагам, с граммами и таймером.</p>
+    <button class="hero-search" id="hero-search" type="button">${ICONS.search}<span>Например: тесто, фарш, взбить сливки</span></button>
+    <p class="eyebrow" style="margin-top:26px">Что хотите сделать?</p>
+    <div class="tasks">
+      <a href="/sm23/attachments/hook/">Замесить тесто <i>→</i></a>
+      <a href="/sm23/attachments/grinder/">Прокрутить фарш <i>→</i></a>
+      <a href="/sm23/attachments/whisk/">Взбить сливки или белки <i>→</i></a>
+      <a href="/sm23/attachments/roller/">Раскатать тесто <i>→</i></a>
+      <a href="/sm23/attachments/slicer/">Натереть или нарезать овощи <i>→</i></a>
+      <a href="/sm23/attachments/noodle/">Нарезать лапшу <i>→</i></a>
+    </div>
+    <div class="actions"><a class="btn" href="/sm23/start/">Первый запуск за 5 шагов</a><a class="btn ghost" href="/sm23/recipes/">Все рецепты</a></div>
   </div>
   <div class="hero-ph"><img src="/img/sm23-host.jpg" alt="Хозяйка готовит тесто на кухонной машине ATARIA"></div>
 </section>
