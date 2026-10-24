@@ -71,14 +71,22 @@
         <div class="page-head tight"><p class="eyebrow">Ұлттық</p><h1>Мәнті</h1><p class="lead">Қайма ірі торменен, қамыр ілгекпен, жаю қондырмамен. Үстелде ет тартқыш пен асүйде шашылған қамырсыз шырынды мәнті.</p></div>
         <div class="meta-strip">
           <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span><b>1 сағ 30 мин</b>уақыты</span></div>
-          <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.5 2.7-6 6-6s6 2.5 6 6"/><circle cx="17" cy="9" r="2.4"/><path d="M16 14.2c3 0 5 2 5 5"/></svg><span><b>40–45 дана</b>порция</span></div>
+          <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.5 2.7-6 6-6s6 2.5 6 6"/><circle cx="17" cy="9" r="2.4"/><path d="M16 14.2c3 0 5 2 5 5"/></svg><span><b id="yield">40–45 дана</b>порция</span></div>
           <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="4" y="4" width="7" height="7" rx="2"/><rect x="13" y="4" width="7" height="7" rx="2"/><rect x="4" y="13" width="7" height="7" rx="2"/><rect x="13" y="13" width="7" height="7" rx="2"/></svg><span><b>Ет тартқыш, Қамырға арналған ілгек, Қамыр жаятын қондырма</b>қондырмалар</span></div>
         </div>
         <div class="actions"><button class="btn" id="cook">Қадамдап дайындау</button>
           <a class="btn ghost" href="/kk/sm23/attachments/grinder/">Ет тартқыш</a><a class="btn ghost" href="/kk/sm23/attachments/hook/">Қамырға арналған ілгек</a><a class="btn ghost" href="/kk/sm23/attachments/roller/">Қамыр жаятын қондырма</a></div>
         <div class="recipe-cols">
-          <div class="ing-box"><h3>Не қажет</h3>
-            <table class="ing"><tr><td>Сиыр немесе қой еті</td><td>1 кг</td></tr><tr><td>Пияз</td><td>600 г</td></tr><tr><td>Құйрық май</td><td>100 г (қалауыңызша)</td></tr><tr><td>Тұз, зире, қара бұрыш</td><td></td></tr><tr><td>Ұн</td><td>600 г</td></tr><tr><td>Су</td><td>280 мл</td></tr><tr><td>Жұмыртқа</td><td>1 дана</td></tr><tr><td>Қамырға тұз</td><td>1 шәй қасық</td></tr></table>
+          <div class="ing-box" id="ingbox" data-base="6" data-yield="40–45 дана" data-scale-yield="1" data-note="Үлкен порцияны бөліп дайындаңыз: тостаған 7 л-ге арналған, машинаны артық жүктемеңіз." data-people="{n} адамға"><h3>Не қажет</h3>
+            <p class="people-q">Неше адамға дайындаймыз?</p>
+            <div class="people" id="people" role="group">
+              <button type="button" data-n="2"><b>1–2</b><span>жалғыз</span></button>
+              <button type="button" data-n="4"><b>3–4</b><span>отбасы</span></button>
+              <button type="button" data-n="6"><b>5–6</b><span>үлкен отбасы</span></button>
+              <button type="button" data-n="12"><b>10+</b><span>достар</span></button>
+            </div>
+            <table class="ing"><tr><td>Сиыр немесе қой еті</td><td data-q="1 кг">1 кг</td></tr><tr><td>Пияз</td><td data-q="600 г">600 г</td></tr><tr><td>Құйрық май</td><td data-q="100 г (қалауыңызша)">100 г (қалауыңызша)</td></tr><tr><td>Тұз, зире, қара бұрыш</td><td data-q=""></td></tr><tr><td>Ұн</td><td data-q="600 г">600 г</td></tr><tr><td>Су</td><td data-q="280 мл">280 мл</td></tr><tr><td>Жұмыртқа</td><td data-q="1 дана">1 дана</td></tr><tr><td>Қамырға тұз</td><td data-q="1 шәй қасық">1 шәй қасық</td></tr></table>
+            <p class="scale-note" id="scale-note" hidden></p>
           </div>
           <div><h3 class="h-s">Қалай дайындау керек</h3><div class="rsteps"><div class="rstep"><div class="n">1</div><div><p>Қамырды ілгекпен илеңіз: су, жұмыртқа, тұз, ұн. 1-жылдамдық, содан кейін 2.</p><div class="tags">
             <span class="chip">Қамырға арналған ілгек</span>
@@ -116,7 +124,7 @@
     <div class="ph"><img src="/img/f-lagman.jpg" alt="Лағманға кеспе" loading="lazy"><span class="time"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>50 мин</span></div>
     <div class="body"><span class="meta">Ұлттық</span><h3>Лағманға кеспе</h3>
       <div class="chips"><span class="chip">Қамырға арналған ілгек</span><span class="chip">Қамыр жаятын қондырма</span><span class="chip">Кеспе турағыш</span></div></div></a></div></section>
-        <script type="application/json" id="recipe-data">{"id":"manty","title":"Мәнті","doneUrl":"/kk/sm23/recipes/manty/done/","labels":{"step":"қадам","of":"/","close":"Жабу","start":"Таймерді қосу","pause":"Кідірту","back":"Артқа","next":"Әрі қарай","done":"Дайын","speed":"жылдамдық"},"steps":[{"text":"Қамырды ілгекпен илеңіз: су, жұмыртқа, тұз, ұн. 1-жылдамдық, содан кейін 2.","attachment":"hook","speed":"1→2","minutes":5,"attachmentName":"Қамырға арналған ілгек"},{"text":"Қамыр үлдір астында демалып жатқанда, қайманы әзірлеңіз.","minutes":30,"attachmentName":""},{"text":"Ет пен майды ет тартқыштың ірі торынан өткізіңіз.","attachment":"grinder","attachmentName":"Ет тартқыш"},{"text":"Пиязды пышақпен ұсақ тураңыз да, қаймамен араластырып, тұз, зире және бұрыш қосыңыз.","attachmentName":""},{"text":"Қамырды қамыр жаятын қондырмамен жайып, 10×10 см шаршы етіп кесіңіз.","attachment":"roller","attachmentName":"Қамыр жаятын қондырма"},{"text":"Қайма салып, мәнтіні жапсырып, мәнтішеде пісіріңіз.","minutes":45,"attachmentName":""}]}</script>
+        <script type="application/json" id="recipe-data">{"id":"manty","title":"Мәнті","doneUrl":"/kk/sm23/recipes/manty/done/","labels":{"step":"қадам","of":"/","close":"Жабу","start":"Таймерді қосу","pause":"Кідірту","back":"Артқа","next":"Әрі қарай","done":"Дайын","speed":"жылдамдық","alarm":"Уақыт бітті!","stopSound":"Дыбысты өшіру","notifyTitle":"ATARIA таймері","notifyBody":"Уақыт бітті — асүйге қараңыз","resume":"Таймер жүріп жатыр"},"steps":[{"text":"Қамырды ілгекпен илеңіз: су, жұмыртқа, тұз, ұн. 1-жылдамдық, содан кейін 2.","attachment":"hook","speed":"1→2","minutes":5,"attachmentName":"Қамырға арналған ілгек"},{"text":"Қамыр үлдір астында демалып жатқанда, қайманы әзірлеңіз.","minutes":30,"attachmentName":""},{"text":"Ет пен майды ет тартқыштың ірі торынан өткізіңіз.","attachment":"grinder","attachmentName":"Ет тартқыш"},{"text":"Пиязды пышақпен ұсақ тураңыз да, қаймамен араластырып, тұз, зире және бұрыш қосыңыз.","attachmentName":""},{"text":"Қамырды қамыр жаятын қондырмамен жайып, 10×10 см шаршы етіп кесіңіз.","attachment":"roller","attachmentName":"Қамыр жаятын қондырма"},{"text":"Қайма салып, мәнтіні жапсырып, мәнтішеде пісіріңіз.","minutes":45,"attachmentName":""}]}</script>
   </div>
 </div></div>
 </main>

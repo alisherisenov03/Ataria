@@ -347,3 +347,16 @@ figure.scene img { width: 100%; aspect-ratio: 16/8; object-fit: cover; object-po
   .scene-card.big { grid-column: span 2; aspect-ratio: 16/10; }
   figure.scene img { aspect-ratio: 16/10; }
 }
+
+/* servings picker */
+.people-q { font-size: 13px; color: var(--muted); margin: -4px 0 10px; }
+.people { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 16px; }
+.people button { font: inherit; display: grid; gap: 1px; text-align: left; padding: 10px 14px; border-radius: 14px; border: 1px solid var(--line); background: transparent; color: var(--muted); cursor: pointer; transition: border-color .2s, background .2s; }
+.people button b { font-weight: 500; font-size: 17px; color: var(--ink); }
+.people button span { font-size: 12px; }
+.people button:hover { border-color: var(--accent); }
+.people button.on { background: var(--ink); border-color: var(--ink); }
+.people button.on b, .people button.on span { color: #0B0B0C; }
+.scale-note { margin-top: 14px; font-size: 13px; color: var(--accent-ink); line-height: 1.5; }
+.cook .timer.ring .t { color: var(--accent-ink); animation: pulse 1s ease-in-out infinite; }
+@keyframes pulse { 50% { opacity: .35; } }

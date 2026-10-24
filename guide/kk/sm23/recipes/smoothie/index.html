@@ -71,14 +71,22 @@
         <div class="page-head tight"><p class="eyebrow">Жылдам</p><h1>Құлпынайлы банан смузиі</h1><p class="lead">Мүлде уақыт болмағанда бес минуттық таңғы ас.</p></div>
         <div class="meta-strip">
           <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span><b>5 мин</b>уақыты</span></div>
-          <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.5 2.7-6 6-6s6 2.5 6 6"/><circle cx="17" cy="9" r="2.4"/><path d="M16 14.2c3 0 5 2 5 5"/></svg><span><b>2 стақан</b>порция</span></div>
+          <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.5 2.7-6 6-6s6 2.5 6 6"/><circle cx="17" cy="9" r="2.4"/><path d="M16 14.2c3 0 5 2 5 5"/></svg><span><b id="yield">2 стақан</b>порция</span></div>
           <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="4" y="4" width="7" height="7" rx="2"/><rect x="13" y="4" width="7" height="7" rx="2"/><rect x="4" y="13" width="7" height="7" rx="2"/><rect x="13" y="13" width="7" height="7" rx="2"/></svg><span><b>Шыны блендер</b>қондырмалар</span></div>
         </div>
         <div class="actions"><button class="btn" id="cook">Қадамдап дайындау</button>
           <a class="btn ghost" href="/kk/sm23/attachments/blender/">Шыны блендер</a></div>
         <div class="recipe-cols">
-          <div class="ing-box"><h3>Не қажет</h3>
-            <table class="ing"><tr><td>Банан</td><td>1 дана</td></tr><tr><td>Құлпынай</td><td>150 г</td></tr><tr><td>Йогурт немесе сүт</td><td>250 мл</td></tr><tr><td>Бал</td><td>1 шәй қасық</td></tr></table>
+          <div class="ing-box" id="ingbox" data-base="2" data-yield="2 стақан" data-scale-yield="0" data-note="" data-people="{n} адамға"><h3>Не қажет</h3>
+            <p class="people-q">Неше адамға дайындаймыз?</p>
+            <div class="people" id="people" role="group">
+              <button type="button" data-n="2"><b>1–2</b><span>жалғыз</span></button>
+              <button type="button" data-n="4"><b>3–4</b><span>отбасы</span></button>
+              <button type="button" data-n="6"><b>5–6</b><span>үлкен отбасы</span></button>
+              <button type="button" data-n="12"><b>10+</b><span>достар</span></button>
+            </div>
+            <table class="ing"><tr><td>Банан</td><td data-q="1 дана">1 дана</td></tr><tr><td>Құлпынай</td><td data-q="150 г">150 г</td></tr><tr><td>Йогурт немесе сүт</td><td data-q="250 мл">250 мл</td></tr><tr><td>Бал</td><td data-q="1 шәй қасық">1 шәй қасық</td></tr></table>
+            <p class="scale-note" id="scale-note" hidden></p>
           </div>
           <div><h3 class="h-s">Қалай дайындау керек</h3><div class="rsteps"><div class="rstep"><div class="n">1</div><div><p>Құмыраға йогурт немесе сүт құйып, содан кейін банан, құлпынай және бал салыңыз.</p><div class="tags">
             <span class="chip">Шыны блендер</span>
@@ -107,7 +115,7 @@
     <div class="ph"><img src="/img/f-baursaki.jpg" alt="Бауырсақ" loading="lazy"><span class="time"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>2 сағ</span></div>
     <div class="body"><span class="meta">Ұлттық</span><h3>Бауырсақ</h3>
       <div class="chips"><span class="chip">Қамырға арналған ілгек</span></div></div></a></div></section>
-        <script type="application/json" id="recipe-data">{"id":"smoothie","title":"Құлпынайлы банан смузиі","doneUrl":"/kk/sm23/recipes/smoothie/done/","labels":{"step":"қадам","of":"/","close":"Жабу","start":"Таймерді қосу","pause":"Кідірту","back":"Артқа","next":"Әрі қарай","done":"Дайын","speed":"жылдамдық"},"steps":[{"text":"Құмыраға йогурт немесе сүт құйып, содан кейін банан, құлпынай және бал салыңыз.","attachment":"blender","attachmentName":"Шыны блендер"},{"text":"Қақпағын жауып, төмен жылдамдықтан бастап, максимумға дейін арттырыңыз.","minutes":1,"attachmentName":""},{"text":"Стақандарға құйып, бірден ұсыныңыз.","attachmentName":""}]}</script>
+        <script type="application/json" id="recipe-data">{"id":"smoothie","title":"Құлпынайлы банан смузиі","doneUrl":"/kk/sm23/recipes/smoothie/done/","labels":{"step":"қадам","of":"/","close":"Жабу","start":"Таймерді қосу","pause":"Кідірту","back":"Артқа","next":"Әрі қарай","done":"Дайын","speed":"жылдамдық","alarm":"Уақыт бітті!","stopSound":"Дыбысты өшіру","notifyTitle":"ATARIA таймері","notifyBody":"Уақыт бітті — асүйге қараңыз","resume":"Таймер жүріп жатыр"},"steps":[{"text":"Құмыраға йогурт немесе сүт құйып, содан кейін банан, құлпынай және бал салыңыз.","attachment":"blender","attachmentName":"Шыны блендер"},{"text":"Қақпағын жауып, төмен жылдамдықтан бастап, максимумға дейін арттырыңыз.","minutes":1,"attachmentName":""},{"text":"Стақандарға құйып, бірден ұсыныңыз.","attachmentName":""}]}</script>
   </div>
 </div></div>
 </main>

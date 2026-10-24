@@ -71,14 +71,22 @@
         <div class="page-head tight"><p class="eyebrow">Каждый день</p><h1>Домашние котлеты</h1><p class="lead">Свой фарш без лишнего. Мясорубка прокручивает, лопатка вымешивает до сочности.</p></div>
         <div class="meta-strip">
           <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span><b>45 мин</b>время</span></div>
-          <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.5 2.7-6 6-6s6 2.5 6 6"/><circle cx="17" cy="9" r="2.4"/><path d="M16 14.2c3 0 5 2 5 5"/></svg><span><b>12–14 штук</b>порций</span></div>
+          <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.5 2.7-6 6-6s6 2.5 6 6"/><circle cx="17" cy="9" r="2.4"/><path d="M16 14.2c3 0 5 2 5 5"/></svg><span><b id="yield">12–14 штук</b>порций</span></div>
           <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="4" y="4" width="7" height="7" rx="2"/><rect x="13" y="4" width="7" height="7" rx="2"/><rect x="4" y="13" width="7" height="7" rx="2"/><rect x="13" y="13" width="7" height="7" rx="2"/></svg><span><b>Мясорубка, Лопатка</b>насадки</span></div>
         </div>
         <div class="actions"><button class="btn" id="cook">Готовить по шагам</button>
           <a class="btn ghost" href="/sm23/attachments/grinder/">Мясорубка</a><a class="btn ghost" href="/sm23/attachments/beater/">Лопатка</a></div>
         <div class="recipe-cols">
-          <div class="ing-box"><h3>Что понадобится</h3>
-            <table class="ing"><tr><td>Говядина</td><td>700 г</td></tr><tr><td>Свинина или курица</td><td>300 г</td></tr><tr><td>Лук</td><td>2 шт.</td></tr><tr><td>Белый хлеб</td><td>2 ломтика</td></tr><tr><td>Молоко</td><td>100 мл</td></tr><tr><td>Яйцо</td><td>1 шт.</td></tr><tr><td>Соль, перец</td><td></td></tr></table>
+          <div class="ing-box" id="ingbox" data-base="4" data-yield="12–14 штук" data-scale-yield="1" data-note="" data-people="На {n} чел."><h3>Что понадобится</h3>
+            <p class="people-q">На сколько человек готовим?</p>
+            <div class="people" id="people" role="group">
+              <button type="button" data-n="2"><b>1–2</b><span>одному</span></button>
+              <button type="button" data-n="4"><b>3–4</b><span>семье</span></button>
+              <button type="button" data-n="6"><b>5–6</b><span>большой семье</span></button>
+              <button type="button" data-n="12"><b>10+</b><span>друзьям</span></button>
+            </div>
+            <table class="ing"><tr><td>Говядина</td><td data-q="700 г">700 г</td></tr><tr><td>Свинина или курица</td><td data-q="300 г">300 г</td></tr><tr><td>Лук</td><td data-q="2 шт.">2 шт.</td></tr><tr><td>Белый хлеб</td><td data-q="2 ломтика">2 ломтика</td></tr><tr><td>Молоко</td><td data-q="100 мл">100 мл</td></tr><tr><td>Яйцо</td><td data-q="1 шт.">1 шт.</td></tr><tr><td>Соль, перец</td><td data-q=""></td></tr></table>
+            <p class="scale-note" id="scale-note" hidden></p>
           </div>
           <div><h3 class="h-s">Как готовить</h3><div class="rsteps"><div class="rstep"><div class="n">1</div><div><p>Замочите хлеб в молоке.</p><div class="tags">
             
@@ -113,7 +121,7 @@
     <div class="ph"><img src="/img/f-morkovcha.jpg" alt="Морковь по-корейски" loading="lazy"><span class="time"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>20 мин + 4 ч</span></div>
     <div class="body"><span class="meta">Каждый день</span><h3>Морковь по-корейски</h3>
       <div class="chips"><span class="chip">Овощерезка</span></div></div></a></div></section>
-        <script type="application/json" id="recipe-data">{"id":"kotlety","title":"Домашние котлеты","doneUrl":"/sm23/recipes/kotlety/done/","labels":{"step":"шаг","of":"из","close":"Закрыть","start":"Запустить таймер","pause":"Пауза","back":"Назад","next":"Дальше","done":"Готово","speed":"скорость"},"steps":[{"text":"Замочите хлеб в молоке.","minutes":5,"attachmentName":""},{"text":"Прокрутите мясо, лук и отжатый хлеб через среднюю решётку.","attachment":"grinder","attachmentName":"Мясорубка"},{"text":"Переложите фарш в чашу, добавьте яйцо, соль, перец и вымешайте лопаткой.","attachment":"beater","speed":"1→2","minutes":2,"attachmentName":"Лопатка"},{"text":"Сформируйте котлеты мокрыми руками.","attachmentName":""},{"text":"Обжарьте с двух сторон, затем доведите под крышкой на малом огне.","minutes":15,"attachmentName":""}]}</script>
+        <script type="application/json" id="recipe-data">{"id":"kotlety","title":"Домашние котлеты","doneUrl":"/sm23/recipes/kotlety/done/","labels":{"step":"шаг","of":"из","close":"Закрыть","start":"Запустить таймер","pause":"Пауза","back":"Назад","next":"Дальше","done":"Готово","speed":"скорость","alarm":"Время вышло!","stopSound":"Выключить сигнал","notifyTitle":"Таймер ATARIA","notifyBody":"Время вышло — загляните на кухню","resume":"Таймер идёт"},"steps":[{"text":"Замочите хлеб в молоке.","minutes":5,"attachmentName":""},{"text":"Прокрутите мясо, лук и отжатый хлеб через среднюю решётку.","attachment":"grinder","attachmentName":"Мясорубка"},{"text":"Переложите фарш в чашу, добавьте яйцо, соль, перец и вымешайте лопаткой.","attachment":"beater","speed":"1→2","minutes":2,"attachmentName":"Лопатка"},{"text":"Сформируйте котлеты мокрыми руками.","attachmentName":""},{"text":"Обжарьте с двух сторон, затем доведите под крышкой на малом огне.","minutes":15,"attachmentName":""}]}</script>
   </div>
 </div></div>
 </main>

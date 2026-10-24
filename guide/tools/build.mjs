@@ -437,7 +437,7 @@ ${footer()}
       const side = `<p class="eyebrow" style="margin-top:26px">${T("Все рецепты", "Барлық рецепттер")}</p><nav>${sm.recipes.map((x) => `<a href="${P}/sm23/recipes/${x.id}/" class="${x.id === r.id ? "on" : ""}">${esc(x.title)}</a>`).join("")}</nav>`;
       const ld = { "@context": "https://schema.org", "@type": "Recipe", name: r.title, image: `${SITE}/${r.image}`, description: r.intro, inLanguage: lang,
         recipeYield: r.servings, recipeIngredient: r.ingredients, recipeInstructions: r.steps.map((s) => ({ "@type": "HowToStep", text: s.text })) };
-      const labels = { step: T("шаг", "қадам"), of: T("из", "/"), close: T("Закрыть", "Жабу"), start: T("Запустить таймер", "Таймерді қосу"), pause: T("Пауза", "Кідірту"), back: T("Назад", "Артқа"), next: T("Дальше", "Әрі қарай"), done: T("Готово", "Дайын"), speed: T("скорость", "жылдамдық") };
+      const labels = { step: T("шаг", "қадам"), of: T("из", "/"), close: T("Закрыть", "Жабу"), start: T("Запустить таймер", "Таймерді қосу"), pause: T("Пауза", "Кідірту"), back: T("Назад", "Артқа"), next: T("Дальше", "Әрі қарай"), done: T("Готово", "Дайын"), speed: T("скорость", "жылдамдық"), alarm: T("Время вышло!", "Уақыт бітті!"), stopSound: T("Выключить сигнал", "Дыбысты өшіру"), notifyTitle: T("Таймер ATARIA", "ATARIA таймері"), notifyBody: T("Время вышло — загляните на кухню", "Уақыт бітті — асүйге қараңыз"), resume: T("Таймер идёт", "Таймер жүріп жатыр") };
       page({
         url: `/sm23/recipes/${r.id}/`,
         title: r.title,
@@ -450,14 +450,22 @@ ${footer()}
         <div class="page-head tight"><p class="eyebrow">${esc(r.tag)}</p><h1>${esc(r.title)}</h1><p class="lead">${esc(r.intro)}</p></div>
         <div class="meta-strip">
           <div>${ICONS.clock}<span><b>${esc(r.time)}</b>${T("время", "уақыты")}</span></div>
-          <div>${ICONS.people}<span><b>${esc(r.servings)}</b>${T("порций", "порция")}</span></div>
+          <div>${ICONS.people}<span><b id="yield">${esc(r.servings)}</b>${T("порций", "порция")}</span></div>
           <div>${ICONS.parts}<span><b>${r.attachments.map((id) => esc(att(sm, id)?.name || id)).join(", ")}</b>${T("насадки", "қондырмалар")}</span></div>
         </div>
         <div class="actions"><button class="btn" id="cook">${T("Готовить по шагам", "Қадамдап дайындау")}</button>
           ${r.attachments.map((id) => `<a class="btn ghost" href="${P}/sm23/attachments/${id}/">${esc(att(sm, id)?.name || id)}</a>`).join("")}</div>
         <div class="recipe-cols">
-          <div class="ing-box"><h3>${T("Что понадобится", "Не қажет")}</h3>
-            <table class="ing">${r.ingredients.map((i) => { const [n, q] = splitIng(i); return `<tr><td>${esc(n)}</td><td>${esc(q)}</td></tr>`; }).join("")}</table>
+          <div class="ing-box" id="ingbox" data-base="${r.base || 4}" data-yield="${esc(r.servings)}" data-scale-yield="${r.scaleYield ? 1 : 0}" data-note="${r.attachments.some((a) => ["hook", "whisk"].includes(a)) ? esc(T("Большую порцию готовьте партиями: чаша рассчитана на 7 л, не перегружайте машину.", "Үлкен порцияны бөліп дайындаңыз: тостаған 7 л-ге арналған, машинаны артық жүктемеңіз.")) : ""}" data-people="${esc(T("На {n} чел.", "{n} адамға"))}"><h3>${T("Что понадобится", "Не қажет")}</h3>
+            <p class="people-q">${T("На сколько человек готовим?", "Неше адамға дайындаймыз?")}</p>
+            <div class="people" id="people" role="group">
+              <button type="button" data-n="2"><b>1–2</b><span>${T("одному", "жалғыз")}</span></button>
+              <button type="button" data-n="4"><b>3–4</b><span>${T("семье", "отбасы")}</span></button>
+              <button type="button" data-n="6"><b>5–6</b><span>${T("большой семье", "үлкен отбасы")}</span></button>
+              <button type="button" data-n="12"><b>10+</b><span>${T("друзьям", "достар")}</span></button>
+            </div>
+            <table class="ing">${r.ingredients.map((i) => { const [n, q] = splitIng(i); return `<tr><td>${esc(n)}</td><td data-q="${esc(q)}">${esc(q)}</td></tr>`; }).join("")}</table>
+            <p class="scale-note" id="scale-note" hidden></p>
           </div>
           <div><h3 class="h-s">${T("Как готовить", "Қалай дайындау керек")}</h3><div class="rsteps">${r.steps.map((s, i) => `<div class="rstep"><div class="n">${i + 1}</div><div><p>${esc(s.text)}</p><div class="tags">
             ${s.attachment ? `<span class="chip">${esc(att(sm, s.attachment)?.name || "")}</span>` : ""}

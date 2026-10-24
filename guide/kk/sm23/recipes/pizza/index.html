@@ -71,14 +71,22 @@
         <div class="page-head tight"><p class="eyebrow">Нан өнімдері</p><h1>Үйде пицца</h1><p class="lead">Қамырды ATARIA илейді, ал сіз тек салмасын жинайсыз. Қолыңыз таза, қамыр тегіс әрі керегінше созылады.</p></div>
         <div class="meta-strip">
           <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span><b>1 сағ 30 мин</b>уақыты</span></div>
-          <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.5 2.7-6 6-6s6 2.5 6 6"/><circle cx="17" cy="9" r="2.4"/><path d="M16 14.2c3 0 5 2 5 5"/></svg><span><b>2 науа</b>порция</span></div>
+          <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.5 2.7-6 6-6s6 2.5 6 6"/><circle cx="17" cy="9" r="2.4"/><path d="M16 14.2c3 0 5 2 5 5"/></svg><span><b id="yield">2 науа</b>порция</span></div>
           <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="4" y="4" width="7" height="7" rx="2"/><rect x="13" y="4" width="7" height="7" rx="2"/><rect x="4" y="13" width="7" height="7" rx="2"/><rect x="13" y="13" width="7" height="7" rx="2"/></svg><span><b>Қамырға арналған ілгек, Көкөніс турағыш</b>қондырмалар</span></div>
         </div>
         <div class="actions"><button class="btn" id="cook">Қадамдап дайындау</button>
           <a class="btn ghost" href="/kk/sm23/attachments/hook/">Қамырға арналған ілгек</a><a class="btn ghost" href="/kk/sm23/attachments/slicer/">Көкөніс турағыш</a></div>
         <div class="recipe-cols">
-          <div class="ing-box"><h3>Не қажет</h3>
-            <table class="ing"><tr><td>Ұн</td><td>500 г</td></tr><tr><td>Құрғақ ашытқы</td><td>7 г</td></tr><tr><td>Қант</td><td>1 шәй қасық</td></tr><tr><td>Тұз</td><td>1 шәй қасық</td></tr><tr><td>Зәйтүн майы</td><td>2 ас қасық</td></tr><tr><td>Жылы су</td><td>320 мл</td></tr><tr><td>Қызанақ тұздығы</td><td>150 г</td></tr><tr><td>Моцарелла</td><td>200 г</td></tr><tr><td>Пепперони</td><td>100 г</td></tr></table>
+          <div class="ing-box" id="ingbox" data-base="4" data-yield="2 науа" data-scale-yield="0" data-note="Үлкен порцияны бөліп дайындаңыз: тостаған 7 л-ге арналған, машинаны артық жүктемеңіз." data-people="{n} адамға"><h3>Не қажет</h3>
+            <p class="people-q">Неше адамға дайындаймыз?</p>
+            <div class="people" id="people" role="group">
+              <button type="button" data-n="2"><b>1–2</b><span>жалғыз</span></button>
+              <button type="button" data-n="4"><b>3–4</b><span>отбасы</span></button>
+              <button type="button" data-n="6"><b>5–6</b><span>үлкен отбасы</span></button>
+              <button type="button" data-n="12"><b>10+</b><span>достар</span></button>
+            </div>
+            <table class="ing"><tr><td>Ұн</td><td data-q="500 г">500 г</td></tr><tr><td>Құрғақ ашытқы</td><td data-q="7 г">7 г</td></tr><tr><td>Қант</td><td data-q="1 шәй қасық">1 шәй қасық</td></tr><tr><td>Тұз</td><td data-q="1 шәй қасық">1 шәй қасық</td></tr><tr><td>Зәйтүн майы</td><td data-q="2 ас қасық">2 ас қасық</td></tr><tr><td>Жылы су</td><td data-q="320 мл">320 мл</td></tr><tr><td>Қызанақ тұздығы</td><td data-q="150 г">150 г</td></tr><tr><td>Моцарелла</td><td data-q="200 г">200 г</td></tr><tr><td>Пепперони</td><td data-q="100 г">100 г</td></tr></table>
+            <p class="scale-note" id="scale-note" hidden></p>
           </div>
           <div><h3 class="h-s">Қалай дайындау керек</h3><div class="rsteps"><div class="rstep"><div class="n">1</div><div><p>Ашытқы мен қантты жылы суда ерітіп, тірілуге қалдырыңыз.</p><div class="tags">
             
@@ -119,7 +127,7 @@
     <div class="ph"><img src="/img/f-beze.jpg" alt="Безе және көпіршітілген кілегей" loading="lazy"><span class="time"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>2 сағ</span></div>
     <div class="body"><span class="meta">Десерттер</span><h3>Безе және көпіршітілген кілегей</h3>
       <div class="chips"><span class="chip">Венчик (көпіршіткіш)</span></div></div></a></div></section>
-        <script type="application/json" id="recipe-data">{"id":"pizza","title":"Үйде пицца","doneUrl":"/kk/sm23/recipes/pizza/done/","labels":{"step":"қадам","of":"/","close":"Жабу","start":"Таймерді қосу","pause":"Кідірту","back":"Артқа","next":"Әрі қарай","done":"Дайын","speed":"жылдамдық"},"steps":[{"text":"Ашытқы мен қантты жылы суда ерітіп, тірілуге қалдырыңыз.","minutes":10,"attachmentName":""},{"text":"Ұнды тікелей тостағанға електен өткізіп, ашытқылы суды құйып, тұз бен май қосыңыз.","attachment":"hook","attachmentName":"Қамырға арналған ілгек"},{"text":"Қамыр тегіс болғанша ілгекпен 1–2 жылдамдықта илеңіз.","speed":"1–2","minutes":8,"attachmentName":""},{"text":"Тостағанға салып, орамалмен жабыңыз. Қамыр екі есе көтеріледі.","minutes":60,"attachmentName":""},{"text":"Моцареллаңызды көкөніс турағыштың ірі үккішімен үгіңіз.","attachment":"slicer","attachmentName":"Көкөніс турағыш"},{"text":"Қамырды науаға жайып, тұздықпен майлап, ірімшік себіп, пепперониді салыңыз.","attachmentName":""},{"text":"Ірімшік көпіршігенше 250 °C температурада пісіріңіз.","minutes":13,"attachmentName":""}]}</script>
+        <script type="application/json" id="recipe-data">{"id":"pizza","title":"Үйде пицца","doneUrl":"/kk/sm23/recipes/pizza/done/","labels":{"step":"қадам","of":"/","close":"Жабу","start":"Таймерді қосу","pause":"Кідірту","back":"Артқа","next":"Әрі қарай","done":"Дайын","speed":"жылдамдық","alarm":"Уақыт бітті!","stopSound":"Дыбысты өшіру","notifyTitle":"ATARIA таймері","notifyBody":"Уақыт бітті — асүйге қараңыз","resume":"Таймер жүріп жатыр"},"steps":[{"text":"Ашытқы мен қантты жылы суда ерітіп, тірілуге қалдырыңыз.","minutes":10,"attachmentName":""},{"text":"Ұнды тікелей тостағанға електен өткізіп, ашытқылы суды құйып, тұз бен май қосыңыз.","attachment":"hook","attachmentName":"Қамырға арналған ілгек"},{"text":"Қамыр тегіс болғанша ілгекпен 1–2 жылдамдықта илеңіз.","speed":"1–2","minutes":8,"attachmentName":""},{"text":"Тостағанға салып, орамалмен жабыңыз. Қамыр екі есе көтеріледі.","minutes":60,"attachmentName":""},{"text":"Моцареллаңызды көкөніс турағыштың ірі үккішімен үгіңіз.","attachment":"slicer","attachmentName":"Көкөніс турағыш"},{"text":"Қамырды науаға жайып, тұздықпен майлап, ірімшік себіп, пепперониді салыңыз.","attachmentName":""},{"text":"Ірімшік көпіршігенше 250 °C температурада пісіріңіз.","minutes":13,"attachmentName":""}]}</script>
   </div>
 </div></div>
 </main>

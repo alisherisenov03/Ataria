@@ -71,14 +71,22 @@
         <div class="page-head tight"><p class="eyebrow">Национальное</p><h1>Манты</h1><p class="lead">Фарш крупной решёткой, тесто крюком, раскатка тестораскаткой. Сочные манты без мясорубки на столе и теста по всей кухне.</p></div>
         <div class="meta-strip">
           <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span><b>1 ч 30 мин</b>время</span></div>
-          <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.5 2.7-6 6-6s6 2.5 6 6"/><circle cx="17" cy="9" r="2.4"/><path d="M16 14.2c3 0 5 2 5 5"/></svg><span><b>40–45 штук</b>порций</span></div>
+          <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.5 2.7-6 6-6s6 2.5 6 6"/><circle cx="17" cy="9" r="2.4"/><path d="M16 14.2c3 0 5 2 5 5"/></svg><span><b id="yield">40–45 штук</b>порций</span></div>
           <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="4" y="4" width="7" height="7" rx="2"/><rect x="13" y="4" width="7" height="7" rx="2"/><rect x="4" y="13" width="7" height="7" rx="2"/><rect x="13" y="13" width="7" height="7" rx="2"/></svg><span><b>Мясорубка, Крюк для теста, Тестораскатка</b>насадки</span></div>
         </div>
         <div class="actions"><button class="btn" id="cook">Готовить по шагам</button>
           <a class="btn ghost" href="/sm23/attachments/grinder/">Мясорубка</a><a class="btn ghost" href="/sm23/attachments/hook/">Крюк для теста</a><a class="btn ghost" href="/sm23/attachments/roller/">Тестораскатка</a></div>
         <div class="recipe-cols">
-          <div class="ing-box"><h3>Что понадобится</h3>
-            <table class="ing"><tr><td>Говядина или баранина</td><td>1 кг</td></tr><tr><td>Лук</td><td>600 г</td></tr><tr><td>Курдючный жир</td><td>100 г (по желанию)</td></tr><tr><td>Соль, зира, чёрный перец</td><td></td></tr><tr><td>Мука</td><td>600 г</td></tr><tr><td>Вода</td><td>280 мл</td></tr><tr><td>Яйцо</td><td>1 шт.</td></tr><tr><td>Соль для теста</td><td>1 ч. л.</td></tr></table>
+          <div class="ing-box" id="ingbox" data-base="6" data-yield="40–45 штук" data-scale-yield="1" data-note="Большую порцию готовьте партиями: чаша рассчитана на 7 л, не перегружайте машину." data-people="На {n} чел."><h3>Что понадобится</h3>
+            <p class="people-q">На сколько человек готовим?</p>
+            <div class="people" id="people" role="group">
+              <button type="button" data-n="2"><b>1–2</b><span>одному</span></button>
+              <button type="button" data-n="4"><b>3–4</b><span>семье</span></button>
+              <button type="button" data-n="6"><b>5–6</b><span>большой семье</span></button>
+              <button type="button" data-n="12"><b>10+</b><span>друзьям</span></button>
+            </div>
+            <table class="ing"><tr><td>Говядина или баранина</td><td data-q="1 кг">1 кг</td></tr><tr><td>Лук</td><td data-q="600 г">600 г</td></tr><tr><td>Курдючный жир</td><td data-q="100 г (по желанию)">100 г (по желанию)</td></tr><tr><td>Соль, зира, чёрный перец</td><td data-q=""></td></tr><tr><td>Мука</td><td data-q="600 г">600 г</td></tr><tr><td>Вода</td><td data-q="280 мл">280 мл</td></tr><tr><td>Яйцо</td><td data-q="1 шт.">1 шт.</td></tr><tr><td>Соль для теста</td><td data-q="1 ч. л.">1 ч. л.</td></tr></table>
+            <p class="scale-note" id="scale-note" hidden></p>
           </div>
           <div><h3 class="h-s">Как готовить</h3><div class="rsteps"><div class="rstep"><div class="n">1</div><div><p>Замесите тесто крюком: вода, яйцо, соль, мука. Скорость 1, потом 2.</p><div class="tags">
             <span class="chip">Крюк для теста</span>
@@ -116,7 +124,7 @@
     <div class="ph"><img src="/img/f-lagman.jpg" alt="Лапша для лагмана" loading="lazy"><span class="time"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>50 мин</span></div>
     <div class="body"><span class="meta">Национальное</span><h3>Лапша для лагмана</h3>
       <div class="chips"><span class="chip">Крюк для теста</span><span class="chip">Тестораскатка</span><span class="chip">Лапшерезка</span></div></div></a></div></section>
-        <script type="application/json" id="recipe-data">{"id":"manty","title":"Манты","doneUrl":"/sm23/recipes/manty/done/","labels":{"step":"шаг","of":"из","close":"Закрыть","start":"Запустить таймер","pause":"Пауза","back":"Назад","next":"Дальше","done":"Готово","speed":"скорость"},"steps":[{"text":"Замесите тесто крюком: вода, яйцо, соль, мука. Скорость 1, потом 2.","attachment":"hook","speed":"1→2","minutes":5,"attachmentName":"Крюк для теста"},{"text":"Пока тесто отдыхает под плёнкой, займитесь фаршем.","minutes":30,"attachmentName":""},{"text":"Прокрутите мясо и жир через крупную решётку мясорубки.","attachment":"grinder","attachmentName":"Мясорубка"},{"text":"Лук мелко нарежьте ножом и смешайте с фаршем, посолите, добавьте зиру и перец.","attachmentName":""},{"text":"Раскатайте тесто тестораскаткой и нарежьте квадратами 10×10 см.","attachment":"roller","attachmentName":"Тестораскатка"},{"text":"Положите фарш, слепите манты и готовьте в мантоварке.","minutes":45,"attachmentName":""}]}</script>
+        <script type="application/json" id="recipe-data">{"id":"manty","title":"Манты","doneUrl":"/sm23/recipes/manty/done/","labels":{"step":"шаг","of":"из","close":"Закрыть","start":"Запустить таймер","pause":"Пауза","back":"Назад","next":"Дальше","done":"Готово","speed":"скорость","alarm":"Время вышло!","stopSound":"Выключить сигнал","notifyTitle":"Таймер ATARIA","notifyBody":"Время вышло — загляните на кухню","resume":"Таймер идёт"},"steps":[{"text":"Замесите тесто крюком: вода, яйцо, соль, мука. Скорость 1, потом 2.","attachment":"hook","speed":"1→2","minutes":5,"attachmentName":"Крюк для теста"},{"text":"Пока тесто отдыхает под плёнкой, займитесь фаршем.","minutes":30,"attachmentName":""},{"text":"Прокрутите мясо и жир через крупную решётку мясорубки.","attachment":"grinder","attachmentName":"Мясорубка"},{"text":"Лук мелко нарежьте ножом и смешайте с фаршем, посолите, добавьте зиру и перец.","attachmentName":""},{"text":"Раскатайте тесто тестораскаткой и нарежьте квадратами 10×10 см.","attachment":"roller","attachmentName":"Тестораскатка"},{"text":"Положите фарш, слепите манты и готовьте в мантоварке.","minutes":45,"attachmentName":""}]}</script>
   </div>
 </div></div>
 </main>

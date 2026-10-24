@@ -71,14 +71,22 @@
         <div class="page-head tight"><p class="eyebrow">Десерттер</p><h1>Көпіршікті бисквит</h1><p class="lead">Биік әрі ауалы, қопсытқышсыз. Бар құпия — жұмыртқаны ұзақ көпіршіту.</p></div>
         <div class="meta-strip">
           <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span><b>1 сағ</b>уақыты</span></div>
-          <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.5 2.7-6 6-6s6 2.5 6 6"/><circle cx="17" cy="9" r="2.4"/><path d="M16 14.2c3 0 5 2 5 5"/></svg><span><b>22 см қалып</b>порция</span></div>
+          <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.5 2.7-6 6-6s6 2.5 6 6"/><circle cx="17" cy="9" r="2.4"/><path d="M16 14.2c3 0 5 2 5 5"/></svg><span><b id="yield">22 см қалып</b>порция</span></div>
           <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="4" y="4" width="7" height="7" rx="2"/><rect x="13" y="4" width="7" height="7" rx="2"/><rect x="4" y="13" width="7" height="7" rx="2"/><rect x="13" y="13" width="7" height="7" rx="2"/></svg><span><b>Венчик (көпіршіткіш)</b>қондырмалар</span></div>
         </div>
         <div class="actions"><button class="btn" id="cook">Қадамдап дайындау</button>
           <a class="btn ghost" href="/kk/sm23/attachments/whisk/">Венчик (көпіршіткіш)</a></div>
         <div class="recipe-cols">
-          <div class="ing-box"><h3>Не қажет</h3>
-            <table class="ing"><tr><td>Жұмыртқа</td><td>5 дана</td></tr><tr><td>Қант</td><td>150 г</td></tr><tr><td>Ұн</td><td>150 г</td></tr><tr><td>Ваниль</td><td>дәміне қарай</td></tr></table>
+          <div class="ing-box" id="ingbox" data-base="6" data-yield="22 см қалып" data-scale-yield="0" data-note="Үлкен порцияны бөліп дайындаңыз: тостаған 7 л-ге арналған, машинаны артық жүктемеңіз." data-people="{n} адамға"><h3>Не қажет</h3>
+            <p class="people-q">Неше адамға дайындаймыз?</p>
+            <div class="people" id="people" role="group">
+              <button type="button" data-n="2"><b>1–2</b><span>жалғыз</span></button>
+              <button type="button" data-n="4"><b>3–4</b><span>отбасы</span></button>
+              <button type="button" data-n="6"><b>5–6</b><span>үлкен отбасы</span></button>
+              <button type="button" data-n="12"><b>10+</b><span>достар</span></button>
+            </div>
+            <table class="ing"><tr><td>Жұмыртқа</td><td data-q="5 дана">5 дана</td></tr><tr><td>Қант</td><td data-q="150 г">150 г</td></tr><tr><td>Ұн</td><td data-q="150 г">150 г</td></tr><tr><td>Ваниль</td><td data-q="дәміне қарай">дәміне қарай</td></tr></table>
+            <p class="scale-note" id="scale-note" hidden></p>
           </div>
           <div><h3 class="h-s">Қалай дайындау керек</h3><div class="rsteps"><div class="rstep"><div class="n">1</div><div><p>Жұмыртқа мен қантты венчикпен 6-жылдамдықта ашық, көпіршікті масса болғанша көпіршітіңіз, көлемі 3 есе өседі.</p><div class="tags">
             <span class="chip">Венчик (көпіршіткіш)</span>
@@ -110,7 +118,7 @@
     <div class="ph"><img src="/img/f-besh.jpg" alt="Бесбармаққа қамыр" loading="lazy"><span class="time"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>40 мин</span></div>
     <div class="body"><span class="meta">Ұлттық</span><h3>Бесбармаққа қамыр</h3>
       <div class="chips"><span class="chip">Қамырға арналған ілгек</span><span class="chip">Қамыр жаятын қондырма</span></div></div></a></div></section>
-        <script type="application/json" id="recipe-data">{"id":"biskvit","title":"Көпіршікті бисквит","doneUrl":"/kk/sm23/recipes/biskvit/done/","labels":{"step":"қадам","of":"/","close":"Жабу","start":"Таймерді қосу","pause":"Кідірту","back":"Артқа","next":"Әрі қарай","done":"Дайын","speed":"жылдамдық"},"steps":[{"text":"Жұмыртқа мен қантты венчикпен 6-жылдамдықта ашық, көпіршікті масса болғанша көпіршітіңіз, көлемі 3 есе өседі.","attachment":"whisk","speed":"6","minutes":8,"attachmentName":"Венчик (көпіршіткіш)"},{"text":"Машинаны тоқтатыңыз. Ұнды көрекшемен қолмен, төменнен жоғары қарай ақырын араластырыңыз.","attachmentName":""},{"text":"Қалыпқа құйып, алғашқы 25 минутта духовканы ашпай, 180 °C температурада пісіріңіз.","minutes":30,"attachmentName":""},{"text":"Қалыпта суығанша қалдырыңыз.","attachmentName":""}]}</script>
+        <script type="application/json" id="recipe-data">{"id":"biskvit","title":"Көпіршікті бисквит","doneUrl":"/kk/sm23/recipes/biskvit/done/","labels":{"step":"қадам","of":"/","close":"Жабу","start":"Таймерді қосу","pause":"Кідірту","back":"Артқа","next":"Әрі қарай","done":"Дайын","speed":"жылдамдық","alarm":"Уақыт бітті!","stopSound":"Дыбысты өшіру","notifyTitle":"ATARIA таймері","notifyBody":"Уақыт бітті — асүйге қараңыз","resume":"Таймер жүріп жатыр"},"steps":[{"text":"Жұмыртқа мен қантты венчикпен 6-жылдамдықта ашық, көпіршікті масса болғанша көпіршітіңіз, көлемі 3 есе өседі.","attachment":"whisk","speed":"6","minutes":8,"attachmentName":"Венчик (көпіршіткіш)"},{"text":"Машинаны тоқтатыңыз. Ұнды көрекшемен қолмен, төменнен жоғары қарай ақырын араластырыңыз.","attachmentName":""},{"text":"Қалыпқа құйып, алғашқы 25 минутта духовканы ашпай, 180 °C температурада пісіріңіз.","minutes":30,"attachmentName":""},{"text":"Қалыпта суығанша қалдырыңыз.","attachmentName":""}]}</script>
   </div>
 </div></div>
 </main>

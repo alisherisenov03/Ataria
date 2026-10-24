@@ -21,7 +21,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/style.css">
-<script type="application/ld+json">{"@context":"https://schema.org","@type":"Recipe","name":"Морковь по-корейски","image":"https://ataria-guide.vercel.app/img/f-morkovcha.jpg","description":"Овощерезка натирает килограмм моркови за пару минут.","inLanguage":"ru","recipeYield":"6 порций","recipeIngredient":["Морковь — 1 кг","Чеснок — 4 зубчика","Растительное масло — 100 мл","Уксус 9% — 3 ст. л.","Сахар — 1 ст. л.","Соль — 1 ч. л.","Молотый кориандр, красный перец","Кунжут"],"recipeInstructions":[{"@type":"HowToStep","text":"Натрите морковь на крупной тёрке овощерезки."},{"@type":"HowToStep","text":"Посолите, добавьте сахар и уксус, слегка помните руками."},{"@type":"HowToStep","text":"Сверху выложите чеснок, кориандр и перец."},{"@type":"HowToStep","text":"Раскалите масло и полейте специи, перемешайте, посыпьте кунжутом."},{"@type":"HowToStep","text":"Уберите в холодильник, чтобы настоялась."}]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"Recipe","name":"Морковь по-корейски","image":"https://ataria-guide.vercel.app/img/f-morkovcha.jpg","description":"Овощерезка натирает килограмм моркови за пару минут.","inLanguage":"ru","recipeYield":"6 порций","recipeIngredient":["Морковь — 1 кг","Чеснок — 4 зуб.","Растительное масло — 100 мл","Уксус 9% — 3 ст. л.","Сахар — 1 ст. л.","Соль — 1 ч. л.","Молотый кориандр, красный перец","Кунжут"],"recipeInstructions":[{"@type":"HowToStep","text":"Натрите морковь на крупной тёрке овощерезки."},{"@type":"HowToStep","text":"Посолите, добавьте сахар и уксус, слегка помните руками."},{"@type":"HowToStep","text":"Сверху выложите чеснок, кориандр и перец."},{"@type":"HowToStep","text":"Раскалите масло и полейте специи, перемешайте, посыпьте кунжутом."},{"@type":"HowToStep","text":"Уберите в холодильник, чтобы настоялась."}]}</script>
 <script>document.documentElement.classList.add("anim")</script>
 </head>
 <body>
@@ -71,14 +71,22 @@
         <div class="page-head tight"><p class="eyebrow">Каждый день</p><h1>Морковь по-корейски</h1><p class="lead">Овощерезка натирает килограмм моркови за пару минут.</p></div>
         <div class="meta-strip">
           <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span><b>20 мин + 4 ч</b>время</span></div>
-          <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.5 2.7-6 6-6s6 2.5 6 6"/><circle cx="17" cy="9" r="2.4"/><path d="M16 14.2c3 0 5 2 5 5"/></svg><span><b>6 порций</b>порций</span></div>
+          <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.5 2.7-6 6-6s6 2.5 6 6"/><circle cx="17" cy="9" r="2.4"/><path d="M16 14.2c3 0 5 2 5 5"/></svg><span><b id="yield">6 порций</b>порций</span></div>
           <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="4" y="4" width="7" height="7" rx="2"/><rect x="13" y="4" width="7" height="7" rx="2"/><rect x="4" y="13" width="7" height="7" rx="2"/><rect x="13" y="13" width="7" height="7" rx="2"/></svg><span><b>Овощерезка</b>насадки</span></div>
         </div>
         <div class="actions"><button class="btn" id="cook">Готовить по шагам</button>
           <a class="btn ghost" href="/sm23/attachments/slicer/">Овощерезка</a></div>
         <div class="recipe-cols">
-          <div class="ing-box"><h3>Что понадобится</h3>
-            <table class="ing"><tr><td>Морковь</td><td>1 кг</td></tr><tr><td>Чеснок</td><td>4 зубчика</td></tr><tr><td>Растительное масло</td><td>100 мл</td></tr><tr><td>Уксус 9%</td><td>3 ст. л.</td></tr><tr><td>Сахар</td><td>1 ст. л.</td></tr><tr><td>Соль</td><td>1 ч. л.</td></tr><tr><td>Молотый кориандр, красный перец</td><td></td></tr><tr><td>Кунжут</td><td></td></tr></table>
+          <div class="ing-box" id="ingbox" data-base="6" data-yield="6 порций" data-scale-yield="1" data-note="" data-people="На {n} чел."><h3>Что понадобится</h3>
+            <p class="people-q">На сколько человек готовим?</p>
+            <div class="people" id="people" role="group">
+              <button type="button" data-n="2"><b>1–2</b><span>одному</span></button>
+              <button type="button" data-n="4"><b>3–4</b><span>семье</span></button>
+              <button type="button" data-n="6"><b>5–6</b><span>большой семье</span></button>
+              <button type="button" data-n="12"><b>10+</b><span>друзьям</span></button>
+            </div>
+            <table class="ing"><tr><td>Морковь</td><td data-q="1 кг">1 кг</td></tr><tr><td>Чеснок</td><td data-q="4 зуб.">4 зуб.</td></tr><tr><td>Растительное масло</td><td data-q="100 мл">100 мл</td></tr><tr><td>Уксус 9%</td><td data-q="3 ст. л.">3 ст. л.</td></tr><tr><td>Сахар</td><td data-q="1 ст. л.">1 ст. л.</td></tr><tr><td>Соль</td><td data-q="1 ч. л.">1 ч. л.</td></tr><tr><td>Молотый кориандр, красный перец</td><td data-q=""></td></tr><tr><td>Кунжут</td><td data-q=""></td></tr></table>
+            <p class="scale-note" id="scale-note" hidden></p>
           </div>
           <div><h3 class="h-s">Как готовить</h3><div class="rsteps"><div class="rstep"><div class="n">1</div><div><p>Натрите морковь на крупной тёрке овощерезки.</p><div class="tags">
             <span class="chip">Овощерезка</span>
@@ -113,7 +121,7 @@
     <div class="ph"><img src="/img/f-manty.jpg" alt="Манты" loading="lazy"><span class="time"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>1 ч 30 мин</span></div>
     <div class="body"><span class="meta">Национальное</span><h3>Манты</h3>
       <div class="chips"><span class="chip">Мясорубка</span><span class="chip">Крюк для теста</span><span class="chip">Тестораскатка</span></div></div></a></div></section>
-        <script type="application/json" id="recipe-data">{"id":"morkovcha","title":"Морковь по-корейски","doneUrl":"/sm23/recipes/morkovcha/done/","labels":{"step":"шаг","of":"из","close":"Закрыть","start":"Запустить таймер","pause":"Пауза","back":"Назад","next":"Дальше","done":"Готово","speed":"скорость"},"steps":[{"text":"Натрите морковь на крупной тёрке овощерезки.","attachment":"slicer","minutes":2,"attachmentName":"Овощерезка"},{"text":"Посолите, добавьте сахар и уксус, слегка помните руками.","attachmentName":""},{"text":"Сверху выложите чеснок, кориандр и перец.","attachmentName":""},{"text":"Раскалите масло и полейте специи, перемешайте, посыпьте кунжутом.","attachmentName":""},{"text":"Уберите в холодильник, чтобы настоялась.","minutes":240,"attachmentName":""}]}</script>
+        <script type="application/json" id="recipe-data">{"id":"morkovcha","title":"Морковь по-корейски","doneUrl":"/sm23/recipes/morkovcha/done/","labels":{"step":"шаг","of":"из","close":"Закрыть","start":"Запустить таймер","pause":"Пауза","back":"Назад","next":"Дальше","done":"Готово","speed":"скорость","alarm":"Время вышло!","stopSound":"Выключить сигнал","notifyTitle":"Таймер ATARIA","notifyBody":"Время вышло — загляните на кухню","resume":"Таймер идёт"},"steps":[{"text":"Натрите морковь на крупной тёрке овощерезки.","attachment":"slicer","minutes":2,"attachmentName":"Овощерезка"},{"text":"Посолите, добавьте сахар и уксус, слегка помните руками.","attachmentName":""},{"text":"Сверху выложите чеснок, кориандр и перец.","attachmentName":""},{"text":"Раскалите масло и полейте специи, перемешайте, посыпьте кунжутом.","attachmentName":""},{"text":"Уберите в холодильник, чтобы настоялась.","minutes":240,"attachmentName":""}]}</script>
   </div>
 </div></div>
 </main>

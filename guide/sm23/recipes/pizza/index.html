@@ -71,14 +71,22 @@
         <div class="page-head tight"><p class="eyebrow">Выпечка</p><h1>Пицца дома</h1><p class="lead">Тесто месит ATARIA, а вы только собираете начинку. Руки чистые, тесто гладкое и тянется как надо.</p></div>
         <div class="meta-strip">
           <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span><b>1 ч 30 мин</b>время</span></div>
-          <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.5 2.7-6 6-6s6 2.5 6 6"/><circle cx="17" cy="9" r="2.4"/><path d="M16 14.2c3 0 5 2 5 5"/></svg><span><b>2 противня</b>порций</span></div>
+          <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.5 2.7-6 6-6s6 2.5 6 6"/><circle cx="17" cy="9" r="2.4"/><path d="M16 14.2c3 0 5 2 5 5"/></svg><span><b id="yield">2 противня</b>порций</span></div>
           <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="4" y="4" width="7" height="7" rx="2"/><rect x="13" y="4" width="7" height="7" rx="2"/><rect x="4" y="13" width="7" height="7" rx="2"/><rect x="13" y="13" width="7" height="7" rx="2"/></svg><span><b>Крюк для теста, Овощерезка</b>насадки</span></div>
         </div>
         <div class="actions"><button class="btn" id="cook">Готовить по шагам</button>
           <a class="btn ghost" href="/sm23/attachments/hook/">Крюк для теста</a><a class="btn ghost" href="/sm23/attachments/slicer/">Овощерезка</a></div>
         <div class="recipe-cols">
-          <div class="ing-box"><h3>Что понадобится</h3>
-            <table class="ing"><tr><td>Мука</td><td>500 г</td></tr><tr><td>Сухие дрожжи</td><td>7 г</td></tr><tr><td>Сахар</td><td>1 ч. л.</td></tr><tr><td>Соль</td><td>1 ч. л.</td></tr><tr><td>Оливковое масло</td><td>2 ст. л.</td></tr><tr><td>Тёплая вода</td><td>320 мл</td></tr><tr><td>Томатный соус</td><td>150 г</td></tr><tr><td>Моцарелла</td><td>200 г</td></tr><tr><td>Пепперони</td><td>100 г</td></tr></table>
+          <div class="ing-box" id="ingbox" data-base="4" data-yield="2 противня" data-scale-yield="0" data-note="Большую порцию готовьте партиями: чаша рассчитана на 7 л, не перегружайте машину." data-people="На {n} чел."><h3>Что понадобится</h3>
+            <p class="people-q">На сколько человек готовим?</p>
+            <div class="people" id="people" role="group">
+              <button type="button" data-n="2"><b>1–2</b><span>одному</span></button>
+              <button type="button" data-n="4"><b>3–4</b><span>семье</span></button>
+              <button type="button" data-n="6"><b>5–6</b><span>большой семье</span></button>
+              <button type="button" data-n="12"><b>10+</b><span>друзьям</span></button>
+            </div>
+            <table class="ing"><tr><td>Мука</td><td data-q="500 г">500 г</td></tr><tr><td>Сухие дрожжи</td><td data-q="7 г">7 г</td></tr><tr><td>Сахар</td><td data-q="1 ч. л.">1 ч. л.</td></tr><tr><td>Соль</td><td data-q="1 ч. л.">1 ч. л.</td></tr><tr><td>Оливковое масло</td><td data-q="2 ст. л.">2 ст. л.</td></tr><tr><td>Тёплая вода</td><td data-q="320 мл">320 мл</td></tr><tr><td>Томатный соус</td><td data-q="150 г">150 г</td></tr><tr><td>Моцарелла</td><td data-q="200 г">200 г</td></tr><tr><td>Пепперони</td><td data-q="100 г">100 г</td></tr></table>
+            <p class="scale-note" id="scale-note" hidden></p>
           </div>
           <div><h3 class="h-s">Как готовить</h3><div class="rsteps"><div class="rstep"><div class="n">1</div><div><p>Разведите дрожжи и сахар в тёплой воде и оставьте, чтобы ожили.</p><div class="tags">
             
@@ -119,7 +127,7 @@
     <div class="ph"><img src="/img/f-beze.jpg" alt="Безе и взбитые сливки" loading="lazy"><span class="time"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>2 ч</span></div>
     <div class="body"><span class="meta">Десерты</span><h3>Безе и взбитые сливки</h3>
       <div class="chips"><span class="chip">Венчик</span></div></div></a></div></section>
-        <script type="application/json" id="recipe-data">{"id":"pizza","title":"Пицца дома","doneUrl":"/sm23/recipes/pizza/done/","labels":{"step":"шаг","of":"из","close":"Закрыть","start":"Запустить таймер","pause":"Пауза","back":"Назад","next":"Дальше","done":"Готово","speed":"скорость"},"steps":[{"text":"Разведите дрожжи и сахар в тёплой воде и оставьте, чтобы ожили.","minutes":10,"attachmentName":""},{"text":"Муку просейте прямо в чашу, влейте дрожжевую воду, добавьте соль и масло.","attachment":"hook","attachmentName":"Крюк для теста"},{"text":"Месите крюком на скорости 1–2, пока тесто не станет гладким.","speed":"1–2","minutes":8,"attachmentName":""},{"text":"Переложите в миску, накройте полотенцем. Тесто вырастет вдвое.","minutes":60,"attachmentName":""},{"text":"Натрите моцареллу на крупной тёрке овощерезки.","attachment":"slicer","attachmentName":"Овощерезка"},{"text":"Растяните тесто на противне, смажьте соусом, посыпьте сыром, выложите пепперони.","attachmentName":""},{"text":"Выпекайте при 250 °C, пока сыр не запузырится.","minutes":13,"attachmentName":""}]}</script>
+        <script type="application/json" id="recipe-data">{"id":"pizza","title":"Пицца дома","doneUrl":"/sm23/recipes/pizza/done/","labels":{"step":"шаг","of":"из","close":"Закрыть","start":"Запустить таймер","pause":"Пауза","back":"Назад","next":"Дальше","done":"Готово","speed":"скорость","alarm":"Время вышло!","stopSound":"Выключить сигнал","notifyTitle":"Таймер ATARIA","notifyBody":"Время вышло — загляните на кухню","resume":"Таймер идёт"},"steps":[{"text":"Разведите дрожжи и сахар в тёплой воде и оставьте, чтобы ожили.","minutes":10,"attachmentName":""},{"text":"Муку просейте прямо в чашу, влейте дрожжевую воду, добавьте соль и масло.","attachment":"hook","attachmentName":"Крюк для теста"},{"text":"Месите крюком на скорости 1–2, пока тесто не станет гладким.","speed":"1–2","minutes":8,"attachmentName":""},{"text":"Переложите в миску, накройте полотенцем. Тесто вырастет вдвое.","minutes":60,"attachmentName":""},{"text":"Натрите моцареллу на крупной тёрке овощерезки.","attachment":"slicer","attachmentName":"Овощерезка"},{"text":"Растяните тесто на противне, смажьте соусом, посыпьте сыром, выложите пепперони.","attachmentName":""},{"text":"Выпекайте при 250 °C, пока сыр не запузырится.","minutes":13,"attachmentName":""}]}</script>
   </div>
 </div></div>
 </main>
