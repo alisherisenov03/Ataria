@@ -114,22 +114,3 @@ if (cookBtn) cookBtn.addEventListener("click", () => {
   };
   draw();
 });
-
-// ---- multi-angle viewer: tabs + drag/swipe through real photos of the machine ----
-const vstage = $("#vstage");
-if (vstage) {
-  const imgs = [...vstage.querySelectorAll("img")], tabs = [...document.querySelectorAll("#vtabs button")];
-  let cur = 0, sx = null, acc = 0;
-  const show = (i) => { cur = (i + imgs.length) % imgs.length; imgs.forEach((im, k) => im.classList.toggle("on", k === cur)); tabs.forEach((t, k) => t.classList.toggle("on", k === cur)); };
-  show(0);
-  tabs.forEach((t, k) => t.addEventListener("click", () => show(k)));
-  vstage.addEventListener("pointerdown", (e) => { sx = e.clientX; acc = 0; vstage.setPointerCapture(e.pointerId); });
-  vstage.addEventListener("pointermove", (e) => {
-    if (sx === null) return;
-    acc += e.clientX - sx; sx = e.clientX;
-    if (Math.abs(acc) > 70) { show(cur + (acc < 0 ? 1 : -1)); acc = 0; }
-  });
-  ["pointerup", "pointercancel"].forEach((ev) => vstage.addEventListener(ev, () => { sx = null; }));
-  vstage.tabIndex = 0;
-  vstage.addEventListener("keydown", (e) => { if (e.key === "ArrowRight") show(cur + 1); if (e.key === "ArrowLeft") show(cur - 1); });
-}

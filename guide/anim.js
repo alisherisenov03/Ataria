@@ -16,7 +16,7 @@
   if (heroPh) animate(heroPh, { opacity: [0, 1], scale: [1.04, 1], y: [20, 0] }, { duration: 1, ease });
 
   // sections and grids reveal when scrolled into view
-  document.querySelectorAll(".sec-head, .stage-txt, .vstage, .vtabs, .band, .review, .story, .specs, .steps, .parts, .note, .split, .meta-strip, .page-head, .faqs").forEach((el) => {
+  document.querySelectorAll(".sec-head, .stage-txt, .band, .review, .story, .specs, .steps, .parts, .note, .split, .meta-strip, .page-head, .faqs").forEach((el) => {
     if (el.closest(".hero, .p-hero")) return;
     el.style.opacity = 0;
     inView(el, () => { animate(el, { opacity: [0, 1], y: [28, 0] }, { duration: 0.7, ease }); }, { margin: "0px 0px -8% 0px" });

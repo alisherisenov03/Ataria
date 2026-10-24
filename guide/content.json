@@ -15,7 +15,7 @@
       "kind": "Кухонная машина",
       "name": "ATARIA AT-SM23",
       "tagline": "Одна машина вместо шести приборов на кухне",
-      "hero": "img/machine.jpg",
+      "hero": "img/p-hero.jpg",
       "intro": "Замесит тесто на баурсаки, прокрутит фарш на манты, раскатает тонкий пласт для беша, нарежет лапшу к лагману, натрёт овощи и сделает смузи. Здесь собрано всё, чтобы вы пользовались ею с первого дня спокойно и уверенно.",
       "specs": [
         {
@@ -122,7 +122,7 @@
           "id": "hook",
           "name": "Крюк для теста",
           "group": "В чаше",
-          "image": "img/hook.jpg",
+          "image": "img/p-hook.jpg",
           "speed": "1–2",
           "short": "Для плотного и дрожжевого теста",
           "what": "Крюк месит тесто так, как это делают руки, только без усталости. Тесто получается гладким и эластичным, а руки остаются чистыми.",
@@ -152,7 +152,7 @@
           "id": "beater",
           "name": "Лопатка",
           "group": "В чаше",
-          "image": "img/beater.jpg",
+          "image": "img/p-beater.jpg",
           "speed": "1–6",
           "short": "Для густых масс и теста для выпечки",
           "what": "Плоская лопатка перемешивает густые и тяжёлые массы. Она не взбивает воздух, а равномерно соединяет всё в чаше.",
@@ -179,7 +179,7 @@
           "id": "whisk",
           "name": "Венчик",
           "group": "В чаше",
-          "image": "img/whisk.jpg",
+          "image": "img/p-whisk.jpg",
           "speed": "1–6",
           "short": "Для воздушных масс",
           "what": "Венчик насыщает массу воздухом. Сливки становятся пышными, белки поднимаются в крепкие пики.",
@@ -207,7 +207,7 @@
           "id": "grinder",
           "name": "Мясорубка",
           "group": "Сбоку",
-          "image": "img/grinder.jpg",
+          "image": "img/p-grinder.jpg",
           "short": "Фарш, колбаски и кеббе",
           "what": "Металлическая мясорубка с лотком и тремя решётками. Ставится в боковой разъём на голове машины.",
           "use_for": [
@@ -247,7 +247,7 @@
           "id": "slicer",
           "name": "Овощерезка",
           "group": "Сбоку",
-          "image": "img/slicer.jpg",
+          "image": "img/p-slicer.jpg",
           "short": "Тёрка и нарезка ломтиками",
           "what": "Три барабана для овощей и сыра: крупная тёрка, мелкая тёрка и нарезка ломтиками.",
           "use_for": [
@@ -280,7 +280,7 @@
           "id": "blender",
           "name": "Стеклянный блендер",
           "group": "Сверху",
-          "image": "img/blender.jpg",
+          "image": "img/p-blender.jpg",
           "short": "Смузи, супы-пюре, соусы",
           "what": "Стеклянный кувшин на 1,5 л. Стекло не впитывает запахи и не царапается.",
           "use_for": [
@@ -307,7 +307,7 @@
           "id": "roller",
           "name": "Тестораскатка",
           "group": "Сбоку",
-          "image": "img/roller.jpg",
+          "image": "img/p-roller.jpg",
           "short": "Ровный тонкий пласт за минуты",
           "what": "Раскатывает тесто в ровный пласт. 8 режимов толщины: от толстого для лепёшек до самого тонкого для беша и лапши.",
           "use_for": [
@@ -334,7 +334,7 @@
           "id": "noodle",
           "name": "Лапшерезка",
           "group": "Сбоку",
-          "image": "img/noodle.jpg",
+          "image": "img/p-noodle.jpg",
           "short": "Домашняя лапша для лагмана и супа",
           "what": "Нарезает раскатанный пласт на ровную лапшу.",
           "use_for": [
@@ -359,7 +359,7 @@
         {
           "id": "besh",
           "title": "Тесто для бешбармака",
-          "image": "img/r-besh.jpg",
+          "image": "img/f-besh.jpg",
           "time": "40 мин",
           "servings": "6–8 порций",
           "attachments": [
@@ -404,7 +404,7 @@
         {
           "id": "manty",
           "title": "Манты",
-          "image": "img/r-manty.jpg",
+          "image": "img/f-manty.jpg",
           "time": "1 ч 30 мин",
           "servings": "40–45 штук",
           "attachments": [
@@ -455,7 +455,7 @@
         {
           "id": "baursaki",
           "title": "Баурсаки",
-          "image": "img/r-baursaki.jpg",
+          "image": "img/f-baursaki.jpg",
           "time": "2 ч",
           "servings": "на большую семью",
           "attachments": [
@@ -503,7 +503,7 @@
         {
           "id": "pizza",
           "title": "Пицца дома",
-          "image": "img/r-pizza.jpg",
+          "image": "img/f-pizza.jpg",
           "time": "1 ч 30 мин",
           "servings": "2 противня",
           "attachments": [
@@ -557,7 +557,7 @@
         {
           "id": "lagman",
           "title": "Лапша для лагмана",
-          "image": "img/r-lagman.jpg",
+          "image": "img/f-lagman.jpg",
           "time": "50 мин",
           "servings": "4–5 порций",
           "attachments": [
@@ -605,7 +605,7 @@
         {
           "id": "kotlety",
           "title": "Домашние котлеты",
-          "image": "img/r-kotlety.jpg",
+          "image": "img/f-kotlety.jpg",
           "time": "45 мин",
           "servings": "12–14 штук",
           "attachments": [
@@ -650,7 +650,7 @@
         {
           "id": "beze",
           "title": "Безе и взбитые сливки",
-          "image": "img/r-beze.jpg",
+          "image": "img/f-beze.jpg",
           "time": "2 ч",
           "servings": "30 безе",
           "attachments": [
@@ -694,7 +694,7 @@
         {
           "id": "biskvit",
           "title": "Пышный бисквит",
-          "image": "img/r-biskvit.jpg",
+          "image": "img/f-biskvit.jpg",
           "time": "1 ч",
           "servings": "форма 22 см",
           "attachments": [
@@ -730,7 +730,7 @@
         {
           "id": "morkovcha",
           "title": "Морковь по-корейски",
-          "image": "img/r-morkovcha.jpg",
+          "image": "img/f-morkovcha.jpg",
           "time": "20 мин + 4 ч",
           "servings": "6 порций",
           "attachments": [
@@ -772,7 +772,7 @@
         {
           "id": "smoothie",
           "title": "Банановый смузи с клубникой",
-          "image": "img/r-smoothie.jpg",
+          "image": "img/f-smoothie.jpg",
           "time": "5 мин",
           "servings": "2 стакана",
           "attachments": [
