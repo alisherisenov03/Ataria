@@ -1,8 +1,8 @@
 {
   "brand": "ATARIA",
   "support": {
-    "whatsapp": "/go/wa?src=guide",
-    "whatsapp_full": "https://jarvis-backend-alisher25.vercel.app/go/wa?src=guide",
+    "whatsapp": "/go/wa?src=guide&p=sm23_owner",
+    "whatsapp_full": "https://jarvis-backend-alisher25.vercel.app/go/wa?src=guide&p=sm23_owner",
     "kaspi_review": "",
     "warranty": "12 месяцев"
   },
