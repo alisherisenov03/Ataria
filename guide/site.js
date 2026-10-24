@@ -134,6 +134,25 @@ const silentWav = (() => {
   let s = ""; b.forEach((x) => (s += String.fromCharCode(x))); return "data:audio/wav;base64," + btoa(s);
 })();
 
+// ---- Web Push: the server sends the "time is up" notification even if the page is asleep or closed ----
+const PUSH_API = "https://pepexjsboutlqmqjyemc.supabase.co/functions/v1/guide-push";
+const VAPID_PUBLIC = "BDdk3HBXtzyb5fFvpOOUJzeviCxBr1m5zU0SxVhQTeR61ZtNGNdsk4qRf58bUCWBk9j9KcXoKObRcz46P0UeCQU";
+const b64 = (s) => { const p = "=".repeat((4 - (s.length % 4)) % 4), r = atob((s + p).replace(/-/g, "+").replace(/_/g, "/")); return Uint8Array.from(r, (c) => c.charCodeAt(0)); };
+const pushPost = (action, body) => fetch(`${PUSH_API}?action=${action}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body), keepalive: true }).catch(() => {});
+async function pushSub() {
+  if (!("serviceWorker" in navigator) || !("PushManager" in window) || !("Notification" in window)) return null;
+  if (Notification.permission === "default") await Notification.requestPermission().catch(() => {});
+  if (Notification.permission !== "granted") return null;
+  const reg = await navigator.serviceWorker.ready;
+  return (await reg.pushManager.getSubscription()) || reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64(VAPID_PUBLIC) });
+}
+async function pushSchedule(seconds, title, body) {
+  try { const s = await pushSub(); if (s) await pushPost("schedule", { sub: s.toJSON(), seconds, title, body, url: location.href }); } catch (e) { /* push is optional */ }
+}
+async function pushCancel() {
+  try { const reg = await navigator.serviceWorker?.ready; const s = await reg?.pushManager.getSubscription(); if (s) await pushPost("cancel", { endpoint: s.endpoint }); } catch (e) { /* ignore */ }
+}
+
 const cookBtn = $("#cook");
 if (cookBtn) {
   const r = JSON.parse($("#recipe-data").textContent);
@@ -156,7 +175,7 @@ if (cookBtn) {
     const stopKeep = () => { try { keep?.pause(); } catch (e) { /* ignore */ } };
     const clearTimer = () => { clearInterval(timer); timer = null; };
     const stopAlarm = () => { clearInterval(beepTimer); beepTimer = null; ringing = false; stopKeep(); };
-    const hardStop = () => { clearTimer(); endAt = 0; left = 0; saveT(null); stopAlarm(); };
+    const hardStop = () => { clearTimer(); endAt = 0; left = 0; saveT(null); stopAlarm(); pushCancel(); };
     const close = () => { hardStop(); wake?.release?.(); document.removeEventListener("visibilitychange", onVis); el.remove(); document.body.style.overflow = ""; };
     const beep = () => {
       if (!ctx) return;
@@ -175,7 +194,7 @@ if (cookBtn) {
       }).catch(() => {});
     };
     const ring = () => {
-      clearTimer(); endAt = 0; left = 0; saveT(null); ringing = true;
+      clearTimer(); endAt = 0; left = 0; saveT(null); ringing = true; pushCancel();
       navigator.vibrate?.([300, 150, 300, 150, 300]);
       beep(); beepTimer = setInterval(() => { beep(); navigator.vibrate?.([300, 150, 300]); }, 1500);
       notify(); draw();
@@ -208,10 +227,11 @@ if (cookBtn) {
       const go = $("#tgo", el);
       if (go) go.onclick = () => {
         if (ringing) { stopAlarm(); draw(); return; }
-        if (endAt) { left = remaining(); endAt = 0; clearTimer(); saveT(null); stopKeep(); draw(); return; }
+        if (endAt) { left = remaining(); endAt = 0; clearTimer(); saveT(null); stopKeep(); pushCancel(); draw(); return; }
         unlock();
         endAt = Date.now() + (left || s.minutes * 60) * 1000;
         saveT({ id: r.id, i, endAt });
+        pushSchedule(Math.round((endAt - Date.now()) / 1000), t.notifyTitle, t.notifyBody);
         loop(); draw();
       };
     };
