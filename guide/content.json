@@ -145,7 +145,8 @@
           ],
           "dont": [
             "Не включайте крюк выше скорости 2: тесто тяжёлое, мотору так тяжелее."
-          ]
+          ],
+          "scene": "img/scene-dough.jpg"
         },
         {
           "id": "beater",
@@ -199,7 +200,8 @@
           ],
           "dont": [
             "Не взбивайте венчиком густое тесто: он может погнуться."
-          ]
+          ],
+          "scene": "img/scene-cream.jpg"
         },
         {
           "id": "grinder",
@@ -271,7 +273,8 @@
           "dont": [
             "Не подавайте овощи руками, только толкателем."
           ],
-          "photo": "img/real-slicer.jpg"
+          "photo": "img/real-slicer.jpg",
+          "scene": "img/scene-veg.jpg"
         },
         {
           "id": "blender",
@@ -324,7 +327,8 @@
           ],
           "dont": [
             "Не мойте валики под водой: протрите сухой щёткой и тканью."
-          ]
+          ],
+          "scene": "img/scene-pasta.jpg"
         },
         {
           "id": "noodle",

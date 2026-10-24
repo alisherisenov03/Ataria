@@ -314,3 +314,46 @@ figure.live { margin: 0; border-radius: 20px; overflow: hidden; background: var(
 figure.live img { width: 100%; aspect-ratio: 4/3; object-fit: cover; }
 figure.live figcaption { position: absolute; left: 12px; bottom: 12px; font-size: 12px; padding: 5px 10px; border-radius: 999px; background: rgba(255,255,255,.92); }
 @media (max-width: 800px) { .sticky-col { position: static; } }
+
+/* dark stage */
+.stage { background: #171411; color: #F6F2EC; margin-top: 72px; overflow: hidden; }
+.stage-in { max-width: var(--max); margin: 0 auto; padding: 72px 24px; display: grid; grid-template-columns: .8fr 1.2fr; gap: 48px; align-items: center; }
+.stage h2 { font-size: clamp(30px, 4.4vw, 54px); font-weight: 300; line-height: 1.08; }
+.stage .eyebrow { color: #B49A74; }
+.stage .lead { color: #B8AEA2; margin-top: 18px; }
+.stage-txt { display: grid; gap: 6px; }
+.stage-ph { perspective: 1200px; }
+.stage-ph img { width: 100%; border-radius: 22px; box-shadow: 0 40px 80px rgba(0, 0, 0, .55); transform-style: preserve-3d; will-change: transform; }
+.btn.light { background: #F6F2EC; color: #171411; border-color: #F6F2EC; }
+.btn.ghost-light { background: transparent; color: #F6F2EC; border-color: rgba(246, 242, 236, .35); }
+.btn.ghost-light:hover { border-color: #F6F2EC; }
+/* scenes */
+.scenes { display: grid; grid-template-columns: 1.4fr 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 16px; height: min(78vw, 640px); }
+.scene-card { position: relative; border-radius: 22px; overflow: hidden; background: var(--stone); text-decoration: none; color: #fff; display: block; }
+.scene-card.big { grid-row: span 2; }
+.scene-card.tall { grid-row: span 2; }
+.scene-card img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: transform .8s cubic-bezier(.22, 1, .36, 1); }
+.scene-card:hover img { transform: scale(1.05); }
+.scene-card::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 45%, rgba(23, 20, 17, .72)); }
+.scene-card span { position: absolute; left: 22px; right: 22px; bottom: 20px; z-index: 1; display: grid; gap: 2px; font-size: 14px; opacity: .92; }
+.scene-card b { font-weight: 400; font-size: clamp(20px, 2.4vw, 28px); letter-spacing: -.01em; }
+/* attachment scene banner */
+figure.scene { margin: 0 0 32px; border-radius: 24px; overflow: hidden; background: var(--stone); }
+figure.scene img { width: 100%; aspect-ratio: 16/8; object-fit: cover; object-position: center 40%; }
+/* viewer */
+.viewer .hint { font-size: 13px; color: var(--muted); }
+.vstage { position: relative; aspect-ratio: 16/10; max-height: 560px; width: 100%; background: var(--stone); border-radius: 26px; overflow: hidden; cursor: grab; touch-action: pan-y; user-select: none; }
+.vstage:active { cursor: grabbing; }
+.vstage img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; opacity: 0; pointer-events: none; transition: opacity .35s ease; }
+.vstage img.on { opacity: 1; }
+.vtabs { display: flex; justify-content: center; gap: 8px; margin-top: 16px; flex-wrap: wrap; }
+.vtabs button { font: inherit; font-size: 13px; padding: 9px 18px; border-radius: 999px; border: 1px solid var(--line); background: transparent; color: var(--muted); cursor: pointer; }
+.vtabs button.on { background: var(--ink); color: #fff; border-color: var(--ink); }
+@media (max-width: 800px) {
+  .stage-in { grid-template-columns: 1fr; padding: 48px 24px; gap: 28px; }
+  .scenes { grid-template-columns: 1fr 1fr; grid-template-rows: auto; height: auto; }
+  .scene-card, .scene-card.big, .scene-card.tall { grid-row: auto; aspect-ratio: 4/5; }
+  .scene-card.big { grid-column: span 2; aspect-ratio: 16/10; }
+  figure.scene img { aspect-ratio: 16/10; }
+  .vstage { aspect-ratio: 4/3; }
+}

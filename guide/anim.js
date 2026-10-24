@@ -16,12 +16,12 @@
   if (heroPh) animate(heroPh, { opacity: [0, 1], scale: [1.04, 1], y: [20, 0] }, { duration: 1, ease });
 
   // sections and grids reveal when scrolled into view
-  document.querySelectorAll(".sec-head, .band, .review, .story, .specs, .steps, .parts, .note, .split, .meta-strip, .page-head, .faqs").forEach((el) => {
+  document.querySelectorAll(".sec-head, .stage-txt, .vstage, .vtabs, .band, .review, .story, .specs, .steps, .parts, .note, .split, .meta-strip, .page-head, .faqs").forEach((el) => {
     if (el.closest(".hero, .p-hero")) return;
     el.style.opacity = 0;
     inView(el, () => { animate(el, { opacity: [0, 1], y: [28, 0] }, { duration: 0.7, ease }); }, { margin: "0px 0px -8% 0px" });
   });
-  document.querySelectorAll(".grid, .tiles, .pick, .tasks, .speeds, .rsteps, .results").forEach((wrap) => {
+  document.querySelectorAll(".grid, .tiles, .pick, .tasks, .speeds, .rsteps, .results, .scenes").forEach((wrap) => {
     const kids = [...wrap.children];
     kids.forEach((k) => (k.style.opacity = 0));
     inView(wrap, () => { animate(kids, { opacity: [0, 1], y: [30, 0] }, { delay: stagger(0.07), duration: 0.65, ease }); }, { margin: "0px 0px -6% 0px" });
@@ -31,6 +31,17 @@
   document.querySelectorAll(".hero-ph img, .p-hero .ph img, .story .ph img, .cover img").forEach((img) => {
     scroll(animate(img, { y: [-14, 14] }, { ease: "linear" }), { target: img.parentElement, offset: ["start end", "end start"] });
   });
+
+  // 3D tilt on the dark stage photo (follows the pointer)
+  const tilt = document.getElementById("tilt");
+  if (tilt && matchMedia("(pointer: fine)").matches) {
+    const img = tilt.querySelector("img");
+    tilt.addEventListener("pointermove", (e) => {
+      const r = tilt.getBoundingClientRect(), x = (e.clientX - r.left) / r.width - 0.5, y = (e.clientY - r.top) / r.height - 0.5;
+      animate(img, { rotateY: x * 9, rotateX: -y * 7 }, { duration: 0.3 });
+    });
+    tilt.addEventListener("pointerleave", () => animate(img, { rotateY: 0, rotateX: 0 }, { duration: 0.6, ease }));
+  }
 
   // press feedback on buttons and cards
   document.querySelectorAll(".btn, .card, .tiles a, .pick-card, .tasks a, .speeds a").forEach((el) => {

@@ -237,6 +237,28 @@ ${footer()}
   <div class="hero-ph"><img src="/img/sm23-host.jpg" alt="${T("Хозяйка готовит тесто на кухонной машине ATARIA", "Үй иесі ATARIA комбайнында қамыр жасап жатыр")}"></div>
 </section>
 
+<section class="stage">
+  <div class="stage-in">
+    <div class="stage-txt">
+      <p class="eyebrow">ATARIA AT-SM23</p>
+      <h2>${T("Одна машина. Шесть насадок. Вся кухня под рукой.", "Бір машина. Алты қондырма. Бүкіл асүй қолыңызда.")}</h2>
+      <p class="lead">${T("Мощность 2000 Вт, чаша 7 литров, таймер до 15 минут. Тесто, фарш, крем, лапша и овощи.", "Қуаты 2000 Вт, тостаған 7 литр, таймер 15 минутқа дейін. Қамыр, қайма, кілегей, кеспе және көкөніс.")}</p>
+      <div class="actions"><a class="btn light" href="${P}/sm23/attachments/">${T("Все насадки", "Барлық қондырмалар")}</a><a class="btn ghost-light" href="${P}/sm23/">${T("О машине", "Машина туралы")}</a></div>
+    </div>
+    <div class="stage-ph" id="tilt"><img src="/img/stage.jpg" alt="${T("ATARIA AT-SM23", "ATARIA AT-SM23")}" loading="lazy"></div>
+  </div>
+</section>
+
+<section class="wrap block-section">
+  <div class="sec-head"><h2>${T("Что можно приготовить", "Не дайындауға болады")}</h2></div>
+  <div class="scenes">
+    <a class="scene-card big" href="${P}/sm23/attachments/hook/"><img src="/img/scene-dough.jpg" alt="" loading="lazy"><span><b>${T("Тесто", "Қамыр")}</b>${T("Крюк, скорость 1–2", "Ілгек, 1–2 жылдамдық")}</span></a>
+    <a class="scene-card" href="${P}/sm23/attachments/whisk/"><img src="/img/scene-cream.jpg" alt="" loading="lazy"><span><b>${T("Крем и безе", "Крем және безе")}</b>${T("Венчик, скорость 1–6", "Венчик, 1–6 жылдамдық")}</span></a>
+    <a class="scene-card" href="${P}/sm23/attachments/roller/"><img src="/img/scene-pasta.jpg" alt="" loading="lazy"><span><b>${T("Раскатка и лапша", "Қамыр жаю және кеспе")}</b>${T("8 уровней толщины", "8 қалыңдық деңгейі")}</span></a>
+    <a class="scene-card tall" href="${P}/sm23/attachments/slicer/"><img src="/img/scene-veg.jpg" alt="" loading="lazy"><span><b>${T("Овощи и сыр", "Көкөніс және ірімшік")}</b>${T("Три барабана", "Үш барабан")}</span></a>
+  </div>
+</section>
+
 <section class="wrap block-section">
   <div class="sec-head"><h2>${T("Ваша техника", "Сіздің техникаңыз")}</h2></div>
   <div class="pick">
@@ -297,6 +319,14 @@ ${footer()}
     <a href="${P}/sm23/recipes/"><span class="ic">${ICONS.book}</span><h3>${L.recipes}</h3><p>${T(`${sm.recipes.length} проверенных рецептов.`, `${sm.recipes.length} сыналған рецепт.`)}</p></a>
     <a href="${P}/sm23/care/"><span class="ic">${ICONS.care}</span><h3>${L.care}</h3><p>${T("Мытьё, хранение, безопасность.", "Жуу, сақтау, қауіпсіздік.")}</p></a>
   </div>
+
+  <section class="block-section viewer" id="viewer">
+    <div class="sec-head"><h2>${T("Посмотрите со всех сторон", "Барлық жағынан қараңыз")}</h2><span class="hint">${T("Потяните влево или вправо", "Солға немесе оңға сүйреңіз")}</span></div>
+    <div class="vstage" id="vstage" data-views="4">
+      <img src="/img/v-front.jpg" alt="" data-i="0"><img src="/img/v-side.jpg" alt="" data-i="1" loading="lazy"><img src="/img/v-back.jpg" alt="" data-i="2" loading="lazy"><img src="/img/v-top.jpg" alt="" data-i="3" loading="lazy">
+    </div>
+    <div class="vtabs" id="vtabs"><button class="on" data-i="0">${T("Спереди", "Алдынан")}</button><button data-i="1">${T("Сбоку", "Бүйірінен")}</button><button data-i="2">${T("Сзади", "Артынан")}</button><button data-i="3">${T("Сверху", "Жоғарыдан")}</button></div>
+  </section>
 
   <div class="story">
     <div class="ph"><img src="/img/sm23-host.jpg" alt="${T("Хозяйка засыпает муку в чашу ATARIA", "Үй иесі ATARIA тостағанына ұн салып жатыр")}" loading="lazy"></div>
@@ -373,6 +403,7 @@ ${footer()}
         image: a.image,
         active: "attachments",
         body: `<div class="wrap">${crumbs([[HOME, `${P}/`], [sm.kind, `${P}/sm23/`], [L.attachments, `${P}/sm23/attachments/`], [a.name, ""]])}${layout(sm, "attachments", `
+        ${a.scene ? `<figure class="scene"><img src="/${esc(a.scene)}" alt="${esc(a.name)}" loading="lazy"></figure>` : ""}
         <div class="split top">
           <div class="sticky-col"><div class="ph sticky">${media(a)}</div>${a.photo ? `<figure class="live"><img src="/${esc(a.photo)}" alt="${esc(a.name)}" loading="lazy"><figcaption>${T("Вживую на вашей кухне", "Асүйде тікелей")}</figcaption></figure>` : ""}</div>
           <div>
