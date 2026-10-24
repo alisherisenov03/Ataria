@@ -1,1 +1,1 @@
-{"headers":[{"source":"/(.*)\\.(jpg|png|svg)","headers":[{"key":"Cache-Control","value":"public, max-age=604800"}]},{"source":"/content.json","headers":[{"key":"Cache-Control","value":"no-cache"}]}]}
+{"trailingSlash":true,"headers":[{"source":"/(.*)\\.(jpg|png|svg|webp)","headers":[{"key":"Cache-Control","value":"public, max-age=604800"}]},{"source":"/(style.css|site.js|content.json|search-index.json)","headers":[{"key":"Cache-Control","value":"no-cache"}]}]}

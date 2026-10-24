@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://ataria-guide.vercel.app/sitemap.xml

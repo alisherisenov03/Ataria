@@ -1,0 +1,489 @@
+// Static site generator: content.json -> real HTML pages (one URL per section, recipe and attachment).
+// Run from the guide/ folder: node tools/build.mjs
+import fs from "node:fs";
+import path from "node:path";
+
+const ROOT = path.resolve(import.meta.dirname, "..");
+const DATA = JSON.parse(fs.readFileSync(path.join(ROOT, "content.json"), "utf8"));
+const API = "https://jarvis-backend-alisher25.vercel.app";
+const SITE = "https://ataria-guide.vercel.app";
+const WA = API + DATA.support.whatsapp;
+const KASPI_REVIEW = DATA.support.kaspi_review;
+const KASPI_CARD = DATA.support.kaspi_card;
+
+const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const att = (p, id) => p.attachments.find((a) => a.id === id);
+const minutesLabel = (m) => (m >= 60 ? `${Math.floor(m / 60)} ч${m % 60 ? " " + (m % 60) + " мин" : ""}` : `${m} мин`);
+const splitIng = (s) => { const [n, ...rest] = s.split(" — "); return rest.length ? [n, rest.join(" — ")] : [s, ""]; };
+
+const ICONS = {
+  slicer: '<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="10" y="20" width="44" height="26" rx="13"/><circle cx="22" cy="33" r="1.4"/><circle cx="30" cy="29" r="1.4"/><circle cx="38" cy="33" r="1.4"/><circle cx="46" cy="29" r="1.4"/><circle cx="26" cy="38" r="1.4"/><circle cx="34" cy="38" r="1.4"/><circle cx="42" cy="38" r="1.4"/><path d="M6 33h4M54 33h4"/></svg>',
+  roller: '<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="12" y="16" width="40" height="12" rx="6"/><rect x="12" y="30" width="40" height="12" rx="6"/><path d="M18 50c6-3 22-3 28 0M6 22h6M52 36h6"/></svg>',
+  noodle: '<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="10" y="12" width="44" height="14" rx="7"/><path d="M18 30c0 10 2 18 0 24M26 30c0 10-2 18 0 24M34 30c0 10 2 18 0 24M42 30c0 10-2 18 0 24"/></svg>',
+  airfryer: '<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="1.2"><rect x="14" y="8" width="36" height="48" rx="14"/><rect x="20" y="30" width="24" height="18" rx="5"/><circle cx="32" cy="19" r="4"/><path d="M28 56v2M36 56v2"/></svg>',
+  clock: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',
+  people: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.5 2.7-6 6-6s6 2.5 6 6"/><circle cx="17" cy="9" r="2.4"/><path d="M16 14.2c3 0 5 2 5 5"/></svg>',
+  search: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></svg>',
+  menu: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M4 8h16M4 16h16"/></svg>',
+  speed: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M4 17a8 8 0 1 1 16 0"/><path d="m12 17 4-6"/></svg>',
+  parts: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="4" y="4" width="7" height="7" rx="2"/><rect x="13" y="4" width="7" height="7" rx="2"/><rect x="4" y="13" width="7" height="7" rx="2"/><rect x="13" y="13" width="7" height="7" rx="2"/></svg>',
+  book: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M5 5.5C7.5 4.5 10 4.5 12 6c2-1.5 4.5-1.5 7-.5V19c-2.5-1-5-1-7 .5-2-1.5-4.5-1.5-7-.5z"/><path d="M12 6v13.5"/></svg>',
+  care: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M12 3c3 4 6 6.5 6 10a6 6 0 0 1-12 0c0-3.5 3-6 6-10z"/></svg>',
+  help: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.4-1 .9-1 1.7M12 17v.2"/></svg>',
+};
+const media = (item) => (item.image ? `<img src="/${esc(item.image)}" alt="${esc(item.name || item.title)}" loading="lazy">` : ICONS[item.id] || "");
+
+const files = new Map();
+const emit = (url, html) => files.set(url === "/" ? "index.html" : path.join(url.slice(1), "index.html"), html);
+
+// ---------- layout ----------
+const sm = DATA.products.find((p) => p.id === "sm23");
+const af = DATA.products.find((p) => p.id === "airfryer");
+
+function productNav(p, active) {
+  const items = [
+    ["", "Обзор", "parts"], ["start", "С чего начать", "book"], ["speeds", "Скорости", "speed"],
+    ["attachments", "Насадки", "parts"], ["recipes", "Рецепты", "book"], ["care", "Уход", "care"], ["help", "Помощь", "help"],
+  ];
+  return items.map(([k, l]) => ({ k, l, href: `/${p.id}/${k ? k + "/" : ""}`, on: active === k }));
+}
+
+function header(active) {
+  const nav = productNav(sm, active).filter((x) => ["", "attachments", "recipes", "care", "help"].includes(x.k));
+  return `<header class="top">
+  <div class="top-in">
+    <a href="/" class="logo" aria-label="ATARIA, на главную">ATARIA</a>
+    <nav class="topnav" aria-label="Разделы">
+      <div class="dd">
+        <a href="/sm23/" class="${active !== null && active !== "recipes" && active !== "attachments" ? "on" : ""}">Кухонная машина</a>
+        <div class="dd-menu">
+          ${productNav(sm, "").map((x) => `<a href="${x.href}">${x.l}</a>`).join("")}
+        </div>
+      </div>
+      <a href="/sm23/recipes/" class="${active === "recipes" ? "on" : ""}">Рецепты</a>
+      <a href="/sm23/attachments/" class="${active === "attachments" ? "on" : ""}">Насадки</a>
+      <a href="/airfryer/" class="soon-link">Аэрогриль <i>скоро</i></a>
+    </nav>
+    <div class="top-act">
+      <button class="icon-btn" id="open-search" aria-label="Поиск">${ICONS.search}</button>
+      <a class="btn sm" href="${esc(WA)}" target="_blank" rel="noopener">WhatsApp</a>
+      <button class="icon-btn menu-btn" id="open-menu" aria-label="Меню">${ICONS.menu}</button>
+    </div>
+  </div>
+</header>
+<div class="drawer" id="drawer" hidden>
+  <div class="drawer-in">
+    <button class="x" id="close-menu">Закрыть</button>
+    <p class="eyebrow">Кухонная машина AT-SM23</p>
+    ${productNav(sm, "").map((x) => `<a href="${x.href}">${x.l}</a>`).join("")}
+    <p class="eyebrow" style="margin-top:22px">Скоро</p>
+    <a href="/airfryer/">Аэрогриль ATARIA</a>
+    <a class="btn" style="margin-top:22px" href="${esc(WA)}" target="_blank" rel="noopener">Написать в WhatsApp</a>
+  </div>
+</div>
+<div class="search" id="search" hidden>
+  <div class="search-in">
+    <div class="search-bar">${ICONS.search}<input id="q" type="search" placeholder="Например: тесто, мясорубка, скорость" autocomplete="off"><button class="x" id="close-search">Закрыть</button></div>
+    <div id="results" class="results"></div>
+  </div>
+</div>`;
+}
+
+function footer() {
+  return `<footer class="foot">
+  <div class="foot-in">
+    <div class="foot-brand"><a href="/" class="logo">ATARIA</a><p>Рецепты, насадки и простые советы для вашей техники. Казахстан.</p></div>
+    <div><p class="eyebrow">Кухонная машина</p>${productNav(sm, "").map((x) => `<a href="${x.href}">${x.l}</a>`).join("")}</div>
+    <div><p class="eyebrow">Рецепты</p>${sm.recipes.slice(0, 5).map((r) => `<a href="/sm23/recipes/${r.id}/">${esc(r.title)}</a>`).join("")}<a href="/sm23/recipes/">Все рецепты</a></div>
+    <div><p class="eyebrow">Связь</p><a href="${esc(WA)}" target="_blank" rel="noopener">Поддержка в WhatsApp</a>${KASPI_CARD ? `<a href="${esc(KASPI_CARD)}" target="_blank" rel="noopener">Карточка на Kaspi</a>` : ""}${KASPI_REVIEW ? `<a href="${esc(KASPI_REVIEW)}" target="_blank" rel="noopener">Оставить отзыв</a>` : ""}</div>
+  </div>
+  <p class="copy">© ATARIA</p>
+</footer>`;
+}
+
+function page({ url, title, desc, body, active = null, image, extraHead = "" }) {
+  const full = title.includes("ATARIA") ? title : `${title} · ATARIA`;
+  const og = image ? `${SITE}/${image}` : `${SITE}/img/sm23-hero.jpg`;
+  emit(url, `<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>${esc(full)}</title>
+<meta name="description" content="${esc(desc)}">
+<meta property="og:title" content="${esc(full)}">
+<meta property="og:description" content="${esc(desc)}">
+<meta property="og:image" content="${esc(og)}">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#F6F2EC">
+<link rel="canonical" href="${SITE}${url}">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" href="/img/icon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/style.css">
+${extraHead}
+</head>
+<body>
+${header(active)}
+<main id="main">
+${body}
+</main>
+${footer()}
+<script src="/site.js" defer></script>
+</body>
+</html>
+`);
+}
+
+const crumbs = (list) => `<nav class="crumbs" aria-label="Путь">${list.map(([l, h]) => (h ? `<a href="${h}">${esc(l)}</a>` : `<span>${esc(l)}</span>`)).join("<i>/</i>")}</nav>`;
+
+function layout(p, active, inner, sideExtra = "") {
+  const nav = productNav(p, active).map((x) => `<a href="${x.href}" class="${x.on ? "on" : ""}">${x.l}</a>`).join("");
+  return `<div class="shell">
+  <aside class="aside"><p class="eyebrow">${esc(p.name)}</p><nav>${nav}</nav>${sideExtra}</aside>
+  <div class="content">
+    <nav class="tabs" aria-label="Разделы">${nav}</nav>
+    ${inner}
+  </div>
+</div>`;
+}
+
+const pageHead = (eyebrow, title, lead = "") => `<div class="page-head"><p class="eyebrow">${esc(eyebrow)}</p><h1>${esc(title)}</h1>${lead ? `<p class="lead">${esc(lead)}</p>` : ""}</div>`;
+
+function attGrid(p, list) {
+  return `<div class="grid">${list.map((a) => `<a class="card" href="/${p.id}/attachments/${a.id}/">
+    <div class="ph">${media(a)}</div>
+    <div class="body"><span class="meta">${esc(a.group)}${a.speed ? " · скорость " + esc(a.speed) : ""}</span><h3>${esc(a.name)}</h3><span class="meta">${esc(a.short)}</span></div></a>`).join("")}</div>`;
+}
+
+function recGrid(p, list) {
+  return `<div class="grid">${list.map((r) => `<a class="card" href="/${p.id}/recipes/${r.id}/">
+    <div class="ph">${r.image ? `<img src="/${esc(r.image)}" alt="${esc(r.title)}" loading="lazy">` : ""}<span class="time">${ICONS.clock}${esc(r.time)}</span></div>
+    <div class="body"><span class="meta">${esc(r.tag)}</span><h3>${esc(r.title)}</h3>
+      <div class="chips">${r.attachments.map((id) => `<span class="chip">${esc(att(p, id)?.name || id)}</span>`).join("")}</div></div></a>`).join("")}</div>`;
+}
+
+function reviewBlock(p, big = false) {
+  if (!KASPI_REVIEW) return "";
+  return `<section class="block-section"><div class="review">
+    <div><p class="eyebrow">Вам нравится ${esc(p.name)}?</p>
+    <h3>${big ? "Оставьте отзыв на Kaspi, это займёт минуту" : "Будем рады вашему отзыву на Kaspi"}</h3>
+    <p class="lead sm">Отзыв помогает другим выбрать, а нам становиться лучше. ${esc(DATA.support.kaspi_review_hint || "")}</p></div>
+    <a class="btn" href="${esc(KASPI_REVIEW)}" target="_blank" rel="noopener">Оставить отзыв на Kaspi</a>
+  </div></section>`;
+}
+
+const helpBand = () => `<section class="block-section"><div class="band">
+  <div><p class="eyebrow">Помощь</p><h3>Что-то не получается?</h3><p class="lead sm">Напишите нам в WhatsApp. Подскажем по насадкам, скоростям и рецептам.</p></div>
+  <a class="btn" href="${esc(WA)}" target="_blank" rel="noopener">Написать в WhatsApp</a></div></section>`;
+
+// ---------- pages ----------
+// Home
+page({
+  url: "/",
+  title: "ATARIA — рецепты и инструкции",
+  desc: "Как пользоваться техникой ATARIA: насадки, скорости, пошаговые рецепты и уход.",
+  body: `
+<section class="hero">
+  <div class="hero-txt">
+    <p class="eyebrow">ATARIA</p>
+    <h1>Готовим вместе</h1>
+    <div class="rule"></div>
+    <p class="lead">Рецепты, насадки и простые советы для вашей техники. Выберите, что у вас дома, и мы покажем, с чего начать.</p>
+    <div class="actions"><a class="btn" href="/sm23/start/">С чего начать</a><a class="btn ghost" href="/sm23/recipes/">Рецепты</a></div>
+  </div>
+  <div class="hero-ph"><img src="/img/sm23-host.jpg" alt="Хозяйка готовит тесто на кухонной машине ATARIA"></div>
+</section>
+
+<section class="wrap block-section">
+  <div class="sec-head"><h2>Ваша техника</h2></div>
+  <div class="pick">
+    <a class="pick-card" href="/sm23/">
+      <div class="ph"><img src="/${esc(sm.hero)}" alt="${esc(sm.name)}"></div>
+      <div class="body"><p class="eyebrow">${esc(sm.kind)}</p><h3>${esc(sm.name)}</h3><p class="lead sm">${esc(sm.tagline)}</p><span class="more">Открыть инструкцию →</span></div>
+    </a>
+    <a class="pick-card soon" href="/airfryer/">
+      <span class="badge">Скоро</span>
+      <div class="ph">${ICONS.airfryer}</div>
+      <div class="body"><p class="eyebrow">${esc(af.kind)}</p><h3>${esc(af.name)}</h3><p class="lead sm">${esc(af.tagline)}</p><span class="more">Узнать первым →</span></div>
+    </a>
+  </div>
+</section>
+
+<section class="wrap block-section">
+  <div class="sec-head"><h2>Что приготовить сегодня</h2><a href="/sm23/recipes/">Все рецепты →</a></div>
+  ${recGrid(sm, sm.recipes.slice(0, 4))}
+</section>
+
+<section class="wrap block-section">
+  <div class="sec-head"><h2>Всё о вашей машине</h2></div>
+  <div class="tiles">
+    <a href="/sm23/start/"><span class="ic">${ICONS.book}</span><h3>С чего начать</h3><p>Пять шагов до первого замеса.</p></a>
+    <a href="/sm23/attachments/"><span class="ic">${ICONS.parts}</span><h3>Насадки</h3><p>Для чего каждая и как ею пользоваться.</p></a>
+    <a href="/sm23/speeds/"><span class="ic">${ICONS.speed}</span><h3>Скорости</h3><p>Какую выбрать для теста, крема и фарша.</p></a>
+    <a href="/sm23/care/"><span class="ic">${ICONS.care}</span><h3>Уход</h3><p>Как мыть и хранить, чтобы служила годами.</p></a>
+  </div>
+</section>
+<div class="wrap">${helpBand()}</div>`,
+});
+
+// Product overview
+page({
+  url: "/sm23/",
+  title: `${sm.name}: инструкция и рецепты`,
+  desc: sm.intro,
+  image: sm.hero,
+  active: "",
+  body: `
+<section class="p-hero wrap">
+  <div class="txt">
+    ${crumbs([["Главная", "/"], [sm.kind, ""]])}
+    <p class="eyebrow">${esc(sm.kind)}</p>
+    <h1>${esc(sm.name)}</h1>
+    <div class="rule"></div>
+    <p class="lead">${esc(sm.intro)}</p>
+    <div class="actions"><a class="btn" href="/sm23/start/">С чего начать</a><a class="btn ghost" href="/sm23/recipes/">Рецепты</a></div>
+  </div>
+  <div class="ph"><img src="/${esc(sm.hero)}" alt="${esc(sm.name)}"></div>
+</section>
+<div class="wrap">
+  <div class="specs">${sm.specs.map((s) => `<div class="spec"><div class="k">${esc(s.label)}</div><div class="v">${esc(s.value)}</div></div>`).join("")}</div>
+
+  <div class="tiles block-section">
+    <a href="/sm23/start/"><span class="ic">${ICONS.book}</span><h3>С чего начать</h3><p>Первый запуск за 5 шагов.</p></a>
+    <a href="/sm23/attachments/"><span class="ic">${ICONS.parts}</span><h3>Насадки</h3><p>${sm.attachments.length} насадок и для чего они.</p></a>
+    <a href="/sm23/recipes/"><span class="ic">${ICONS.book}</span><h3>Рецепты</h3><p>${sm.recipes.length} проверенных рецептов.</p></a>
+    <a href="/sm23/care/"><span class="ic">${ICONS.care}</span><h3>Уход</h3><p>Мытьё, хранение, безопасность.</p></a>
+  </div>
+
+  <div class="story">
+    <div class="ph"><img src="/img/sm23-host.jpg" alt="Хозяйка засыпает муку в чашу ATARIA" loading="lazy"></div>
+    <div class="txt">
+      <p class="eyebrow">Как это бывает дома</p>
+      <blockquote>«Засыпала муку, нажала кнопку и пошла резать лук. Через три минуты тесто для беша готово, руки чистые»</blockquote>
+      <p class="lead sm">Машина берёт на себя самое тяжёлое: замес, фарш, раскатку. Вам остаётся самое приятное.</p>
+      <div class="actions"><a class="btn ghost" href="/sm23/recipes/besh/">Рецепт теста для беша</a></div>
+    </div>
+  </div>
+
+  <section class="block-section">
+    <div class="sec-head"><h2>Насадки</h2><a href="/sm23/attachments/">Все насадки →</a></div>
+    ${attGrid(sm, sm.attachments.slice(0, 4))}
+  </section>
+  <section class="block-section">
+    <div class="sec-head"><h2>Что приготовить</h2><a href="/sm23/recipes/">Все рецепты →</a></div>
+    ${recGrid(sm, sm.recipes.slice(0, 4))}
+  </section>
+  ${helpBand()}
+</div>`,
+});
+
+// Start
+page({
+  url: "/sm23/start/",
+  title: "С чего начать",
+  desc: "Первый запуск кухонной машины ATARIA AT-SM23 за пять простых шагов.",
+  active: "start",
+  body: `<div class="wrap">${crumbs([["Главная", "/"], [sm.kind, "/sm23/"], ["С чего начать", ""]])}${layout(sm, "start", `
+    ${pageHead("Первый запуск", "С чего начать", "Пять шагов, и вы готовы к первому замесу.")}
+    <div class="steps">${sm.quickstart.map((s, i) => `<div class="step"><div class="n">${i + 1}</div><div><h3>${esc(s.title)}</h3><p>${esc(s.text)}</p></div></div>`).join("")}</div>
+    <section class="block-section"><div class="sec-head"><h2>Что где на машине</h2></div>
+      <div class="split"><div class="ph"><img src="/img/dial.jpg" alt="Регулятор скорости" loading="lazy"></div>
+      <div class="parts one">${sm.parts.map((x) => `<div class="part"><h3>${esc(x.name)}</h3><p>${esc(x.text)}</p></div>`).join("")}</div></div>
+    </section>
+    <div class="actions"><a class="btn" href="/sm23/attachments/">Дальше: насадки</a><a class="btn ghost" href="/sm23/speeds/">Скорости</a></div>`)}</div>`,
+});
+
+// Speeds
+page({
+  url: "/sm23/speeds/",
+  title: "Какая скорость для чего",
+  desc: "Таблица скоростей кухонной машины ATARIA AT-SM23 для теста, крема, фарша и овощей.",
+  active: "speeds",
+  body: `<div class="wrap">${crumbs([["Главная", "/"], [sm.kind, "/sm23/"], ["Скорости", ""]])}${layout(sm, "speeds", `
+    ${pageHead("Подсказка", "Какая скорость для чего", "Всегда начинайте со скорости 1 и прибавляйте постепенно. Так мука не разлетится по кухне.")}
+    <div class="speeds">${sm.speeds.map((s) => `<a href="/sm23/attachments/${s.attachment}/"><span class="nm">${esc(s.name)}</span><span class="rg">${esc(s.range)}</span><span class="fo">${esc(s.for)}</span></a>`).join("")}</div>
+    <div class="note"><b>Режим P.</b> Импульсный режим работает, пока вы держите кнопку. Подходит, чтобы быстро измельчить или перемешать.</div>
+    ${helpBand()}`)}</div>`,
+});
+
+// Attachments
+{
+  const groups = [...new Set(sm.attachments.map((a) => a.group))];
+  page({
+    url: "/sm23/attachments/",
+    title: "Насадки",
+    desc: "Все насадки ATARIA AT-SM23: крюк, лопатка, венчик, мясорубка, овощерезка, блендер, тестораскатка и лапшерезка.",
+    active: "attachments",
+    body: `<div class="wrap">${crumbs([["Главная", "/"], [sm.kind, "/sm23/"], ["Насадки", ""]])}${layout(sm, "attachments", `
+      ${pageHead(sm.name, "Насадки", "В чаше месим и взбиваем. Спереди крутим, трём, раскатываем и режем. Сверху блендер.")}
+      ${groups.map((g) => `<section class="grp"><p class="eyebrow">${esc(g)}</p>${attGrid(sm, sm.attachments.filter((a) => a.group === g))}</section>`).join("")}`)}</div>`,
+  });
+  for (const a of sm.attachments) {
+    const recs = sm.recipes.filter((r) => r.attachments.includes(a.id));
+    const side = `<p class="eyebrow" style="margin-top:26px">Все насадки</p><nav>${sm.attachments.map((x) => `<a href="/sm23/attachments/${x.id}/" class="${x.id === a.id ? "on" : ""}">${esc(x.name)}</a>`).join("")}</nav>`;
+    page({
+      url: `/sm23/attachments/${a.id}/`,
+      title: a.name,
+      desc: a.what,
+      image: a.image,
+      active: "attachments",
+      body: `<div class="wrap">${crumbs([["Главная", "/"], [sm.kind, "/sm23/"], ["Насадки", "/sm23/attachments/"], [a.name, ""]])}${layout(sm, "attachments", `
+        <div class="split top">
+          <div class="ph sticky">${media(a)}</div>
+          <div>
+            <p class="eyebrow">${esc(a.group)}</p><h1>${esc(a.name)}</h1><div class="rule"></div>
+            <p class="lead">${esc(a.what)}</p>
+            ${a.speed ? `<div class="speedbig"><span class="eyebrow">Скорость</span><b>${esc(a.speed)}</b></div>` : ""}
+            <div class="block"><h3>Подходит для</h3><div class="chips">${a.use_for.map((u) => `<span class="chip">${esc(u)}</span>`).join("")}</div></div>
+            ${a.kit ? `<div class="block"><h3>В комплекте</h3><ul class="clean">${a.kit.map((k) => `<li>${esc(k)}</li>`).join("")}</ul></div>` : ""}
+            <div class="block"><h3>Как пользоваться</h3><ol class="num">${a.how.map((k) => `<li>${esc(k)}</li>`).join("")}</ol></div>
+            <div class="block"><h3>Совет</h3><ul class="clean">${a.tips.map((k) => `<li>${esc(k)}</li>`).join("")}</ul></div>
+            <div class="block"><h3>Чего не делать</h3><ul class="clean warn">${a.dont.map((k) => `<li>${esc(k)}</li>`).join("")}</ul></div>
+          </div>
+        </div>
+        ${recs.length ? `<section class="block-section"><div class="sec-head"><h2>Рецепты с этой насадкой</h2></div>${recGrid(sm, recs)}</section>` : ""}`, side)}</div>`,
+    });
+  }
+}
+
+// Recipes
+{
+  const tags = ["Все", ...new Set(sm.recipes.map((r) => r.tag))];
+  page({
+    url: "/sm23/recipes/",
+    title: "Рецепты",
+    desc: "Проверенные рецепты для ATARIA AT-SM23 с точными граммами, скоростями и временем.",
+    active: "recipes",
+    body: `<div class="wrap">${crumbs([["Главная", "/"], [sm.kind, "/sm23/"], ["Рецепты", ""]])}${layout(sm, "recipes", `
+      ${pageHead(sm.name, "Рецепты", "Точные граммы, скорости и время. Откройте рецепт и нажмите «Готовить по шагам»: крупный текст и таймер прямо в телефоне.")}
+      <div class="filters" id="filters">${tags.map((t, i) => `<button data-tag="${esc(t)}" class="${i === 0 ? "on" : ""}">${esc(t)}</button>`).join("")}</div>
+      <div class="grid" id="rgrid">${sm.recipes.map((r) => `<a class="card" data-tag="${esc(r.tag)}" href="/sm23/recipes/${r.id}/">
+        <div class="ph"><img src="/${esc(r.image)}" alt="${esc(r.title)}" loading="lazy"><span class="time">${ICONS.clock}${esc(r.time)}</span></div>
+        <div class="body"><span class="meta">${esc(r.tag)} · ${esc(r.servings)}</span><h3>${esc(r.title)}</h3>
+        <div class="chips">${r.attachments.map((id) => `<span class="chip">${esc(att(sm, id)?.name || id)}</span>`).join("")}</div></div></a>`).join("")}</div>`)}</div>`,
+  });
+  sm.recipes.forEach((r, idx) => {
+    const others = sm.recipes.filter((x) => x.id !== r.id);
+    const side = `<p class="eyebrow" style="margin-top:26px">Все рецепты</p><nav>${sm.recipes.map((x) => `<a href="/sm23/recipes/${x.id}/" class="${x.id === r.id ? "on" : ""}">${esc(x.title)}</a>`).join("")}</nav>`;
+    const ld = { "@context": "https://schema.org", "@type": "Recipe", name: r.title, image: `${SITE}/${r.image}`, description: r.intro,
+      recipeYield: r.servings, recipeIngredient: r.ingredients, recipeInstructions: r.steps.map((s) => ({ "@type": "HowToStep", text: s.text })) };
+    page({
+      url: `/sm23/recipes/${r.id}/`,
+      title: r.title,
+      desc: r.intro,
+      image: r.image,
+      active: "recipes",
+      extraHead: `<script type="application/ld+json">${JSON.stringify(ld)}</script>`,
+      body: `<div class="wrap">${crumbs([["Главная", "/"], [sm.kind, "/sm23/"], ["Рецепты", "/sm23/recipes/"], [r.title, ""]])}${layout(sm, "recipes", `
+        <div class="cover"><img src="/${esc(r.image)}" alt="${esc(r.title)}"></div>
+        <div class="page-head tight"><p class="eyebrow">${esc(r.tag)}</p><h1>${esc(r.title)}</h1><p class="lead">${esc(r.intro)}</p></div>
+        <div class="meta-strip">
+          <div>${ICONS.clock}<span><b>${esc(r.time)}</b>время</span></div>
+          <div>${ICONS.people}<span><b>${esc(r.servings)}</b>порций</span></div>
+          <div>${ICONS.parts}<span><b>${r.attachments.map((id) => esc(att(sm, id)?.name || id)).join(", ")}</b>насадки</span></div>
+        </div>
+        <div class="actions"><button class="btn" id="cook">Готовить по шагам</button>
+          ${r.attachments.map((id) => `<a class="btn ghost" href="/sm23/attachments/${id}/">${esc(att(sm, id)?.name || id)}</a>`).join("")}</div>
+        <div class="recipe-cols">
+          <div class="ing-box"><h3>Что понадобится</h3>
+            <table class="ing">${r.ingredients.map((i) => { const [n, q] = splitIng(i); return `<tr><td>${esc(n)}</td><td>${esc(q)}</td></tr>`; }).join("")}</table>
+          </div>
+          <div><h3 class="h-s">Как готовить</h3><div class="rsteps">${r.steps.map((s, i) => `<div class="rstep"><div class="n">${i + 1}</div><div><p>${esc(s.text)}</p><div class="tags">
+            ${s.attachment ? `<span class="chip">${esc(att(sm, s.attachment)?.name || "")}</span>` : ""}
+            ${s.speed ? `<span class="chip">скорость ${esc(s.speed)}</span>` : ""}
+            ${s.minutes ? `<span class="chip">${esc(minutesLabel(s.minutes))}</span>` : ""}</div></div></div>`).join("")}</div></div>
+        </div>
+        ${reviewBlock(sm)}
+        <section class="block-section"><div class="sec-head"><h2>Ещё рецепты</h2><a href="/sm23/recipes/">Все →</a></div>${recGrid(sm, [...others.slice(idx), ...others.slice(0, idx)].slice(0, 3))}</section>
+        <script type="application/json" id="recipe-data">${JSON.stringify({ id: r.id, title: r.title, steps: r.steps.map((s) => ({ ...s, attachmentName: s.attachment ? att(sm, s.attachment)?.name : "" })) })}</script>`, side)}</div>`,
+    });
+    page({
+      url: `/sm23/recipes/${r.id}/done/`,
+      title: `${r.title}: готово`,
+      desc: "Приятного аппетита!",
+      image: r.image,
+      active: "recipes",
+      body: `<section class="done wrap">
+        <p class="eyebrow">${esc(r.title)}</p><h1>Приятного аппетита!</h1><p class="lead">Надеемся, получилось вкусно.</p>
+      </section>
+      <div class="wrap">${reviewBlock(sm, true)}
+      <section class="block-section"><div class="sec-head"><h2>Что приготовить ещё</h2></div>${recGrid(sm, others.slice(0, 4))}</section></div>`,
+    });
+  });
+}
+
+// Care
+page({
+  url: "/sm23/care/",
+  title: "Уход и безопасность",
+  desc: "Как мыть, хранить и безопасно пользоваться кухонной машиной ATARIA AT-SM23.",
+  active: "care",
+  body: `<div class="wrap">${crumbs([["Главная", "/"], [sm.kind, "/sm23/"], ["Уход", ""]])}${layout(sm, "care", `
+    ${pageHead(sm.name, "Уход и безопасность", "Несколько простых привычек, и машина прослужит долгие годы.")}
+    <div class="parts">${sm.care.map((c) => `<div class="part"><h3>${esc(c.title)}</h3><p>${esc(c.text)}</p></div>`).join("")}</div>
+    <section class="block-section"><div class="sec-head"><h2>Важно</h2></div><div class="note warnbox"><ul class="clean warn">${sm.safety.map((s) => `<li>${esc(s)}</li>`).join("")}</ul></div></section>`)}</div>`,
+});
+
+// Help
+page({
+  url: "/sm23/help/",
+  title: "Вопросы и помощь",
+  desc: "Ответы на частые вопросы по ATARIA AT-SM23 и связь с поддержкой.",
+  active: "help",
+  extraHead: `<script type="application/ld+json">${JSON.stringify({ "@context": "https://schema.org", "@type": "FAQPage", mainEntity: sm.faq.map((f) => ({ "@type": "Question", name: f.q, acceptedAnswer: { "@type": "Answer", text: f.a } })) })}</script>`,
+  body: `<div class="wrap">${crumbs([["Главная", "/"], [sm.kind, "/sm23/"], ["Помощь", ""]])}${layout(sm, "help", `
+    ${pageHead(sm.name, "Вопросы и помощь")}
+    <div class="faqs">${sm.faq.map((f) => `<details class="faq"><summary>${esc(f.q)}</summary><p>${esc(f.a)}</p></details>`).join("")}</div>
+    ${helpBand()}${reviewBlock(sm)}`)}</div>`,
+});
+
+// Air fryer (soon)
+page({
+  url: "/airfryer/",
+  title: "Аэрогриль ATARIA — скоро",
+  desc: "Инструкции и рецепты для аэрогриля ATARIA готовим к выходу.",
+  body: `<section class="hero soonp">
+    <div class="hero-txt"><p class="eyebrow">Скоро</p><h1>${esc(af.name)}</h1><div class="rule"></div>
+      <p class="lead">Здесь появятся инструкции, режимы и рецепты. Напишите нам, и мы сообщим, когда всё будет готово.</p>
+      <div class="actions"><a class="btn" href="${esc(WA)}" target="_blank" rel="noopener">Сообщить мне</a><a class="btn ghost" href="/sm23/">К кухонной машине</a></div></div>
+    <div class="hero-ph ic-ph">${ICONS.airfryer}</div></section>`,
+});
+
+// Search page + index
+page({
+  url: "/search/",
+  title: "Поиск",
+  desc: "Поиск по инструкциям и рецептам ATARIA.",
+  body: `<div class="wrap"><div class="page-head"><p class="eyebrow">Поиск</p><h1>Найти на сайте</h1></div>
+    <div class="search-bar big">${ICONS.search}<input id="q2" type="search" placeholder="Например: тесто, мясорубка, скорость" autocomplete="off"></div>
+    <div id="results2" class="results"></div></div>`,
+});
+
+const index = [
+  ...sm.recipes.map((r) => ({ t: r.title, u: `/sm23/recipes/${r.id}/`, k: "Рецепт", x: [r.intro, r.tag, ...r.ingredients].join(" ") })),
+  ...sm.attachments.map((a) => ({ t: a.name, u: `/sm23/attachments/${a.id}/`, k: "Насадка", x: [a.what, a.short, ...a.use_for].join(" ") })),
+  ...sm.faq.map((f) => ({ t: f.q, u: "/sm23/help/", k: "Вопрос", x: f.a })),
+  { t: "Какая скорость для чего", u: "/sm23/speeds/", k: "Раздел", x: sm.speeds.map((s) => s.name + " " + s.for).join(" ") },
+  { t: "С чего начать", u: "/sm23/start/", k: "Раздел", x: sm.quickstart.map((s) => s.title + " " + s.text).join(" ") },
+  { t: "Уход и безопасность", u: "/sm23/care/", k: "Раздел", x: [...sm.care.map((c) => c.title + " " + c.text), ...sm.safety].join(" ") },
+];
+fs.writeFileSync(path.join(ROOT, "search-index.json"), JSON.stringify(index));
+
+// 404
+emit("/404", "");
+files.delete(path.join("404", "index.html"));
+files.set("404.html", `<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Страница не найдена · ATARIA</title><link rel="stylesheet" href="/style.css"></head><body><section class="done wrap"><p class="eyebrow">404</p><h1>Такой страницы нет</h1><p class="lead">Возможно, ссылка устарела.</p><div class="actions" style="justify-content:center"><a class="btn" href="/">На главную</a></div></section></body></html>`);
+
+// ---------- write ----------
+for (const [rel, html] of files) {
+  const out = path.join(ROOT, rel);
+  fs.mkdirSync(path.dirname(out), { recursive: true });
+  fs.writeFileSync(out, html);
+}
+const sitemap = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${[...files.keys()].filter((f) => f.endsWith("index.html")).map((f) => `<url><loc>${SITE}/${f.replace(/index\.html$/, "")}</loc></url>`).join("\n")}\n</urlset>\n`;
+fs.writeFileSync(path.join(ROOT, "sitemap.xml"), sitemap);
+fs.writeFileSync(path.join(ROOT, "robots.txt"), `User-agent: *\nAllow: /\nSitemap: ${SITE}/sitemap.xml\n`);
+console.log(`built ${files.size} pages`);

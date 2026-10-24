@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Домашние котлеты · ATARIA</title>
+<meta name="description" content="Свой фарш без лишнего. Мясорубка прокручивает, лопатка вымешивает до сочности.">
+<meta property="og:title" content="Домашние котлеты · ATARIA">
+<meta property="og:description" content="Свой фарш без лишнего. Мясорубка прокручивает, лопатка вымешивает до сочности.">
+<meta property="og:image" content="https://ataria-guide.vercel.app/img/r-kotlety.jpg">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#F6F2EC">
+<link rel="canonical" href="https://ataria-guide.vercel.app/sm23/recipes/kotlety/">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" href="/img/icon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/style.css">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"Recipe","name":"Домашние котлеты","image":"https://ataria-guide.vercel.app/img/r-kotlety.jpg","description":"Свой фарш без лишнего. Мясорубка прокручивает, лопатка вымешивает до сочности.","recipeYield":"12–14 штук","recipeIngredient":["Говядина — 700 г","Свинина или курица — 300 г","Лук — 2 шт.","Белый хлеб — 2 ломтика","Молоко — 100 мл","Яйцо — 1 шт.","Соль, перец"],"recipeInstructions":[{"@type":"HowToStep","text":"Замочите хлеб в молоке."},{"@type":"HowToStep","text":"Прокрутите мясо, лук и отжатый хлеб через среднюю решётку."},{"@type":"HowToStep","text":"Переложите фарш в чашу, добавьте яйцо, соль, перец и вымешайте лопаткой."},{"@type":"HowToStep","text":"Сформируйте котлеты мокрыми руками."},{"@type":"HowToStep","text":"Обжарьте с двух сторон, затем доведите под крышкой на малом огне."}]}</script>
+</head>
+<body>
+<header class="top">
+  <div class="top-in">
+    <a href="/" class="logo" aria-label="ATARIA, на главную">ATARIA</a>
+    <nav class="topnav" aria-label="Разделы">
+      <div class="dd">
+        <a href="/sm23/" class="">Кухонная машина</a>
+        <div class="dd-menu">
+          <a href="/sm23/">Обзор</a><a href="/sm23/start/">С чего начать</a><a href="/sm23/speeds/">Скорости</a><a href="/sm23/attachments/">Насадки</a><a href="/sm23/recipes/">Рецепты</a><a href="/sm23/care/">Уход</a><a href="/sm23/help/">Помощь</a>
+        </div>
+      </div>
+      <a href="/sm23/recipes/" class="on">Рецепты</a>
+      <a href="/sm23/attachments/" class="">Насадки</a>
+      <a href="/airfryer/" class="soon-link">Аэрогриль <i>скоро</i></a>
+    </nav>
+    <div class="top-act">
+      <button class="icon-btn" id="open-search" aria-label="Поиск"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></svg></button>
+      <a class="btn sm" href="https://jarvis-backend-alisher25.vercel.app/go/wa?src=guide&amp;p=sm23_owner" target="_blank" rel="noopener">WhatsApp</a>
+      <button class="icon-btn menu-btn" id="open-menu" aria-label="Меню"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M4 8h16M4 16h16"/></svg></button>
+    </div>
+  </div>
+</header>
+<div class="drawer" id="drawer" hidden>
+  <div class="drawer-in">
+    <button class="x" id="close-menu">Закрыть</button>
+    <p class="eyebrow">Кухонная машина AT-SM23</p>
+    <a href="/sm23/">Обзор</a><a href="/sm23/start/">С чего начать</a><a href="/sm23/speeds/">Скорости</a><a href="/sm23/attachments/">Насадки</a><a href="/sm23/recipes/">Рецепты</a><a href="/sm23/care/">Уход</a><a href="/sm23/help/">Помощь</a>
+    <p class="eyebrow" style="margin-top:22px">Скоро</p>
+    <a href="/airfryer/">Аэрогриль ATARIA</a>
+    <a class="btn" style="margin-top:22px" href="https://jarvis-backend-alisher25.vercel.app/go/wa?src=guide&amp;p=sm23_owner" target="_blank" rel="noopener">Написать в WhatsApp</a>
+  </div>
+</div>
+<div class="search" id="search" hidden>
+  <div class="search-in">
+    <div class="search-bar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></svg><input id="q" type="search" placeholder="Например: тесто, мясорубка, скорость" autocomplete="off"><button class="x" id="close-search">Закрыть</button></div>
+    <div id="results" class="results"></div>
+  </div>
+</div>
+<main id="main">
+<div class="wrap"><nav class="crumbs" aria-label="Путь"><a href="/">Главная</a><i>/</i><a href="/sm23/">Кухонная машина</a><i>/</i><a href="/sm23/recipes/">Рецепты</a><i>/</i><span>Домашние котлеты</span></nav><div class="shell">
+  <aside class="aside"><p class="eyebrow">ATARIA AT-SM23</p><nav><a href="/sm23/" class="">Обзор</a><a href="/sm23/start/" class="">С чего начать</a><a href="/sm23/speeds/" class="">Скорости</a><a href="/sm23/attachments/" class="">Насадки</a><a href="/sm23/recipes/" class="on">Рецепты</a><a href="/sm23/care/" class="">Уход</a><a href="/sm23/help/" class="">Помощь</a></nav><p class="eyebrow" style="margin-top:26px">Все рецепты</p><nav><a href="/sm23/recipes/besh/" class="">Тесто для бешбармака</a><a href="/sm23/recipes/manty/" class="">Манты</a><a href="/sm23/recipes/baursaki/" class="">Баурсаки</a><a href="/sm23/recipes/pizza/" class="">Пицца дома</a><a href="/sm23/recipes/lagman/" class="">Лапша для лагмана</a><a href="/sm23/recipes/kotlety/" class="on">Домашние котлеты</a><a href="/sm23/recipes/beze/" class="">Безе и взбитые сливки</a><a href="/sm23/recipes/biskvit/" class="">Пышный бисквит</a><a href="/sm23/recipes/morkovcha/" class="">Морковь по-корейски</a><a href="/sm23/recipes/smoothie/" class="">Банановый смузи с клубникой</a></nav></aside>
+  <div class="content">
+    <nav class="tabs" aria-label="Разделы"><a href="/sm23/" class="">Обзор</a><a href="/sm23/start/" class="">С чего начать</a><a href="/sm23/speeds/" class="">Скорости</a><a href="/sm23/attachments/" class="">Насадки</a><a href="/sm23/recipes/" class="on">Рецепты</a><a href="/sm23/care/" class="">Уход</a><a href="/sm23/help/" class="">Помощь</a></nav>
+    
+        <div class="cover"><img src="/img/r-kotlety.jpg" alt="Домашние котлеты"></div>
+        <div class="page-head tight"><p class="eyebrow">Каждый день</p><h1>Домашние котлеты</h1><p class="lead">Свой фарш без лишнего. Мясорубка прокручивает, лопатка вымешивает до сочности.</p></div>
+        <div class="meta-strip">
+          <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span><b>45 мин</b>время</span></div>
+          <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.5 2.7-6 6-6s6 2.5 6 6"/><circle cx="17" cy="9" r="2.4"/><path d="M16 14.2c3 0 5 2 5 5"/></svg><span><b>12–14 штук</b>порций</span></div>
+          <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="4" y="4" width="7" height="7" rx="2"/><rect x="13" y="4" width="7" height="7" rx="2"/><rect x="4" y="13" width="7" height="7" rx="2"/><rect x="13" y="13" width="7" height="7" rx="2"/></svg><span><b>Мясорубка, Лопатка</b>насадки</span></div>
+        </div>
+        <div class="actions"><button class="btn" id="cook">Готовить по шагам</button>
+          <a class="btn ghost" href="/sm23/attachments/grinder/">Мясорубка</a><a class="btn ghost" href="/sm23/attachments/beater/">Лопатка</a></div>
+        <div class="recipe-cols">
+          <div class="ing-box"><h3>Что понадобится</h3>
+            <table class="ing"><tr><td>Говядина</td><td>700 г</td></tr><tr><td>Свинина или курица</td><td>300 г</td></tr><tr><td>Лук</td><td>2 шт.</td></tr><tr><td>Белый хлеб</td><td>2 ломтика</td></tr><tr><td>Молоко</td><td>100 мл</td></tr><tr><td>Яйцо</td><td>1 шт.</td></tr><tr><td>Соль, перец</td><td></td></tr></table>
+          </div>
+          <div><h3 class="h-s">Как готовить</h3><div class="rsteps"><div class="rstep"><div class="n">1</div><div><p>Замочите хлеб в молоке.</p><div class="tags">
+            
+            
+            <span class="chip">5 мин</span></div></div></div><div class="rstep"><div class="n">2</div><div><p>Прокрутите мясо, лук и отжатый хлеб через среднюю решётку.</p><div class="tags">
+            <span class="chip">Мясорубка</span>
+            
+            </div></div></div><div class="rstep"><div class="n">3</div><div><p>Переложите фарш в чашу, добавьте яйцо, соль, перец и вымешайте лопаткой.</p><div class="tags">
+            <span class="chip">Лопатка</span>
+            <span class="chip">скорость 1→2</span>
+            <span class="chip">2 мин</span></div></div></div><div class="rstep"><div class="n">4</div><div><p>Сформируйте котлеты мокрыми руками.</p><div class="tags">
+            
+            
+            </div></div></div><div class="rstep"><div class="n">5</div><div><p>Обжарьте с двух сторон, затем доведите под крышкой на малом огне.</p><div class="tags">
+            
+            
+            <span class="chip">15 мин</span></div></div></div></div></div>
+        </div>
+        <section class="block-section"><div class="review">
+    <div><p class="eyebrow">Вам нравится ATARIA AT-SM23?</p>
+    <h3>Будем рады вашему отзыву на Kaspi</h3>
+    <p class="lead sm">Отзыв помогает другим выбрать, а нам становиться лучше. В приложении Kaspi: Заказы → ваш заказ → Оставить отзыв.</p></div>
+    <a class="btn" href="https://kaspi.kz/shop/p/kuhonnyi-kombain-ataria-at-sm23-temno-seryi-168203173/?c=750000000&amp;v=reviews" target="_blank" rel="noopener">Оставить отзыв на Kaspi</a>
+  </div></section>
+        <section class="block-section"><div class="sec-head"><h2>Ещё рецепты</h2><a href="/sm23/recipes/">Все →</a></div><div class="grid"><a class="card" href="/sm23/recipes/beze/">
+    <div class="ph"><img src="/img/r-beze.jpg" alt="Безе и взбитые сливки" loading="lazy"><span class="time"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>2 ч</span></div>
+    <div class="body"><span class="meta">Десерты</span><h3>Безе и взбитые сливки</h3>
+      <div class="chips"><span class="chip">Венчик</span></div></div></a><a class="card" href="/sm23/recipes/biskvit/">
+    <div class="ph"><img src="/img/r-biskvit.jpg" alt="Пышный бисквит" loading="lazy"><span class="time"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>1 ч</span></div>
+    <div class="body"><span class="meta">Десерты</span><h3>Пышный бисквит</h3>
+      <div class="chips"><span class="chip">Венчик</span></div></div></a><a class="card" href="/sm23/recipes/morkovcha/">
+    <div class="ph"><img src="/img/r-morkovcha.jpg" alt="Морковь по-корейски" loading="lazy"><span class="time"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>20 мин + 4 ч</span></div>
+    <div class="body"><span class="meta">Каждый день</span><h3>Морковь по-корейски</h3>
+      <div class="chips"><span class="chip">Овощерезка</span></div></div></a></div></section>
+        <script type="application/json" id="recipe-data">{"id":"kotlety","title":"Домашние котлеты","steps":[{"text":"Замочите хлеб в молоке.","minutes":5,"attachmentName":""},{"text":"Прокрутите мясо, лук и отжатый хлеб через среднюю решётку.","attachment":"grinder","attachmentName":"Мясорубка"},{"text":"Переложите фарш в чашу, добавьте яйцо, соль, перец и вымешайте лопаткой.","attachment":"beater","speed":"1→2","minutes":2,"attachmentName":"Лопатка"},{"text":"Сформируйте котлеты мокрыми руками.","attachmentName":""},{"text":"Обжарьте с двух сторон, затем доведите под крышкой на малом огне.","minutes":15,"attachmentName":""}]}</script>
+  </div>
+</div></div>
+</main>
+<footer class="foot">
+  <div class="foot-in">
+    <div class="foot-brand"><a href="/" class="logo">ATARIA</a><p>Рецепты, насадки и простые советы для вашей техники. Казахстан.</p></div>
+    <div><p class="eyebrow">Кухонная машина</p><a href="/sm23/">Обзор</a><a href="/sm23/start/">С чего начать</a><a href="/sm23/speeds/">Скорости</a><a href="/sm23/attachments/">Насадки</a><a href="/sm23/recipes/">Рецепты</a><a href="/sm23/care/">Уход</a><a href="/sm23/help/">Помощь</a></div>
+    <div><p class="eyebrow">Рецепты</p><a href="/sm23/recipes/besh/">Тесто для бешбармака</a><a href="/sm23/recipes/manty/">Манты</a><a href="/sm23/recipes/baursaki/">Баурсаки</a><a href="/sm23/recipes/pizza/">Пицца дома</a><a href="/sm23/recipes/lagman/">Лапша для лагмана</a><a href="/sm23/recipes/">Все рецепты</a></div>
+    <div><p class="eyebrow">Связь</p><a href="https://jarvis-backend-alisher25.vercel.app/go/wa?src=guide&amp;p=sm23_owner" target="_blank" rel="noopener">Поддержка в WhatsApp</a><a href="https://kaspi.kz/shop/p/kuhonnyi-kombain-ataria-at-sm23-temno-seryi-168203173/?m=30444998" target="_blank" rel="noopener">Карточка на Kaspi</a><a href="https://kaspi.kz/shop/p/kuhonnyi-kombain-ataria-at-sm23-temno-seryi-168203173/?c=750000000&amp;v=reviews" target="_blank" rel="noopener">Оставить отзыв</a></div>
+  </div>
+  <p class="copy">© ATARIA</p>
+</footer>
+<script src="/site.js" defer></script>
+</body>
+</html>
