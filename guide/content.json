@@ -3,7 +3,9 @@
   "support": {
     "whatsapp": "/go/wa?src=guide&p=sm23_owner",
     "whatsapp_full": "https://jarvis-backend-alisher25.vercel.app/go/wa?src=guide&p=sm23_owner",
-    "kaspi_review": "",
+    "kaspi_review": "https://kaspi.kz/shop/p/kuhonnyi-kombain-ataria-at-sm23-temno-seryi-168203173/?c=750000000&v=reviews",
+    "kaspi_card": "https://kaspi.kz/shop/p/kuhonnyi-kombain-ataria-at-sm23-temno-seryi-168203173/?m=30444998",
+    "kaspi_review_hint": "В приложении Kaspi: Заказы → ваш заказ → Оставить отзыв.",
     "warranty": "12 месяцев"
   },
   "products": [

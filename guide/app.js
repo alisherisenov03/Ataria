@@ -270,7 +270,7 @@ function reviewBlock(p, big = false) {
   return `<section><div class="support"><div class="box">
     <p class="eyebrow">Вам нравится ${esc(p.name)}?</p>
     <h3>${big ? "Оставьте отзыв на Kaspi, это займёт минуту" : "Будем рады вашему отзыву на Kaspi"}</h3>
-    <p class="lead" style="font-size:15px">Отзыв помогает другим выбрать и нам становиться лучше.</p>
+    <p class="lead" style="font-size:15px">Отзыв помогает другим выбрать и нам становиться лучше. ${esc(DATA.support.kaspi_review_hint || "")}</p>
     <div class="actions" style="margin-top:6px"><a class="btn" href="${esc(k)}" target="_blank" rel="noopener">Оставить отзыв на Kaspi</a></div>
   </div></div></section>`;
 }
