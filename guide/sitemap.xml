@@ -2,6 +2,7 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 <url><loc>https://ataria-guide.vercel.app/</loc></url>
 <url><loc>https://ataria-guide.vercel.app/sm23/</loc></url>
+<url><loc>https://ataria-guide.vercel.app/sm23/about/</loc></url>
 <url><loc>https://ataria-guide.vercel.app/sm23/start/</loc></url>
 <url><loc>https://ataria-guide.vercel.app/sm23/speeds/</loc></url>
 <url><loc>https://ataria-guide.vercel.app/sm23/attachments/</loc></url>
@@ -62,6 +63,7 @@
 <url><loc>https://ataria-guide.vercel.app/search/</loc></url>
 <url><loc>https://ataria-guide.vercel.app/kk/</loc></url>
 <url><loc>https://ataria-guide.vercel.app/kk/sm23/</loc></url>
+<url><loc>https://ataria-guide.vercel.app/kk/sm23/about/</loc></url>
 <url><loc>https://ataria-guide.vercel.app/kk/sm23/start/</loc></url>
 <url><loc>https://ataria-guide.vercel.app/kk/sm23/speeds/</loc></url>
 <url><loc>https://ataria-guide.vercel.app/kk/sm23/attachments/</loc></url>

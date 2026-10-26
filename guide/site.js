@@ -242,3 +242,16 @@ if (cookBtn) {
   const sv = readT();
   if (sv && sv.id === r.id && Date.now() - sv.endAt < 6 * 3600 * 1000) open(sv.i, sv.endAt);
 }
+
+// ---- first screen: expand the chosen half, then open that appliance ----
+const splitScreen = $(".split-screen");
+if (splitScreen) {
+  splitScreen.querySelectorAll(".half").forEach((h) => h.addEventListener("click", (e) => {
+    if (e.metaKey || e.ctrlKey || e.shiftKey || e.button) return;
+    e.preventDefault();
+    splitScreen.classList.add("go");
+    h.classList.add("sel");
+    setTimeout(() => { location.href = h.href; }, 650);
+  }));
+  addEventListener("pageshow", () => { splitScreen.classList.remove("go"); splitScreen.querySelectorAll(".half").forEach((x) => x.classList.remove("sel")); });
+}
