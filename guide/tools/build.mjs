@@ -564,10 +564,21 @@ buildSite("kk");
 
 files.set("404.html", `<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>404 · ATARIA</title><link rel="stylesheet" href="/style.css"></head><body><section class="done wrap"><p class="eyebrow">404</p><h1>Такой страницы нет</h1><p class="lead">Возможно, ссылка устарела. / Бұл бет жоқ.</p><div class="actions" style="justify-content:center"><a class="btn" href="/">На главную</a><a class="btn ghost" href="/kk/">Басты бет</a></div></section></body></html>`);
 
+// cache-busting: every /img/ file gets ?v=<content hash>, so a replaced photo never shows up stale
+const crypto = await import("node:crypto");
+const imgHash = new Map();
+const withVersion = (html) => html.replace(/\/img\/([\w.-]+\.(?:jpg|png|webp))(?![\w?])/g, (m, name) => {
+  if (!imgHash.has(name)) {
+    const f = path.join(ROOT, "img", name);
+    imgHash.set(name, fs.existsSync(f) ? crypto.createHash("md5").update(fs.readFileSync(f)).digest("hex").slice(0, 8) : "");
+  }
+  const h = imgHash.get(name);
+  return h ? `${m}?v=${h}` : m;
+});
 for (const [rel, html] of files) {
   const out = path.join(ROOT, rel);
   fs.mkdirSync(path.dirname(out), { recursive: true });
-  fs.writeFileSync(out, html);
+  fs.writeFileSync(out, withVersion(html));
 }
 const sitemap = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${pageUrls.map((u) => `<url><loc>${SITE}${u}</loc></url>`).join("\n")}\n</urlset>\n`;
 fs.writeFileSync(path.join(ROOT, "sitemap.xml"), sitemap);
