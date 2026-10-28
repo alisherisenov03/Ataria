@@ -145,7 +145,7 @@ function buildSite(lang) {
 <link rel="apple-touch-icon" href="/img/icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600&family=Unbounded:wght@300;400&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/style.css">
 ${extraHead}
 <script>document.documentElement.classList.add("anim")</script>
@@ -224,7 +224,7 @@ ${bare ? "" : footer()}
 </div>
 <section class="split-screen" aria-label="${T("Выбор техники", "Техниканы таңдау")}">
   <a class="half" href="${P}/sm23/">
-    <img src="/img/m-hero.jpg" alt="${T("Кухонная машина ATARIA AT-SM23", "ATARIA AT-SM23 асүй машинасы")}">
+    <img src="/img/m-side.jpg" alt="${T("Кухонная машина ATARIA AT-SM23", "ATARIA AT-SM23 асүй машинасы")}">
     <div class="cap"><p class="eyebrow">${T("Кухонная машина", "Асүй машинасы")}</p><h2>AT-SM23</h2><p class="sub">${T("Насадки, скорости и 21 рецепт", "Қондырмалар, жылдамдықтар және 21 рецепт")}</p><span class="cta">${T("Открыть", "Ашу")} <i>→</i></span></div>
   </a>
   <a class="half soon" href="${P}/airfryer/">
@@ -260,18 +260,26 @@ ${bare ? "" : footer()}
     </div>
     <div class="actions"><a class="btn" href="${P}/sm23/start/">${T("Первый запуск за 5 шагов", "Алғашқы іске қосу — 5 қадам")}</a><a class="btn ghost" href="${P}/sm23/recipes/">${T("Все рецепты", "Барлық рецепттер")}</a></div>
   </div>
-  <div class="hero-ph"><img src="/img/m-hero.jpg" alt="${T("Кухонная машина ATARIA AT-SM23", "ATARIA AT-SM23 асүй машинасы")}"></div>
+  <div class="hero-ph tall"><img src="/img/m-side.jpg" alt="${T("Кухонная машина ATARIA AT-SM23", "ATARIA AT-SM23 асүй машинасы")}"></div>
 </section>
 
-<section class="stage">
-  <div class="stage-in">
-    <div class="stage-txt">
-      <p class="eyebrow">ATARIA AT-SM23</p>
-      <h2>${T("Одна машина. Шесть насадок. Вся кухня под рукой.", "Бір машина. Алты қондырма. Бүкіл асүй қолыңызда.")}</h2>
-      <p class="lead">${T("Мощность 2000 Вт, чаша 7 литров, таймер до 15 минут. Тесто, фарш, крем, лапша и овощи.", "Қуаты 2000 Вт, тостаған 7 литр, таймер 15 минутқа дейін. Қамыр, қайма, кілегей, кеспе және көкөніс.")}</p>
-      <div class="actions"><a class="btn light" href="${P}/sm23/attachments/">${T("Все насадки", "Барлық қондырмалар")}</a><a class="btn ghost-light" href="${P}/sm23/about/">${T("О машине", "Машина туралы")}</a></div>
+<section class="tech">
+  <div class="wrap">
+    <div class="tech-strip">
+      <div><b>2000</b><span>${T("Вт мощность", "Вт қуат")}</span></div>
+      <div><b>7</b><span>${T("литров чаша", "литр тостаған")}</span></div>
+      <div><b>15</b><span>${T("минут таймер, шаг 30 с", "минут таймер, қадамы 30 с")}</span></div>
+      <div><b>P·6</b><span>${T("импульс и 6 скоростей", "импульс және 6 жылдамдық")}</span></div>
     </div>
-    <div class="stage-ph" id="tilt"><img src="/img/m-panel.jpg" alt="${T("ATARIA AT-SM23", "ATARIA AT-SM23")}" loading="lazy"></div>
+    ${[
+      ["t-planet", T("Планетарное вращение", "Планеталық айналу"), T("Насадка вращается вокруг своей оси и одновременно обходит всю чашу. Тесто вымешивается равномерно, без комков у стенок.", "Қондырма өз осінен айналып, бір мезгілде бүкіл тостағанды айналып шығады. Қамыр қабырғаларда кесексіз біркелкі иленеді.")],
+      ["t-bowl", T("Чаша 7 литров с крышкой", "Қақпағы бар 7 литрлік тостаған"), T("Стальная чаша вмещает тесто на большую семью. Прозрачная крышка не даёт муке разлетаться, а через носик удобно добавлять продукты на ходу.", "Болат тостағанға үлкен отбасына жететін қамыр сыяды. Мөлдір қақпақ ұнды шашыратпайды, ал шүмек арқылы өнімді жұмыс кезінде қосуға ыңғайлы.")],
+      ["t-power", T("Мотор 2000 Вт", "2000 Вт мотор"), T("Мощности хватает на тугое тесто для беша, мантов и лапши. Машина работает уверенно, не перегреваясь на долгом замесе.", "Қуаты бесбармаққа, мантыға және кеспеге арналған қатты қамырға жетеді. Ұзақ илеуде қызып кетпей, сенімді жұмыс істейді.")],
+      ["t-timer", T("Таймер до 15 минут", "15 минутқа дейін таймер"), T("Задайте время кнопками TIME, + и − с шагом 30 секунд. По окончании машина сама остановится, можно не стоять рядом.", "TIME, + және − түймелерімен уақытты 30 секунд қадаммен орнатыңыз. Уақыт біткенде машина өзі тоқтайды, қасында тұрудың қажеті жоқ.")],
+      ["t-speed", T("Импульс и 6 скоростей", "Импульс және 6 жылдамдық"), T("Ноль сверху, справа скорости от 1 до 6, слева импульс P. Крюку хватает 1–2, венчик и лопатка работают на всех скоростях.", "Нөл жоғарыда, оң жақта 1-ден 6-ға дейінгі жылдамдықтар, сол жақта P импульсі. Ілгекке 1–2 жеткілікті, венчик пен көрекше барлық жылдамдықта жұмыс істейді.")],
+      ["t-port", T("Боковой разъём под насадки", "Қондырмаларға арналған бүйір ұяшық"), T("Поднимите крышку с треугольником и подключите мясорубку, овощерезку, тестораскатку или лапшерезку. Одна машина вместо шести приборов.", "Үшбұрышты қақпақты көтеріп, ет тартқышты, көкөніс турағышты, қамыр жаятын немесе кеспе турағыш қондырманы қосыңыз. Алты құралдың орнына бір машина.")],
+    ].map(([img, h, t], i) => `<article class="feat"><figure><img src="/img/${img}.jpg" alt="${esc(h)}" loading="lazy"></figure><div class="txt"><p class="eyebrow">${String(i + 1).padStart(2, "0")}</p><h3>${esc(h)}</h3><p>${esc(t)}</p></div></article>`).join("")}
+    <div class="actions center"><a class="btn" href="${P}/sm23/attachments/">${T("Все насадки", "Барлық қондырмалар")}</a><a class="btn ghost" href="${P}/sm23/about/">${T("Характеристики", "Сипаттамалар")}</a></div>
   </div>
 </section>
 
