@@ -9,6 +9,7 @@ grey velvet top that runs down the centre of the front face, white
 diamond-quilted sides, dark button in the head dimple.
 """
 import math
+import os
 import sys
 
 import bpy
@@ -437,6 +438,8 @@ def render_turntable(out_dir, frames=96, samples=48, res=(720, 900)):
         cam.location = (r * math.cos(a), r * math.sin(a), loc0.z - 0.08 * f / frames)
         look_at(cam, (0, 0.02, 0.17))
         scn.render.filepath = f"{out_dir}/f{f:04d}.png"
+        if os.path.exists(scn.render.filepath):  # resume an interrupted run
+            continue
         bpy.ops.render.render(write_still=True)
 
 
