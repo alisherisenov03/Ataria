@@ -120,13 +120,13 @@ def build_pillow(step=0.002):
     seam = np.clip(1 - np.abs(2 * grey - 1), 0, 1) ** 2  # peaks on the grey/white seam
     # lower seam where the side band meets the bottom panel; the label is sewn into it
     side = smoothstep(0.85, 0.6, np.abs(normals[:, 2]))
-    seam = np.maximum(seam, np.exp(-((verts[:, 2] - SEAM_Z) / 0.0022) ** 2) * side)
+    low_seam = np.exp(-((verts[:, 2] - SEAM_Z) / 0.0012) ** 2) * side  # barely visible, same white fabric
     # fabric: quilt puffs on white, slow soft ripples on the velvet, piping groove on the seam
     ripple = smooth_noise(verts, cell=0.008, sigma=2.0, seed=7)
     puff = 0.75 + 0.5 * (0.5 + 0.5 * np.sin(verts @ np.array([31.0, -23.0, 17.0])))  # uneven filling
     disp = (1 - grey) * 0.0022 * quilt_height(verts, normals) * puff
     disp += 0.0014 * ripple
-    disp -= 0.0016 * seam
+    disp -= 0.0016 * seam + 0.0005 * low_seam
     verts = verts + normals * disp[:, None]
 
     mesh = bpy.data.meshes.new("pillow")
@@ -234,7 +234,7 @@ def add_tag(pillow, podium_h):
     from mathutils import Matrix, Vector
     bpy.context.view_layer.update()
     mw = pillow.matrix_world
-    target = Vector((-0.235, -0.215, SEAM_Z))
+    target = Vector((-0.36, -0.09, SEAM_Z))  # left end of the pillow, not the front
     cands = [v for v in pillow.data.vertices if abs(v.co.z - SEAM_Z) < 0.003]
     best = min(cands, key=lambda v: (v.co - target).length)
     out = Vector((best.normal.x, best.normal.y, 0)).normalized()
@@ -272,7 +272,7 @@ def add_tag(pillow, podium_h):
     txt.data.align_y = "CENTER"
     txt.data.size = 0.0072
     txt.data.extrude = 0.00005
-    x_ax = -t if (-t).dot(Vector((1, 0, 0))) > 0 else t  # read left-to-right from the front
+    x_ax = -t if (-t).dot(Vector((0.6, -0.8, 0))) > 0 else t  # reads left-to-right for the front-left cameras
     y_ax = face_n.cross(x_ax).normalized()
     rot = Matrix((x_ax, y_ax, face_n)).transposed().to_4x4()
     mid = root + e * (L * 0.55) - up * 0.0005 + face_n * 0.0009
@@ -392,7 +392,7 @@ CAMERAS = {
     "hero": ((-0.95, -1.25, 0.62), (0, 0.02, 0.17), 70),
     "front": ((0.0, -1.6, 0.30), (0, 0, 0.17), 85),
     "top": ((0.0, -0.35, 1.45), (0, 0.0, 0.15), 60),
-    "macro": ((-0.34, -0.55, 0.33), (-0.235, -0.225, 0.12), 100),
+    "macro": ((-0.56, -0.36, 0.25), (-0.268, -0.125, 0.122), 100),
 }
 
 
