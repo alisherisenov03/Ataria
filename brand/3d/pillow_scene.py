@@ -65,23 +65,67 @@ def pillow_sdf(x, y, z):
     return d
 
 
-def build_pillow(step=0.0025):
+def smoothstep(e0, e1, v):
+    t = np.clip((v - e0) / (e1 - e0), 0, 1)
+    return t * t * (3 - 2 * t)
+
+
+def grey_mask(v, n):
+    """1 on the grey velvet panel (top + centre band of the front/back faces), 0 on white knit."""
+    top = smoothstep(0.30, 0.50, n[:, 2])
+    band_w = 0.085 + 1.25 * v[:, 2]
+    band = smoothstep(band_w + 0.006, band_w - 0.006, np.abs(v[:, 0])) * smoothstep(0.15, 0.35, np.abs(n[:, 1]))
+    return np.maximum(top, band)
+
+
+def quilt_height(v, n, p=0.026):
+    """Puffy diamond quilting, triplanar so the diamonds stay square on every face."""
+    w = np.abs(n) ** 4
+    w /= w.sum(axis=1, keepdims=True)
+    h = np.zeros(len(v))
+    for axis, (i, j) in enumerate(((1, 2), (0, 2), (0, 1))):
+        u, t = v[:, i], v[:, j]
+        q = np.abs(np.sin(np.pi * (u + t) / p) * np.sin(np.pi * (u - t) / p)) ** 0.45
+        h += w[:, axis] * q
+    return h
+
+
+def build_pillow(step=0.002):
     o = step * 0.37  # keep flat faces off the grid planes (avoids degenerate triangles)
     xs = np.arange(-0.42, 0.42, step) + o
     ys = np.arange(-0.25, 0.25, step) + o
     zs = np.arange(-0.01, 0.18, step) + o
     X, Y, Z = np.meshgrid(xs, ys, zs, indexing="ij")
     vol = pillow_sdf(X, Y, Z)
-    verts, faces, _, _ = measure.marching_cubes(vol, 0.0, spacing=(step, step, step))
+    verts, faces, normals, _ = measure.marching_cubes(vol, 0.0, spacing=(step, step, step))
     verts += np.array([xs[0], ys[0], zs[0]])
+    normals = normals / np.linalg.norm(normals, axis=1, keepdims=True)
+    if np.mean(np.sum((verts - verts.mean(axis=0)) * normals, axis=1)) < 0:
+        normals = -normals  # make them point outward
+
+    grey = grey_mask(verts, normals)
+    seam = np.clip(1 - np.abs(2 * grey - 1), 0, 1) ** 2  # peaks on the grey/white seam
+    # fabric: quilt puffs on white, slow soft ripples on the velvet, piping groove on the seam
+    rng = np.random.default_rng(7)
+    k = rng.normal(size=(10, 3)) * np.r_[25, 25, 25, 45, 45, 45, 70, 70, 90, 90][:, None]
+    ph = rng.uniform(0, 6.3, 10)
+    ripple = sum(np.sin(verts @ k[i] + ph[i]) for i in range(10)) / 5
+    disp = (1 - grey) * 0.0022 * quilt_height(verts, normals)
+    disp += grey * 0.0005 * ripple
+    disp -= 0.0016 * seam
+    verts = verts + normals * disp[:, None]
+
     mesh = bpy.data.meshes.new("pillow")
     mesh.from_pydata(verts.tolist(), [], faces[:, ::-1].tolist())
+    for name, vals in (("grey", grey), ("seam", seam)):
+        attr = mesh.attributes.new(name, "FLOAT", "POINT")
+        attr.data.foreach_set("value", vals.astype(np.float32))
     import bmesh
     bm = bmesh.new()
     bm.from_mesh(mesh)
     bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=step * 0.05)
     bmesh.ops.dissolve_degenerate(bm, edges=bm.edges, dist=step * 0.05)
-    bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+    bmesh.ops.recalc_face_normals(bm, faces=bm.faces)  # consistent outward faces
     bm.to_mesh(mesh)
     bm.free()
     mesh.update()
@@ -124,58 +168,82 @@ def pillow_material():
     N = Nodes(mat)
     out = N.n("ShaderNodeOutputMaterial")
     tex = N.n("ShaderNodeTexCoord")
-    sep = N.n("ShaderNodeSeparateXYZ")
-    N.link(tex.outputs["Object"], sep.inputs[0])
-    geo = N.n("ShaderNodeNewGeometry")
-    nsep = N.n("ShaderNodeSeparateXYZ")
-    N.link(geo.outputs["Normal"], nsep.inputs[0])
-    x, y, z = sep.outputs
-    nz, ny = nsep.outputs[2], nsep.outputs[1]
+    grey = N.n("ShaderNodeAttribute", attribute_name="grey").outputs["Fac"]
+    seam = N.n("ShaderNodeAttribute", attribute_name="seam").outputs["Fac"]
 
-    # grey mask: upward-facing top + band down the centre of front/back faces
-    top = N.math("GREATER_THAN", nz, 0.42)
-    band_w = N.math("ADD", N.math("MULTIPLY", z, 1.25), 0.085)
-    band = N.math("LESS_THAN", N.math("ABSOLUTE", x), band_w)
-    grey = N.math("MAXIMUM", top, band)
-
-    # diamond quilting: two diagonal families of stitch lines
-    p = 0.028
-    a = N.math("MULTIPLY", N.math("ADD", N.math("ADD", x, y), z), math.pi / p)
-    b = N.math("MULTIPLY", N.math("ADD", N.math("SUBTRACT", x, y), z), math.pi / p)
-    sa = N.math("ABSOLUTE", N.math("SINE", a))
-    sb = N.math("ABSOLUTE", N.math("SINE", b))
-    quilt = N.math("POWER", N.math("MINIMUM", sa, sb), 0.35)
+    # knit / pile micro texture (quilting itself is real geometry)
     knit = N.n("ShaderNodeTexNoise")
-    knit.inputs["Scale"].default_value = 900.0
+    knit.inputs["Scale"].default_value = 2200.0
+    knit.inputs["Detail"].default_value = 4
     N.link(tex.outputs["Object"], knit.inputs["Vector"])
-    white_h = N.math("ADD", quilt, N.math("MULTIPLY", knit.outputs["Fac"], 0.08))
     bump = N.n("ShaderNodeBump")
-    bump.inputs["Strength"].default_value = 0.8
-    bump.inputs["Distance"].default_value = 0.004
-    N.link(white_h, bump.inputs["Height"])
-    vbump = N.n("ShaderNodeBump")  # fine velvet pile only, no quilting
-    vbump.inputs["Strength"].default_value = 0.15
-    vbump.inputs["Distance"].default_value = 0.0005
+    bump.inputs["Strength"].default_value = 0.35
+    bump.inputs["Distance"].default_value = 0.0006
+    N.link(knit.outputs["Fac"], bump.inputs["Height"])
+    vbump = N.n("ShaderNodeBump")
+    vbump.inputs["Strength"].default_value = 0.2
+    vbump.inputs["Distance"].default_value = 0.0003
     N.link(knit.outputs["Fac"], vbump.inputs["Height"])
 
     white = N.n("ShaderNodeBsdfPrincipled")
-    white.inputs["Base Color"].default_value = (0.86, 0.85, 0.82, 1)
-    white.inputs["Roughness"].default_value = 0.85
-    white.inputs["Sheen Weight"].default_value = 0.3
+    white.inputs["Base Color"].default_value = (0.80, 0.78, 0.74, 1)
+    white.inputs["Roughness"].default_value = 0.9
+    white.inputs["Sheen Weight"].default_value = 0.4
+    white.inputs["Subsurface Weight"].default_value = 0.08
+    white.inputs["Subsurface Radius"].default_value = (0.004, 0.004, 0.004)
     velvet = N.n("ShaderNodeBsdfPrincipled")
-    velvet.inputs["Base Color"].default_value = (0.16, 0.16, 0.19, 1)
-    velvet.inputs["Roughness"].default_value = 0.75
-    velvet.inputs["Sheen Weight"].default_value = 0.6
-    velvet.inputs["Sheen Roughness"].default_value = 0.35
-    velvet.inputs["Sheen Tint"].default_value = (0.85, 0.85, 0.9, 1)
+    velvet.inputs["Base Color"].default_value = (0.15, 0.15, 0.175, 1)
+    velvet.inputs["Roughness"].default_value = 0.9
+    velvet.inputs["Sheen Weight"].default_value = 1.0
+    velvet.inputs["Sheen Roughness"].default_value = 0.3
+    velvet.inputs["Sheen Tint"].default_value = (0.8, 0.8, 0.86, 1)
+    piping = N.n("ShaderNodeBsdfPrincipled")
+    piping.inputs["Base Color"].default_value = (0.55, 0.54, 0.53, 1)
+    piping.inputs["Roughness"].default_value = 0.85
     N.link(bump.outputs["Normal"], white.inputs["Normal"])
     N.link(vbump.outputs["Normal"], velvet.inputs["Normal"])
     mix = N.n("ShaderNodeMixShader")
     N.link(grey, mix.inputs["Fac"])
     N.link(white.outputs[0], mix.inputs[1])
     N.link(velvet.outputs[0], mix.inputs[2])
-    N.link(mix.outputs[0], out.inputs["Surface"])
+    mix2 = N.n("ShaderNodeMixShader")
+    N.link(N.math("POWER", seam, 2.0), mix2.inputs["Fac"])
+    N.link(mix.outputs[0], mix2.inputs[1])
+    N.link(piping.outputs[0], mix2.inputs[2])
+    N.link(mix2.outputs[0], out.inputs["Surface"])
     return mat
+
+
+def add_tag(pillow, podium_h):
+    """Black woven ATARIA label sewn into the side seam (front-right, white part)."""
+    import bmesh
+    from mathutils import Vector
+    bpy.context.view_layer.update()
+    me = pillow.data
+    target = Vector((-0.235, -0.215, 0.035))
+    best = min(me.vertices, key=lambda v: (v.co - target).length)
+    nrm = best.normal.normalized()
+    loc = pillow.matrix_world @ best.co + nrm * 0.0015
+
+    bpy.ops.mesh.primitive_plane_add(size=1, location=loc)
+    tag = bpy.context.object
+    tag.scale = (0.022, 0.032, 1)
+    tag.rotation_euler = nrm.to_track_quat("Z", "Y").to_euler()
+    tag.rotation_euler.rotate_axis("Z", math.radians(-12))
+    solid = tag.modifiers.new("solid", "SOLIDIFY")
+    solid.thickness = 0.0008
+    tag.data.materials.append(simple_material("tag", (0.03, 0.035, 0.05), 0.75))
+    bpy.ops.object.text_add(location=loc + nrm * 0.0006)
+    txt = bpy.context.object
+    txt.data.body = "ATARIA"
+    txt.data.align_x = "CENTER"
+    txt.data.align_y = "CENTER"
+    txt.data.size = 0.0075
+    txt.data.extrude = 0.0001
+    txt.rotation_euler = tag.rotation_euler.copy()
+    txt.rotation_euler.rotate_axis("Z", math.radians(90))
+    txt.data.materials.append(simple_material("tag_text", (0.85, 0.85, 0.85), 0.6))
+    return tag
 
 
 def simple_material(name, color, rough=0.6, noise_scale=0.0, bump=0.0):
@@ -249,7 +317,8 @@ def build_scene():
     btn = bpy.context.object
     btn.scale.z = 0.6
     bpy.ops.object.shade_smooth()
-    btn.data.materials.append(simple_material("button", (0.08, 0.08, 0.09), 0.4))
+    btn.data.materials.append(simple_material("button", (0.05, 0.05, 0.06), 0.75))
+    add_tag(pillow, podium_h)
 
     # travertine podium
     bpy.ops.mesh.primitive_cylinder_add(vertices=128, radius=0.5, depth=podium_h, location=(0, 0, podium_h / 2))
@@ -288,7 +357,7 @@ CAMERAS = {
     "hero": ((-0.95, -1.25, 0.62), (0, 0.02, 0.17), 70),
     "front": ((0.0, -1.6, 0.30), (0, 0, 0.17), 85),
     "top": ((0.0, -0.35, 1.45), (0, 0.0, 0.15), 60),
-    "macro": ((-0.48, -0.62, 0.30), (-0.20, -0.17, 0.17), 100),
+    "macro": ((-0.40, -0.62, 0.24), (-0.22, -0.21, 0.14), 100),
 }
 
 
