@@ -16,6 +16,7 @@ import numpy as np
 from skimage import measure
 
 W, D = 0.31, 0.205  # half width / half depth, metres
+SEAM_Z = 0.016  # height of the lower side seam (label sits in it)
 
 
 # ---------------------------------------------------------------- geometry
@@ -60,8 +61,10 @@ def height(x, y):
 
 def pillow_sdf(x, y, z):
     d = outline_sdf(x, y, z)
-    d = smax(d, z - height(x, y), 0.03)
-    d = smax(d, -z, 0.012)
+    # soft cover: sides bulge out a little around mid-height
+    d -= 0.007 * np.exp(-((z - 0.05) / 0.035) ** 2)
+    d = smax(d, z - height(x, y), 0.045)
+    d = smax(d, -z, 0.022)
     return d
 
 
@@ -90,6 +93,16 @@ def quilt_height(v, n, p=0.026):
     return h
 
 
+def smooth_noise(v, cell, sigma, seed):
+    """Isotropic soft noise in roughly [-1, 1]: blurred random lattice sampled at the vertices."""
+    from scipy.ndimage import gaussian_filter, map_coordinates
+    lo = v.min(axis=0) - 4 * cell
+    shape = np.ceil((v.max(axis=0) - lo) / cell).astype(int) + 8
+    g = gaussian_filter(np.random.default_rng(seed).normal(size=shape), sigma)
+    g /= np.abs(g).max()
+    return map_coordinates(g, ((v - lo) / cell).T, order=1)
+
+
 def build_pillow(step=0.002):
     o = step * 0.37  # keep flat faces off the grid planes (avoids degenerate triangles)
     xs = np.arange(-0.42, 0.42, step) + o
@@ -105,13 +118,14 @@ def build_pillow(step=0.002):
 
     grey = grey_mask(verts, normals)
     seam = np.clip(1 - np.abs(2 * grey - 1), 0, 1) ** 2  # peaks on the grey/white seam
+    # lower seam where the side band meets the bottom panel; the label is sewn into it
+    side = smoothstep(0.85, 0.6, np.abs(normals[:, 2]))
+    seam = np.maximum(seam, np.exp(-((verts[:, 2] - SEAM_Z) / 0.0022) ** 2) * side)
     # fabric: quilt puffs on white, slow soft ripples on the velvet, piping groove on the seam
-    rng = np.random.default_rng(7)
-    k = rng.normal(size=(10, 3)) * np.r_[25, 25, 25, 45, 45, 45, 70, 70, 90, 90][:, None]
-    ph = rng.uniform(0, 6.3, 10)
-    ripple = sum(np.sin(verts @ k[i] + ph[i]) for i in range(10)) / 5
-    disp = (1 - grey) * 0.0022 * quilt_height(verts, normals)
-    disp += grey * 0.0005 * ripple
+    ripple = smooth_noise(verts, cell=0.008, sigma=2.0, seed=7)
+    puff = 0.75 + 0.5 * (0.5 + 0.5 * np.sin(verts @ np.array([31.0, -23.0, 17.0])))  # uneven filling
+    disp = (1 - grey) * 0.0022 * quilt_height(verts, normals) * puff
+    disp += 0.0014 * ripple
     disp -= 0.0016 * seam
     verts = verts + normals * disp[:, None]
 
@@ -193,7 +207,7 @@ def pillow_material():
     white.inputs["Subsurface Radius"].default_value = (0.004, 0.004, 0.004)
     velvet = N.n("ShaderNodeBsdfPrincipled")
     velvet.inputs["Base Color"].default_value = (0.15, 0.15, 0.175, 1)
-    velvet.inputs["Roughness"].default_value = 0.9
+    velvet.inputs["Roughness"].default_value = 0.95
     velvet.inputs["Sheen Weight"].default_value = 1.0
     velvet.inputs["Sheen Roughness"].default_value = 0.3
     velvet.inputs["Sheen Tint"].default_value = (0.8, 0.8, 0.86, 1)
@@ -215,33 +229,54 @@ def pillow_material():
 
 
 def add_tag(pillow, podium_h):
-    """Black woven ATARIA label sewn into the side seam (front-right, white part)."""
+    """Black woven ATARIA label sewn into the lower side seam, sticking out of it."""
     import bmesh
-    from mathutils import Vector
+    from mathutils import Matrix, Vector
     bpy.context.view_layer.update()
-    me = pillow.data
-    target = Vector((-0.235, -0.215, 0.035))
-    best = min(me.vertices, key=lambda v: (v.co - target).length)
-    nrm = best.normal.normalized()
-    loc = pillow.matrix_world @ best.co + nrm * 0.0015
-
-    bpy.ops.mesh.primitive_plane_add(size=1, location=loc)
-    tag = bpy.context.object
-    tag.scale = (0.022, 0.032, 1)
-    tag.rotation_euler = nrm.to_track_quat("Z", "Y").to_euler()
-    tag.rotation_euler.rotate_axis("Z", math.radians(-12))
+    mw = pillow.matrix_world
+    target = Vector((-0.235, -0.215, SEAM_Z))
+    cands = [v for v in pillow.data.vertices if abs(v.co.z - SEAM_Z) < 0.003]
+    best = min(cands, key=lambda v: (v.co - target).length)
+    out = Vector((best.normal.x, best.normal.y, 0)).normalized()
+    up = Vector((0, 0, 1))
+    t = up.cross(out).normalized()               # along the seam
+    e = out                                      # sticks straight out of the seam
+    w, L, n = 0.032, 0.017, 8  # wide along the seam, sticks out 17 mm
+    root = mw @ best.co - out * 0.002            # starts inside the seam
+    bm = bmesh.new()
+    rows = []
+    for i in range(n + 1):
+        f = i / n
+        c = root + e * (L * f) - up * (0.0015 * f * f)
+        rows.append([bm.verts.new(c - t * w / 2), bm.verts.new(c + t * w / 2)])
+    for a, b in zip(rows, rows[1:]):
+        bm.faces.new((a[0], a[1], b[1], b[0]))
+    me = bpy.data.meshes.new("tag")
+    bm.to_mesh(me)
+    bm.free()
+    tag = bpy.data.objects.new("tag", me)
+    bpy.context.collection.objects.link(tag)
     solid = tag.modifiers.new("solid", "SOLIDIFY")
-    solid.thickness = 0.0008
-    tag.data.materials.append(simple_material("tag", (0.03, 0.035, 0.05), 0.75))
-    bpy.ops.object.text_add(location=loc + nrm * 0.0006)
+    solid.thickness = 0.0011                     # folded label: two layers of ribbon
+    solid.offset = 0
+    tag.data.materials.append(simple_material("tag", (0.025, 0.03, 0.045), 0.8, 3000.0, 0.15))
+    bpy.ops.object.shade_smooth()
+
+    face_n = e.cross(t).normalized()
+    if face_n.z < 0:
+        face_n = -face_n
+    bpy.ops.object.text_add()
     txt = bpy.context.object
     txt.data.body = "ATARIA"
     txt.data.align_x = "CENTER"
     txt.data.align_y = "CENTER"
-    txt.data.size = 0.0075
-    txt.data.extrude = 0.0001
-    txt.rotation_euler = tag.rotation_euler.copy()
-    txt.rotation_euler.rotate_axis("Z", math.radians(90))
+    txt.data.size = 0.0072
+    txt.data.extrude = 0.00005
+    x_ax = -t if (-t).dot(Vector((1, 0, 0))) > 0 else t  # read left-to-right from the front
+    y_ax = face_n.cross(x_ax).normalized()
+    rot = Matrix((x_ax, y_ax, face_n)).transposed().to_4x4()
+    mid = root + e * (L * 0.55) - up * 0.0005 + face_n * 0.0009
+    txt.matrix_world = Matrix.Translation(mid) @ rot
     txt.data.materials.append(simple_material("tag_text", (0.85, 0.85, 0.85), 0.6))
     return tag
 
@@ -346,7 +381,7 @@ def build_scene():
     sweep.data.materials.append(simple_material("taupe", (0.16, 0.13, 0.11), 0.9, 6.0, 0.05))
 
     warm, neutral, cool = (1.0, 0.86, 0.72), (1.0, 0.95, 0.9), (0.85, 0.9, 1.0)
-    add_area("key", (-1.1, -1.0, 1.4), (0, 0, 0.18), (1.4, 1.0), 70, warm)
+    add_area("key", (-1.1, -1.0, 1.4), (0, 0, 0.18), (2.4, 1.8), 75, warm)
     add_area("rim", (1.2, 1.0, 0.9), (0, 0, 0.2), (0.4, 1.2), 45, neutral)
     add_area("fill", (1.2, -1.3, 0.5), (0, 0, 0.15), (1.5, 1.5), 8, cool)
     return pillow
@@ -357,7 +392,7 @@ CAMERAS = {
     "hero": ((-0.95, -1.25, 0.62), (0, 0.02, 0.17), 70),
     "front": ((0.0, -1.6, 0.30), (0, 0, 0.17), 85),
     "top": ((0.0, -0.35, 1.45), (0, 0.0, 0.15), 60),
-    "macro": ((-0.40, -0.62, 0.24), (-0.22, -0.21, 0.14), 100),
+    "macro": ((-0.34, -0.55, 0.33), (-0.235, -0.225, 0.12), 100),
 }
 
 
