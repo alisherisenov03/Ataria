@@ -1,0 +1,168 @@
+<title>Подушка ATARIA: план продаж</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@300;500&family=Golos+Text:wght@400;500;600&display=swap">
+<style>
+/* Layout: one reading column in the brand's taupe; video ideas as a numbered production list, since the order is the shooting order. */
+:root{
+  --bg:#efebe6; --surface:#e4ded6; --fg:#24201c; --muted:#6c645b; --line:#cfc6bb;
+  --accent:#7a5c3e; --good:#3f6b4a; --warn:#9a5b1f;
+  --display:"Unbounded","Golos Text",system-ui,sans-serif;
+  --body:"Golos Text",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#1b1815; --surface:#26221e; --fg:#ece6de; --muted:#a49a8e; --line:#3a342e;
+  --accent:#c9a27a; --good:#8fbf98; --warn:#e0a565; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1b1815; --surface:#26221e; --fg:#ece6de; --muted:#a49a8e; --line:#3a342e;
+  --accent:#c9a27a; --good:#8fbf98; --warn:#e0a565; color-scheme:dark}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.6;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:40px 80px}
+.wrap{max-width:860px;margin:0 auto;display:flex;flex-direction:column;gap:52px}
+h1,h2{font-family:var(--display);font-weight:300;text-wrap:balance;margin:0;letter-spacing:-.01em}
+h1{font-size:clamp(28px,5.6vw,48px);line-height:1.1}
+h2{font-size:clamp(21px,3.4vw,28px);line-height:1.2}
+h3{margin:0;font-size:17px;font-weight:600}
+p{margin:0;max-width:66ch}
+section{display:flex;flex-direction:column;gap:16px}
+.eyebrow{font-size:12px;text-transform:uppercase;letter-spacing:.14em;color:var(--muted)}
+.lede{font-size:18px;color:var(--muted)}
+.note{font-size:13px;color:var(--muted)}
+ul{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px;max-width:66ch}
+.tbl{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:15px;font-variant-numeric:tabular-nums}
+th,td{text-align:left;padding:9px 12px 9px 0;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:12px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);font-weight:500}
+td.n{text-align:right;white-space:nowrap}
+tr.total td{font-weight:600}
+.three{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.three>div{background:var(--surface);padding:18px;display:flex;flex-direction:column;gap:8px;min-width:0}
+@media (max-width:720px){.three{grid-template-columns:1fr}}
+.tag{font-size:12px;color:var(--accent);text-transform:uppercase;letter-spacing:.1em}
+ol.videos{list-style:none;margin:0;padding:0;counter-reset:v;display:flex;flex-direction:column}
+ol.videos>li{counter-increment:v;display:grid;grid-template-columns:44px 1fr;gap:14px;padding-block:18px;border-top:1px solid var(--line)}
+ol.videos>li::before{content:counter(v,decimal-leading-zero);font-family:var(--display);font-weight:300;font-size:22px;color:var(--accent);line-height:1.2}
+ol.videos .body{display:flex;flex-direction:column;gap:6px;min-width:0}
+.meta{display:flex;flex-wrap:wrap;gap:6px}
+.meta span{font-size:12px;padding:2px 9px;border:1px solid var(--line);border-radius:999px;color:var(--muted)}
+.ref{font-size:14px;color:var(--muted);overflow-wrap:anywhere}
+.flow{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.flow span{padding:8px 12px;background:var(--surface);font-size:14px}
+.flow i{font-style:normal;color:var(--muted)}
+.status{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
+.pill{display:inline-block;font-size:12px;padding:2px 9px;border-radius:999px;border:1px solid currentColor;white-space:nowrap}
+.good{color:var(--good)} .warn{color:var(--warn)}
+a{color:var(--accent)}
+</style>
+
+<div class="wrap">
+
+<header style="display:flex;flex-direction:column;gap:14px">
+  <div class="eyebrow">ATARIA · подушка «Бабочка» 40×60 · 28 октября 2026</div>
+  <h1>Как продавать подушку мимо Kaspi</h1>
+  <p class="lede">Сайт с промокодами уже работает, но ещё ни разу не продал. Ниже разбор почему, что снимать, где брать креаторов и как довести человека от ролика до оплаты.</p>
+</header>
+
+<section>
+  <div class="eyebrow">1 · Что есть сейчас</div>
+  <h2>Система построена, но не запущена</h2>
+  <div class="tbl"><table>
+    <tr><th>Сайт ataria-seven.vercel.app</th><th>Сейчас</th></tr>
+    <tr><td>Креаторов с промокодом</td><td><span class="pill warn">0</span></td></tr>
+    <tr><td>Переходов по ссылкам</td><td>5, все тестовые, 16 октября</td></tr>
+    <tr><td>Продаж через сайт</td><td><span class="pill warn">0</span></td></tr>
+    <tr><td>Товары на сайте</td><td>Классическая 35×60 · Бабочка 40×60 · Шёлковая</td></tr>
+    <tr><td>Как оформляется заказ</td><td>Кнопка открывает WhatsApp с промокодом, дальше вручную</td></tr>
+  </table></div>
+  <p>Сайт сделан правильно. Не хватает трёх вещей: контента, который приводит людей, креаторов, которые этот контент снимают, и человека, который быстро отвечает в WhatsApp.</p>
+</section>
+
+<section>
+  <div class="eyebrow">2 · Деньги с одной подушки</div>
+  <h2>Через сайт не дороже, чем через Kaspi, и клиент остаётся у вас</h2>
+  <div class="tbl"><table>
+    <tr><th>Бабочка 40×60</th><th class="n">Kaspi + реклама</th><th class="n">Сайт + креатор</th></tr>
+    <tr><td>Цена для покупателя</td><td class="n">15 990</td><td class="n">13 990</td></tr>
+    <tr><td>Комиссия Kaspi, 11%</td><td class="n">−1 760</td><td class="n">—</td></tr>
+    <tr><td>Реклама Kaspi, 23% / вознаграждение креатору</td><td class="n">−3 680</td><td class="n">−3 000</td></tr>
+    <tr><td>Налог 3%</td><td class="n">−480</td><td class="n">−420</td></tr>
+    <tr><td>Доставка</td><td class="n">−1 390</td><td class="n">≈ −1 800</td></tr>
+    <tr><td>Себестоимость с доставкой до склада</td><td class="n">−5 300</td><td class="n">−5 300</td></tr>
+    <tr class="total"><td>Остаётся</td><td class="n">≈ 3 380</td><td class="n">≈ 3 470</td></tr>
+  </table></div>
+  <ul>
+    <li><b>Главное не в 90 тенге разницы.</b> Через сайт у вас остаётся телефон покупателя. Ему можно через месяц продать вторую подушку родителям, шёлковую наволочку или комбайн, уже без рекламы.</li>
+    <li><b>Креатор платится только за продажу.</b> Kaspi берёт за рекламу деньги, даже если человек не купил.</li>
+  </ul>
+  <p class="note">Комиссия, доставка и доля рекламы посчитаны по сентябрьскому отчёту Kaspi. Себестоимость 5 300 ₸ взята из расчёта сальдо. Доставка заказа с сайта — оценка, её нужно уточнить у вас.</p>
+</section>
+
+<section>
+  <div class="eyebrow">3 · Что я нашёл в роликах</div>
+  <h2>Рынок смотрит про боль в шее, но подушки там почти не продают</h2>
+  <div class="three">
+    <div><span class="tag">США</span><h3>Подушки продают объяснением</h3><p>«Никогда не спи так», «врач сказал выбросить плоскую подушку». Такие ролики набирают от 0,5 до 18 млн просмотров у аккаунтов с 5–65 тыс. подписчиков.</p></div>
+    <div><span class="tag">Россия и Казахстан</span><h3>Боль в шее собирает миллионы</h3><p>Кинезиолог на казахском набрал 16,6 млн, 3D-анимация шейных позвонков — 10,3 млн, упражнение от «холки» — 3,6 млн. Продающих роликов про подушки среди лидеров нет: место свободно.</p></div>
+    <div><span class="tag">Механика</span><h3>Кодовое слово</h3><p>Местные авторы заканчивают ролик фразой «Напишите СИСТЕМА — пришлю бесплатно» или «ЙОГА деп жазыңыз». Комментарии поднимают охват, а в директ уходит ссылка.</p></div>
+  </div>
+  <p><b>Вывод:</b> подушку нужно продавать через тему, которую люди уже смотрят. Это боль в шее, «холка», головная боль по утрам и сон на боку. И продавать её должны люди, которым доверяют: кинезиологи, массажисты, мамы-блогеры.</p>
+</section>
+
+<section>
+  <div class="eyebrow">4 · Как человек доходит до покупки</div>
+  <h2>Одна воронка для своих роликов, креаторов и рекламы</h2>
+  <div class="flow">
+    <span>Ролик про шею</span><i>→</i><span>комментарий «ШЕЯ»</span><i>→</i><span>бот в директе присылает ссылку с промокодом</span><i>→</i><span>сайт: цена ниже Kaspi</span><i>→</i><span>WhatsApp: заказ и оплата Kaspi Pay</span><i>→</i><span>через 14 дней: «как спится?» и отзыв</span><i>→</i><span>через 30 дней: вторая подушка</span>
+  </div>
+  <ul>
+    <li><b>Если клиенту удобнее Kaspi,</b> на сайте у каждой подушки есть кнопка Kaspi. Это тоже продажа, просто без вашей базы.</li>
+    <li><b>«30 ночей на пробу».</b> Не подошла — возвращаем деньги. Эта гарантия убирает главный страх: «а вдруг неудобно».</li>
+    <li><b>Комплект «для пары»:</b> 2 подушки по промокоду за 25 990 ₸. Креатору — 5 000 ₸.</li>
+  </ul>
+</section>
+
+<section>
+  <div class="eyebrow">5 · Какие ролики снимаем · порядок съёмки</div>
+  <h2>10 роликов, каждый по формату, который уже залетел</h2>
+  <ol class="videos">
+    <li><div class="body"><h3>«Проверь свою подушку за 10 секунд»</h3><p>Человек ложится на свою плоскую подушку, камера сбоку, на экране рисуется линия шеи: она изогнута. Потом то же на ATARIA: линия ровная. В конце: «Напиши ШЕЯ — пришлю промокод».</p><div class="meta"><span>телефон</span><span>1 человек</span><span>час съёмки</span></div><p class="ref">Образец: «NEVER SLEEP LIKE THIS», 536 тыс. · <a href="https://www.instagram.com/reel/Dcdguu0joHh" target="_blank" rel="noopener">instagram.com/reel/Dcdguu0joHh</a></p></div></li>
+    <li><div class="body"><h3>3D-анимация: шея на обычной подушке и на ATARIA</h3><p>Позвонки на плоской подушке гнутся и краснеют, на ATARIA выстраиваются ровно. Делаю я в Blender, той же моделью подушки. Этот ролик можно крутить в рекламе месяцами.</p><div class="meta"><span>Blender</span><span>делаю я</span></div><p class="ref">Образцы: 3D-позвонки «Проблемы в шее», 10,3 млн · <a href="https://www.instagram.com/reel/DclVrYtAEWl" target="_blank" rel="noopener">instagram.com/reel/DclVrYtAEWl</a> · 3D-скелет с подушкой, 994 тыс. · <a href="https://www.tiktok.com/@divinedailydealz/video/7686159813818174734" target="_blank" rel="noopener">tiktok</a></p></div></li>
+    <li><div class="body"><h3>Кинезиолог или массажист: упражнение для шеи + подушка</h3><p>Специалист показывает одно упражнение от «холки», а в конце говорит: «Днём упражнение, ночью правильная подушка». Снимаем на казахском и русском.</p><div class="meta"><span>креатор-специалист</span><span>казахский</span></div><p class="ref">Образцы: на казахском, 16,6 млн · <a href="https://www.instagram.com/reel/DclZ7kIt_-X" target="_blank" rel="noopener">instagram.com/reel/DclZ7kIt_-X</a> · «Холка», 3,6 млн · <a href="https://www.instagram.com/reel/DegSldPI41S" target="_blank" rel="noopener">instagram.com/reel/DegSldPI41S</a></p></div></li>
+    <li><div class="body"><h3>POV: «Врач сказал выбросить плоскую подушку»</h3><p>Утро, человек трёт шею. Текст на экране: «Невролог сказал: голова проваливается ниже позвоночника, шея держит её всю ночь». Смена подушки, следующее утро без боли.</p><div class="meta"><span>телефон</span><span>без слов, текст на экране</span></div><p class="ref">Образцы: 1,9 млн · <a href="https://www.instagram.com/reel/DdDhIploIb6" target="_blank" rel="noopener">instagram.com/reel/DdDhIploIb6</a> · 1,1 млн · <a href="https://www.tiktok.com/@moob1511/video/7669278408945208590" target="_blank" rel="noopener">tiktok</a></p></div></li>
+    <li><div class="body"><h3>«На чём спали наши әжелер»</h3><p>Местная версия американского хита «на чём спали древние греки». Жёсткий валик, высокая подушка из шерсти, потом ATARIA. С юмором и под домбру.</p><div class="meta"><span>телефон</span><span>юмор</span></div><p class="ref">Образцы: «What Egyptian sleep on», 2 млн · <a href="https://www.instagram.com/reel/DesPXWClGjL" target="_blank" rel="noopener">instagram.com/reel/DesPXWClGjL</a> · 18,4 млн · <a href="https://www.instagram.com/reel/De7MayRidYq" target="_blank" rel="noopener">instagram.com/reel/De7MayRidYq</a></p></div></li>
+    <li><div class="body"><h3>Сон на боку: рука в выемке, плечо не затекает</h3><p>Вид сверху: человек ложится на бок, рука проходит в вырез под плечо. Текст: «Если ты спишь на боку и просыпаешься с онемевшей рукой».</p><div class="meta"><span>телефон сверху</span><span>15 сек</span></div><p class="ref">Образец: сон на боку, 859 тыс. · <a href="https://www.instagram.com/reel/Ddq55xZGMCI" target="_blank" rel="noopener">instagram.com/reel/Ddq55xZGMCI</a></p></div></li>
+    <li><div class="body"><h3>Ответ на комментарий «а мне подойдёт?»</h3><p>Ответ на реальные вопросы покупателей Kaspi: короткая шея, высокий рост, сплю на животе. Каждый ответ — отдельный ролик. Вопросы берём из отзывов на Kaspi.</p><div class="meta"><span>телефон</span><span>серия</span></div><p class="ref">Образец: ответ на «у меня короткая шея», 1,8 млн · <a href="https://www.tiktok.com/@kns_1031/video/7684336778441919774" target="_blank" rel="noopener">tiktok</a></p></div></li>
+    <li><div class="body"><h3>ASMR: пена с памятью формы</h3><p>Без людей. Рука медленно давит на серый верх, пена возвращается. Молния, бирка ATARIA, свет скользит по стёжке. Это образ в стиле Bork для сетки профиля.</p><div class="meta"><span>Blender + макро на телефон</span></div></div></li>
+    <li><div class="body"><h3>«Подарок родителям на Новый год»</h3><p>Распаковка у мамы или папы, их реакция. Запускаем с 1 декабря: в декабре люди ищут подарки, и подушка за 14 тыс. ₸ становится понятным подарком.</p><div class="meta"><span>с 1 декабря</span><span>семья в кадре</span></div></div></li>
+    <li><div class="body"><h3>Отзыв через 2 недели</h3><p>Настоящий покупатель с сайта говорит в камеру, что изменилось. Снимаем после первых продаж. Таких отзывов нужно 5–10, они идут в рекламу и на сайт.</p><div class="meta"><span>после первых продаж</span></div></div></li>
+  </ol>
+</section>
+
+<section>
+  <div class="eyebrow">6 · Креаторы</div>
+  <h2>Кого звать в программу с промокодами</h2>
+  <ul>
+    <li><b>Кинезиологи, массажисты, реабилитологи, тренеры йоги</b> с 5–100 тыс. подписчиков. Им верят про шею, и подушка ложится в их тему. Это главная группа.</li>
+    <li><b>Мамы и семейные блоги</b> Астаны и Алматы. Хорошо работают на ролики про подарок и уют.</li>
+    <li><b>Офисная тема:</b> айтишники, бухгалтеры, «работаю за ноутбуком».</li>
+  </ul>
+  <p>Каждому даём подушку, промокод, готовые сценарии из списка выше и 3 000 ₸ с каждой продажи. Первые 10 креаторов: цель — 5 активных, которые выкладывают ролик каждую неделю.</p>
+  <p class="note">Тексты первых сообщений креаторам уже есть в чате «Сайт с промокодами». Под специалистов я перепишу их отдельно.</p>
+</section>
+
+<section>
+  <div class="eyebrow">7 · Ближайшие 2 недели</div>
+  <h2>Кто что делает</h2>
+  <div class="tbl"><table>
+    <tr><th>Задача</th><th>Кто</th><th>Когда</th></tr>
+    <tr><td>3D-ролик «шея на обычной подушке и на ATARIA»</td><td>Я</td><td>3–4 дня</td></tr>
+    <tr><td>Сценарии роликов 1, 4, 6, 7 с текстом на экране, RU и KZ</td><td>Я</td><td>1 день</td></tr>
+    <tr><td>Бот: слово «ШЕЯ» → ссылка с промокодом (ManyChat)</td><td>Я пишу тексты, вы подключаете</td><td>2 дня</td></tr>
+    <tr><td>Снять ролики 1, 4, 6 на телефон</td><td>Вы или человек в кадре</td><td>неделя 1</td></tr>
+    <tr><td>Найти 20 кинезиологов и массажистов, написать им</td><td>Вы или менеджер, тексты мои</td><td>неделя 1–2</td></tr>
+    <tr><td>Реклама лучшего ролика: 4 000 ₸ в день</td><td>Я настраиваю, вы оплачиваете</td><td>неделя 2</td></tr>
+    <tr><td>Отвечать в WhatsApp в течение 15 минут</td><td>Вы или менеджер</td><td>постоянно</td></tr>
+  </table></div>
+</section>
+
+</div>
