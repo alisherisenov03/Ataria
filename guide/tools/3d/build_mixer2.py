@@ -193,18 +193,52 @@ world = bpy.data.worlds.new("w"); sc.world = world; world.use_nodes = True
 world.node_tree.nodes["Background"].inputs["Color"].default_value = (0.36, 0.32, 0.29, 1)
 world.node_tree.nodes["Background"].inputs["Strength"].default_value = 0.35
 
+# ---- inner parts for the "x-ray" view: motor and planetary gears inside the head ----
+if VIEW == "xray":
+    ghost = mat("ghost", (0.06, 0.06, 0.065), rough=0.3, trans=0.0)
+    gb = ghost.node_tree.nodes["Principled BSDF"]; gb.inputs["Alpha"].default_value = 0.18
+    for o in list(sc.objects):
+        if o.name in ("body",): o.data.materials[0] = ghost
+    copper = mat("copper", (0.85, 0.45, 0.25), metal=1.0, rough=0.25)
+    cyl("motor", 4.2, 10.5, (W - 6.6, 0, 33.0), material=copper)
+    cyl("motor_shaft", 0.6, 30, (W - 6.6 - 15, 0, 37.5), rot=(0, math.radians(90), 0), material=STEEL)
+    for i, (x, r) in enumerate(((11.0, 5.0), (18.5, 3.0), (24.0, 2.2))):
+        g = cyl(f"gear{i}", r, 1.2, (x, 0, 33.0), material=STEEL, verts=48)
+        md = g.modifiers.new("t", "SCREW") if False else None
+
 cams = {
     "front34": ((-34, -112, 46), (21, 0, 21), 55),
     "front": ((22, -135, 24), (22, 0, 22), 60),
     "side": ((-130, -10, 28), (22, 0, 21), 60),
-    "close_panel": ((60, -52, 30), (W - 7, FY, 22), 70),
+    "close_panel": ((62, -50, 31), (W - 7, FY, 22), 75),
+    "top": ((11.0, -6.0, 120), (11.0, 0, 10), 50),
+    "low": ((-20, -70, 6), (22, 0, 26), 32),
+    "xray": ((-30, -105, 50), (21, 0, 24), 55),
+    "bowl": ((-38, -46, 34), (11, 0, 16), 60),
 }
-loc, tgt, lens = cams.get(VIEW, cams["front34"])
+loc, tgt, lens = cams.get(VIEW, cams.get(VIEW.replace("orbit", "front34"), cams["front34"]))
 bpy.ops.object.camera_add(location=loc); cam = bpy.context.object; sc.camera = cam; aim(cam, tgt); cam.data.lens = lens
 
 sc.render.engine = "CYCLES"; sc.cycles.device = "CPU"; sc.cycles.samples = SAMPLES; sc.cycles.use_denoising = True
 sc.render.resolution_x = 1200; sc.render.resolution_y = 1500
 sc.view_settings.view_transform = "AgX"; sc.view_settings.look = "AgX - Medium High Contrast"
-sc.render.filepath = OUT
-bpy.ops.render.render(write_still=True)
-print("rendered", OUT)
+
+if VIEW == "orbit":
+    # slow 100-degree orbit with a gentle rise, 4 s at 24 fps, 16:9
+    sc.render.resolution_x = 960; sc.render.resolution_y = 540
+    bpy.ops.object.empty_add(location=(22, 0, 22)); pivot = bpy.context.object
+    cam.parent = pivot; cam.location = (0, -118, 18); cam.rotation_euler = (math.radians(82), 0, 0); cam.data.lens = 50
+    sc.frame_start, sc.frame_end = 1, 96
+    pivot.rotation_euler = (0, 0, math.radians(-60)); pivot.keyframe_insert("rotation_euler", frame=1)
+    pivot.rotation_euler = (0, 0, math.radians(40)); pivot.keyframe_insert("rotation_euler", frame=96)
+    for fc in pivot.animation_data.action.fcurves:
+        for kp in fc.keyframe_points: kp.interpolation = "SINE"
+    sc.render.fps = 24
+    sc.render.filepath = OUT.rstrip("/") + "/f_"
+    sc.render.image_settings.file_format = "JPEG"; sc.render.image_settings.quality = 92
+    bpy.ops.render.render(animation=True)
+    print("rendered animation", OUT)
+else:
+    sc.render.filepath = OUT
+    bpy.ops.render.render(write_still=True)
+    print("rendered", OUT)
