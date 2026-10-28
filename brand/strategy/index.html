@@ -1,0 +1,204 @@
+<title>Система продаж ATARIA</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@300;500&family=Golos+Text:wght@400;500;600&display=swap">
+<style>
+/* Layout: quiet product-catalogue column, taupe and graphite like a premium appliance brochure; renders break the column full-bleed. */
+:root{
+  --bg:#efebe6; --surface:#e4ded6; --fg:#24201c; --muted:#6c645b; --line:#cfc6bb;
+  --accent:#7a5c3e; --good:#3f6b4a; --warn:#9a5b1f; --bad:#9b3b30;
+  --display:"Unbounded","Golos Text",system-ui,sans-serif;
+  --body:"Golos Text",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#1b1815; --surface:#26221e; --fg:#ece6de; --muted:#a49a8e; --line:#3a342e;
+  --accent:#c9a27a; --good:#8fbf98; --warn:#e0a565; --bad:#e48a7e; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1b1815; --surface:#26221e; --fg:#ece6de; --muted:#a49a8e; --line:#3a342e;
+  --accent:#c9a27a; --good:#8fbf98; --warn:#e0a565; --bad:#e48a7e; color-scheme:dark}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.6;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:40px 80px}
+.wrap{max-width:860px;margin:0 auto;display:flex;flex-direction:column;gap:56px}
+h1,h2,h3{font-family:var(--display);font-weight:300;text-wrap:balance;margin:0;letter-spacing:-.01em}
+h1{font-size:clamp(30px,6vw,52px);line-height:1.08}
+h2{font-size:clamp(22px,3.6vw,30px);line-height:1.2}
+h3{font-family:var(--body);font-weight:600;font-size:17px}
+p{margin:0;max-width:66ch}
+.eyebrow{font-size:12px;text-transform:uppercase;letter-spacing:.14em;color:var(--muted)}
+section{display:flex;flex-direction:column;gap:18px}
+.lede{font-size:18px;color:var(--muted)}
+.facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1px;background:var(--line);border:1px solid var(--line)}
+.facts div{background:var(--bg);padding:16px 18px;display:flex;flex-direction:column;gap:4px;min-width:0}
+.facts b{font-family:var(--display);font-weight:300;font-size:26px;font-variant-numeric:tabular-nums}
+.facts span{font-size:13px;color:var(--muted)}
+.tbl{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:15px;font-variant-numeric:tabular-nums}
+th,td{text-align:left;padding:10px 12px 10px 0;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:12px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);font-weight:500}
+.pill{display:inline-block;font-size:12px;padding:2px 9px;border-radius:999px;border:1px solid currentColor;white-space:nowrap}
+.good{color:var(--good)} .warn{color:var(--warn)} .bad{color:var(--bad)}
+ul{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px;max-width:66ch}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+.two>div{display:flex;flex-direction:column;gap:10px;min-width:0;padding:20px;background:var(--surface)}
+@media (max-width:640px){.two{grid-template-columns:1fr}}
+figure{margin:0;display:flex;flex-direction:column;gap:8px}
+figure img{width:100%;height:auto;display:block;background:var(--surface)}
+figcaption{font-size:13px;color:var(--muted)}
+.renders{display:grid;grid-template-columns:2fr 1fr;gap:10px}
+.renders .stack{display:grid;gap:10px;min-width:0}
+@media (max-width:640px){.renders{grid-template-columns:1fr}}
+video{width:100%;max-width:360px;display:block;background:var(--surface)}
+.funnel{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.funnel span{padding:8px 12px;background:var(--surface);font-size:14px}
+.funnel i{font-style:normal;color:var(--muted)}
+.week{display:grid;grid-template-columns:120px 1fr;gap:16px;padding-block:14px;border-top:1px solid var(--line)}
+.week h3{font-family:var(--display);font-weight:300;font-size:18px}
+@media (max-width:520px){.week{grid-template-columns:1fr;gap:6px}}
+.who{font-size:12px;color:var(--accent);text-transform:uppercase;letter-spacing:.1em}
+.note{font-size:13px;color:var(--muted)}
+a{color:var(--accent)}
+</style>
+
+<div class="wrap">
+
+<header style="display:flex;flex-direction:column;gap:14px">
+  <div class="eyebrow">ATARIA · отдел маркетинга и продаж · 28 октября 2026</div>
+  <h1>Система продаж ATARIA за пределами Kaspi</h1>
+  <p class="lede">Разбор по вашим выгрузкам Kaspi, двум рабочим чатам и рынку: США, Wildberries, Bork. Здесь то, что продаёт, то, что тратит деньги, и план на 30 дней с разделением, кто что делает.</p>
+</header>
+
+<section>
+  <div class="eyebrow">1 · Где мы сейчас</div>
+  <h2>Бизнес растёт, но живёт на одной площадке и на её рекламе</h2>
+  <div class="facts">
+    <div><b>≈55 млн ₸</b><span>оборот, выдано, 24.02–14.10 (бренд Ataria ≈49 млн)</span></div>
+    <div><b>1 303 шт</b><span>подушек ≈18 млн ₸, средний чек ≈13 800 ₸</span></div>
+    <div><b>434 шт</b><span>комбайн AT-SM23 ≈19 млн ₸, драйвер с августа</span></div>
+    <div><b>23%</b><span>доля рекламы Kaspi в выручке: 1 ₸ рекламы даёт 4,3 ₸</span></div>
+  </div>
+  <div class="tbl"><table>
+    <tr><th>Сентябрь 2026</th><th>₸</th><th>Комментарий</th></tr>
+    <tr><td>Выручка</td><td>10 008 630</td><td></td></tr>
+    <tr><td>Маркетинг</td><td>2 500 196</td><td><span class="pill warn">25% выручки</span></td></tr>
+    <tr><td>Чистая прибыль</td><td>1 447 450</td><td>14,5%</td></tr>
+    <tr><td>Подушки, прибыль после рекламы</td><td>696 664</td><td><span class="pill good">22% выручки</span></td></tr>
+    <tr><td>Комбайн, прибыль после рекламы</td><td>664 832</td><td><span class="pill warn">11,6%: реклама 26%</span></td></tr>
+    <tr><td>Измельчители</td><td>85 936</td><td><span class="pill bad">9%</span></td></tr>
+  </table></div>
+  <p class="note">Источник: чаты «Каспи», «Анализ продаж по товарам», «Инвестиционный план». Около 1 750 заказов по 250–1 000 ₸ из Айета и Шетпе (самовыкупы) и товары брата в цифры не входят.</p>
+</section>
+
+<section>
+  <div class="eyebrow">2 · Диагноз</div>
+  <h2>Четыре вещи, которые тормозят рост</h2>
+  <ul>
+    <li><b>100% продаж через Kaspi.</b> Покупатель принадлежит Kaspi, а не вам. Нет базы, нет повторных продаж, ставка за клик растёт каждый месяц.</li>
+    <li><b>Комбайн продаётся за счёт рекламы.</b> С одной машины ≈15 400 ₸ прибыли при цене 129 990 ₸. Ещё +5 пунктов рекламы, и он уйдёт в ноль.</li>
+    <li><b>Instagram не продаёт.</b> Нет системы: ролик → вопрос в директ → ссылка → покупка. Красивые кадры без механики сбора заявок не окупаются.</li>
+    <li><b>Видео не похоже на товар.</b> Генерация ИИ искажает форму подушки и шкалу комбайна. Покупатель видит разницу при получении, отсюда отмены «передумал» (42 из 103).</li>
+  </ul>
+</section>
+
+<section>
+  <div class="eyebrow">3 · Что работает на рынке</div>
+  <h2>США продают объяснением, Bork продаёт ощущением цены</h2>
+  <div class="two">
+    <div>
+      <h3>Подушки, США, май–октябрь 2026</h3>
+      <p>Ролики-лидеры набрали от 0,5 до 18 млн просмотров у аккаунтов с 5–65 тыс. подписчиков. Ни один из них не «красивый». Все объясняют боль:</p>
+      <ul>
+        <li>«Никогда не спи так»: человек лёг на плоскую подушку, рядом рентген шеи.</li>
+        <li>«На чём спали древние греки/египтяне» → подушка-решение.</li>
+        <li>Физиотерапевт или хиропрактик объясняет, почему болит шея утром.</li>
+        <li>POV: «врач сказал выбросить плоскую подушку», смена подушки, утро без боли.</li>
+        <li>Финал всегда один: «Напиши ПОДУШКА, пришлю ссылку».</li>
+      </ul>
+    </div>
+    <div>
+      <h3>Комбайны, СНГ и мир</h3>
+      <p>Миксер сам по себе никому не интересен. Интересна еда и время:</p>
+      <ul>
+        <li>Рецепт с машиной в кадре: чебуреки с промокодом блогера, 957 тыс. просмотров.</li>
+        <li>Замес теста крупно, зацикленный, без слов (ASMR).</li>
+        <li>«Это не просто миксер, это ещё…»: каждая насадка как отдельный сюрприз.</li>
+        <li>«Лучший подарок маме / себе»: продажи растут к праздникам.</li>
+        <li>Для Казахстана: беш, манты, лагман, баурсаки. Этого почти никто не снимает.</li>
+      </ul>
+    </div>
+  </div>
+  <div class="two">
+    <div>
+      <h3>Bork</h3>
+      <p>Bork тоже не производит сам, всё делают OEM-заводы. Премиум он строит дизайном, металлом в корпусе, своими бутиками и одним визуальным языком во всём. Для Ataria это тот же путь: свой завод не нужен, нужен единый стиль, который оправдывает цену.</p>
+    </div>
+    <div>
+      <h3>DTC-бренды и Wildberries</h3>
+      <p>У DTC-брендов есть «100 ночей на пробу» как снятие риска, комплекты из двух штук и скидка новому клиенту. Продавцы Wildberries ведут внешний трафик на карточку: это поднимает её в поиске, и органика начинает продавать сама.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="eyebrow">4 · Стратегия</div>
+  <h2>Две витрины: образ как у Bork, продажи как в США</h2>
+  <div class="two">
+    <div>
+      <span class="who">20% контента · образ</span>
+      <h3>Слой «Bork»</h3>
+      <p>Студийные 3D-кадры товара, медленные пролёты камеры, люди в дорогом, но живом интерьере. Это сетка Instagram, сайт, карточки Kaspi, упаковка. Задача: чтобы 13–17 тыс. ₸ за подушку и 130 тыс. ₸ за машину казались нормальной ценой.</p>
+    </div>
+    <div>
+      <span class="who">80% контента · продажи</span>
+      <h3>Слой «объяснение»</h3>
+      <p>Короткие ролики про боль и решение: шея, сон, тесто, время на кухне. Снимаются на телефон, людьми, по проверенным хукам из США. Именно они идут в рекламу и к блогерам.</p>
+    </div>
+  </div>
+  <h3>Воронка, которую строим</h3>
+  <div class="funnel">
+    <span>Reels / TikTok</span><i>→</i><span>комментарий «ПОДУШКА»</span><i>→</i><span>бот в директе</span><i>→</i><span>Kaspi или сайт с промокодом</span><i>→</i><span>WhatsApp после покупки</span><i>→</i><span>отзыв и вторая покупка</span>
+  </div>
+  <ul>
+    <li><b>Гарантия «30 ночей».</b> Не подошла подушка, возвращаем деньги. По Kaspi возвратов почти нет, значит риск маленький, а покупать проще.</li>
+    <li><b>Комплект.</b> «Две подушки для пары» и «подушка + шёлковая наволочка». Средний чек растёт без новой рекламы.</li>
+    <li><b>Повторные продажи.</b> Через 30 дней пишем в WhatsApp: «как спится?», просим отзыв и предлагаем вторую подушку в подарок родителям.</li>
+    <li><b>Комбайн.</b> Продаём через рецепты и инструкцию (сайт ataria-guide уже есть). Покупатель видит, что машина реально помогает готовить, и не отменяет заказ.</li>
+  </ul>
+</section>
+
+<section>
+  <div class="eyebrow">5 · Видео без искажений</div>
+  <h2>Товар рисует Blender, людей и интерьер рисует ИИ</h2>
+  <p>ИИ-видео каждый раз заново угадывает форму подушки, поэтому она «плывёт». Я построил точную 3D-модель подушки №1 по вашим фото (620×410 мм, крылья 13 см, серый бархатный верх, белые стёганые бока, кнопка). Теперь товар в кадре всегда один и тот же, а камеру, свет и фон можно менять сколько угодно. ИИ остаётся для сцен с людьми, но только как фон, без крупных планов товара.</p>
+  <div class="renders">
+    <figure><img src="img/hero.jpg" alt="3D-рендер подушки ATARIA на каменном подиуме, вид 3/4"><figcaption>Главный кадр: подиум из травертина, тёплый тауп</figcaption></figure>
+    <div class="stack">
+      <figure><img src="img/front.jpg" alt="Подушка спереди: силуэт крыльев"><figcaption>Спереди: силуэт крыльев</figcaption></figure>
+      <figure><img src="img/top.jpg" alt="Подушка сверху: форма бабочки"><figcaption>Сверху: форма «бабочки»</figcaption></figure>
+    </div>
+  </div>
+  <p class="note">Это первая версия модели. Что доработать: стёжка «ромб» на боках пока читается как диагональные полосы, нет бирки ATARIA и молнии. Дальше макро стёжки, нажатие на пену, облёт камеры для Reels. Потом та же схема для AT-SM23.</p>
+</section>
+
+<section>
+  <div class="eyebrow">6 · План на 30 дней</div>
+  <h2>Кто что делает</h2>
+  <div class="week"><h3>Неделя 1</h3><div><span class="who">Я</span><p>3D-набор подушки: 10 кадров и 5 роликов в стиле Bork. Сценарии 10 продающих роликов по хукам из США на русском и казахском. Тексты бота для директа.</p><span class="who">Вы</span><p>Выбрать гарантию (30 ночей или нет). Подключить ManyChat к Instagram и WhatsApp Business.</p></div></div>
+  <div class="week"><h3>Неделя 2</h3><div><span class="who">Я</span><p>Карточки Kaspi из 3D-кадров. Реклама в Meta: 3 ролика × 2 аудитории, 4 000 ₸ в день на тест.</p><span class="who">Вы или менеджер</span><p>Снять на телефон 5 роликов по моим сценариям: дома, с живым человеком. Отправить подушки 10 микроблогерам.</p></div></div>
+  <div class="week"><h3>Неделя 3</h3><div><span class="who">Я</span><p>Отключаю ролики, которые не окупаются, и масштабирую лучший. Рецептный контент для AT-SM23: беш, манты, баурсаки.</p><span class="who">Менеджер</span><p>Отвечает в директе и WhatsApp по моим скриптам, ведёт таблицу клиентов.</p></div></div>
+  <div class="week"><h3>Неделя 4</h3><div><span class="who">Я</span><p>Первая рассылка покупателям: отзыв и вторая подушка. Отчёт за месяц и план на ноябрь (Чёрная пятница, Новый год).</p><span class="who">Вы</span><p>Решение по бюджету на декабрь.</p></div></div>
+</section>
+
+<section>
+  <div class="eyebrow">7 · Что считаем каждую неделю</div>
+  <div class="tbl"><table>
+    <tr><th>Показатель</th><th>Цель на ноябрь</th></tr>
+    <tr><td>Доля рекламы в выручке (Kaspi + внешняя)</td><td>с 25% до 18%</td></tr>
+    <tr><td>Стоимость одного покупателя из Instagram</td><td>до 2 500 ₸ за подушку, до 12 000 ₸ за комбайн</td></tr>
+    <tr><td>Заявки в директ по кодовому слову</td><td>от 30 в день</td></tr>
+    <tr><td>Клиенты в своей базе (телефон)</td><td>от 300</td></tr>
+    <tr><td>Отмены «передумал»</td><td>в 2 раза меньше</td></tr>
+  </table></div>
+  <p class="note">Цели предварительные. Уточню их после первой недели теста рекламы.</p>
+</section>
+
+</div>
