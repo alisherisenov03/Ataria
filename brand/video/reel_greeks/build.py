@@ -7,6 +7,7 @@ pauses inside phrases are cut and the whole reel runs at SPEED.
 RAW_DIR holds v1..v4.mp4, IMG_DIR the illustrations named in EDL.
 """
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -20,6 +21,8 @@ BG = "0x16130f"
 
 SPEED = 1.12        # whole reel slightly faster
 PAD, GAP = 0.12, 0.3  # keep this much around speech; pauses longer than GAP are cut
+EXPORT_SRC = os.environ.get("EXPORT_SRC")  # dir: also write each part's raw footage (for the AI re-cast)
+AI_DIR = os.environ.get("AI_DIR")          # dir with aiNN.mp4: use re-cast footage instead of the source video
 
 # segments: (title, illustration, [(video, in, out, caption), ...])
 EDL = [
@@ -129,6 +132,17 @@ def build_part(raw, img_dir, tmp, idx, sub, title, image):
     dur = sum(hi - lo for lo, hi in ranges) / SPEED
     sel = "+".join(f"between(t,{lo:.3f},{hi:.3f})" for lo, hi in ranges)
     out = tmp / f"part{idx:02d}.mp4"
+    if EXPORT_SRC:
+        Path(EXPORT_SRC).mkdir(parents=True, exist_ok=True)
+        run(["ffmpeg", "-v", "error", "-y", "-i", str(src), "-an", "-vf", f"fps=30,select='{sel}',setpts=N/30/TB",
+             "-c:v", "libx264", "-crf", "16", "-pix_fmt", "yuv420p", str(Path(EXPORT_SRC) / f"src{idx:02d}.mp4")])
+    ai = Path(AI_DIR) / f"ai{idx:02d}.mp4" if AI_DIR else None
+    if ai and ai.exists():
+        ai_dur = float(subprocess.run(["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0",
+                                       str(ai)], capture_output=True, text=True).stdout)
+        vid_in = f"[2:v]setpts=PTS*{dur / ai_dur:.5f},fps=30,"
+    else:
+        ai, vid_in = None, f"[0:v]fps=30,select='{sel}',setpts=N/30/{SPEED}/TB,fps=30,"
     # captions: short chunks spread over the clip by length
     parts = chunks(caption)
     weights = [len(t) + 4 for t in parts]
@@ -148,7 +162,7 @@ def build_part(raw, img_dir, tmp, idx, sub, title, image):
     ]
     graph = (
         f"color=c={BG}:s={W}x{H}:d={dur:.3f}:r=30[bg];"
-        f"[0:v]fps=30,select='{sel}',setpts=N/30/{SPEED}/TB,fps=30,scale=-2:{VID_H},crop={W}:{VID_H},eq=contrast=1.06:saturation=1.08[vid];"
+        f"{vid_in}scale=-2:{VID_H}:flags=lanczos,crop={W}:{VID_H},eq=contrast=1.06:saturation=1.08[vid];"
         f"[1:v]scale={IMG_SIZE}:{IMG_SIZE}:force_original_aspect_ratio=increase,crop={IMG_SIZE}:{IMG_SIZE}[img];"
         f"[bg][img]overlay=(W-w)/2:{IMG_Y}[b1];"
         f"[b1][vid]overlay=0:{VID_Y}:eof_action=repeat[b2];"
@@ -158,7 +172,7 @@ def build_part(raw, img_dir, tmp, idx, sub, title, image):
         f"afade=t=out:st={dur - 0.06:.3f}:d=0.06,aresample=48000[outa]"
     )
     run(["ffmpeg", "-v", "error", "-y", "-i", str(src), "-loop", "1", "-t", f"{dur:.3f}",
-         "-i", str(img_dir / image), "-filter_complex", graph, "-map", "[outv]", "-map", "[outa]",
+         "-i", str(img_dir / image), *(["-i", str(ai)] if ai else []), "-filter_complex", graph, "-map", "[outv]", "-map", "[outa]",
          "-c:v", "libx264", "-preset", "medium", "-crf", "19", "-pix_fmt", "yuv420p",
          "-c:a", "aac", "-b:a", "192k", "-t", f"{dur:.3f}", str(out)])
     return out, dur
