@@ -528,6 +528,37 @@ if REAL:
     sc.render.filter_size = 1.2
     sc.view_settings.look = "AgX - Medium High Contrast"; sc.view_settings.exposure = float(os.environ.get("EXPO", "0.0"))
 
+# ---------- MASK=1: white silhouettes of the exact details (logo, pills, display, dial, lever) for compositing ----------
+if os.environ.get("MASK") == "1":
+    keep = ("logo", "icons", "display", "display_frame", "display_glass", "display_cover", "dial_", "lever_", "lock", "port")
+    white = bpy.data.materials.new("mask_white"); white.use_nodes = True; nt = white.node_tree
+    for nd in list(nt.nodes):
+        if nd.type == "BSDF_PRINCIPLED": nt.nodes.remove(nd)
+    em = nt.nodes.new("ShaderNodeEmission"); em.inputs["Strength"].default_value = 1.0
+    nt.links.new(em.outputs["Emission"], nt.nodes["Material Output"].inputs["Surface"])
+    def alpha_mask(img):
+        m = bpy.data.materials.new("mask_" + img.name); m.use_nodes = True; nt = m.node_tree
+        for nd in list(nt.nodes):
+            if nd.type == "BSDF_PRINCIPLED": nt.nodes.remove(nd)
+        t = nt.nodes.new("ShaderNodeTexImage"); t.image = img
+        e = nt.nodes.new("ShaderNodeEmission"); tr = nt.nodes.new("ShaderNodeBsdfTransparent"); mx = nt.nodes.new("ShaderNodeMixShader")
+        nt.links.new(t.outputs["Alpha"], mx.inputs["Fac"]); nt.links.new(tr.outputs[0], mx.inputs[1]); nt.links.new(e.outputs[0], mx.inputs[2])
+        nt.links.new(mx.outputs[0], nt.nodes["Material Output"].inputs["Surface"]); m.blend_method = "BLEND"
+        return m
+    for o in sc.objects:
+        if o.type != "MESH": continue
+        if o.name.startswith(keep):
+            imgs = [n.image for m in o.data.materials if m and m.use_nodes for n in m.node_tree.nodes if n.type == "TEX_IMAGE" and n.image]
+            o.data.materials.clear()
+            # printed decals mask by their own alpha (letters, pills, lock icon); solid parts mask whole
+            o.data.materials.append(alpha_mask(imgs[0]) if imgs and o.name in ("logo", "icons", "lock", "port", "dial_ring", "dial_face") else white)
+        else:
+            o.is_holdout = True
+    sc.render.film_transparent = True; sc.cycles.samples = 4; sc.render.use_motion_blur = False
+    if cam.data.dof: cam.data.dof.use_dof = False
+    sc.view_settings.view_transform = "Standard"; sc.view_settings.look = "None"; sc.view_settings.exposure = 0
+    sc.render.image_settings.color_mode = "RGBA"
+
 if VIEW == "blend":
     bpy.ops.file.pack_all()
     bpy.ops.wm.save_as_mainfile(filepath=OUT, compress=True); print("saved", OUT); sys.exit(0)
@@ -547,6 +578,7 @@ if VIEW == "work":
         for fr in map(int, args[3].split(",")):
             sc.frame_set(fr); sc.render.filepath = OUT.rstrip("/") + f"/p_{fr:04d}.jpg"; bpy.ops.render.render(write_still=True)
         sys.exit(0)
+    sc.render.use_overwrite = False; sc.render.use_placeholder = True  # resumable after restarts
     bpy.ops.render.render(animation=True); print("rendered animation", OUT); sys.exit(0)
 if VIEW == "orbit":
     # 5 s at 24 fps, 16:9: slow 100-degree orbit from the bowl end to the controls
@@ -561,6 +593,7 @@ if VIEW == "orbit":
     sc.render.fps = 24
     sc.render.filepath = OUT.rstrip("/") + "/f_"
     sc.render.image_settings.file_format = "JPEG"; sc.render.image_settings.quality = 93
+    sc.render.use_overwrite = False; sc.render.use_placeholder = True  # resumable after restarts
     bpy.ops.render.render(animation=True); print("rendered animation", OUT); sys.exit(0)
 sc.render.filepath = OUT
 bpy.ops.render.render(write_still=True)
