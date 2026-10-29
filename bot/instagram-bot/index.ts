@@ -415,8 +415,18 @@ async function handleEvent(ourId: string, ev: any) {
 Deno.serve(async (req) => {
   const url = new URL(req.url);
   if (req.method === "GET") {
-    const ok = url.searchParams.get("hub.mode") === "subscribe" &&
-      url.searchParams.get("hub.verify_token") === env("IG_VERIFY_TOKEN") && env("IG_VERIFY_TOKEN") !== "";
+    const tokenOk = url.searchParams.get("hub.verify_token") === env("IG_VERIFY_TOKEN") && env("IG_VERIFY_TOKEN") !== "";
+    // diagnostics for the owner: which account the token belongs to and whether it is subscribed to messages
+    if (tokenOk && url.searchParams.get("hub.mode") === "diag") {
+      const t = await token();
+      if (url.searchParams.get("subscribe") === "1") {
+        await fetch(`${GRAPH}/me/subscribed_apps?subscribed_fields=messages&access_token=${t}`, { method: "POST" });
+      }
+      const me = await (await fetch(`${GRAPH}/me?fields=user_id,username,account_type&access_token=${t}`)).json();
+      const subs = await (await fetch(`${GRAPH}/me/subscribed_apps?access_token=${t}`)).json();
+      return Response.json({ me, subscribed_apps: subs });
+    }
+    const ok = url.searchParams.get("hub.mode") === "subscribe" && tokenOk;
     return ok ? new Response(url.searchParams.get("hub.challenge")) : new Response("forbidden", { status: 403 });
   }
   if (req.method !== "POST") return new Response("method not allowed", { status: 405 });
