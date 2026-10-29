@@ -176,9 +176,10 @@ slab("seam_tilt", rounded_poly([(CX0 + 0.3, -HD / 2 - 0.03), (CX1 + 0.03, -HD / 
 # top cap is flush with the body: only a thin seam runs round the head at z 42.4 (photos 034/035)
 slab("seam_cap", rounded_poly([(0.68, -HD / 2 - 0.02), (43.62, -HD / 2 - 0.02), (43.62, HD / 2 + 0.02), (0.68, HD / 2 + 0.02)], [6.0, 3.2, 3.2, 6.0]), HZ1 - 0.08, HZ1 + 0.08, 0, material=DARK)
 # separate rear lid over the column: flush, seen only as a seam across the top
-# rear top lid over the column (owner's note): a separate panel sitting on the head top, with a thin gap around it
-slab("rear_lid_gap", rounded_poly([(33.3, -HD / 2 + 0.9), (43.0, -HD / 2 + 0.9), (43.0, HD / 2 - 0.9), (33.3, HD / 2 - 0.9)], [0.6, 2.4, 2.4, 0.6]), 44.55, 44.62, 0, material=DARK)
-slab("rear_lid", rounded_poly([(33.45, -HD / 2 + 1.05), (42.85, -HD / 2 + 1.05), (42.85, HD / 2 - 1.05), (33.45, HD / 2 - 1.05)], [0.5, 2.25, 2.25, 0.5]), 44.5, 44.78, 0.12)
+# rear top lid = cover of the blender socket (owner's photo 019): the whole rear part of the top cap from x 25 to the end,
+# flush with the cap; seen only as a seam across the top that runs down both sides to the cap seam
+RLX = 26.2
+box("seam_rear", (0.14, HD + 0.06, 44.66 - HZ1), (RLX, 0, (44.66 + HZ1) / 2), material=DARK)
 # the port cover reaches over the top edge: short seams on the top surface at the bowl end
 box("seam_port_c", (0.14, 8.4, 0.04), (2.3, 0, 44.6), material=DARK)
 for yy in (-4.2, 4.2): box(f"seam_port_{yy}", (1.6, 0.14, 0.04), (1.5, yy, 44.6), material=DARK)
@@ -250,6 +251,35 @@ decal("dial_face", "dial_cap.png", 5.9, 5.9, (DX, FY - 3.09, DZ), rough=0.2, met
 # ---------- head decals: logo and the three speed pills ----------
 decal("logo", "logo.png", 8.1, 8.1 * 297 / 2367, (21.5, FY - 0.02, 38.2), rough=0.4)
 decal("icons", "icons.png", 5.2, 5.2 * 902 / 806, (36.3, FY - 0.02, 36.45), rough=0.4)
+
+# ---------- attachment scenes ----------
+if VIEW in ("tools", "blender", "grinder"):
+    exec(open(os.path.join(TEX, "attachments.py")).read())
+if VIEW == "tools":
+    # hook, whisk and beater standing on the plinth in front of the machine, collars up
+    # stand each tool upside down on its collar, like the factory photos 053-055
+    for fn, (x, y), turn in ((make_hook, (-9.0, -25.0), 30), (make_whisk, (3.5, -30.0), 0), (make_beater, (16.5, -26.0), -25)):
+        objs = fn(x, y, 0.0)
+        e = bpy.data.objects.new("stand", None); prod.objects.link(e); e.location = (x, y, 0.0); bpy.context.view_layer.update()
+        for o in objs:
+            o.parent = e; o.matrix_parent_inverse = e.matrix_world.inverted()
+        e.rotation_euler = (math.radians(180), 0, math.radians(turn))
+if VIEW == "blender":
+    # rear lid removed: open well with the drive socket, jar seated in it
+    b = bpy.data.objects["body"]
+    cut = slab("well_cut", rounded_poly([(RLX + 0.5, -HD / 2 + 0.7), (42.9, -HD / 2 + 0.7), (42.9, HD / 2 - 0.7), (RLX + 0.5, HD / 2 - 0.7)], [0.4, 2.6, 2.6, 0.4]), 43.0, 47.0, 0)
+    cut.modifiers.clear()
+    md = b.modifiers.new("well", "BOOLEAN"); md.operation = "DIFFERENCE"; md.object = cut; md.solver = "EXACT"
+    b.modifiers.move(len(b.modifiers) - 1, 0)
+    cut.hide_render = True; cut.hide_viewport = True
+    bpy.data.objects["seam_rear"].hide_render = True
+    cyl("socket_ring", 6.4, 0.6, (35.0, 0, 43.3), material=DARK, verts=96)
+    cyl("socket_drive", 1.1, 0.9, (35.0, 0, 43.6), material=STEEL, verts=12)
+    make_blender(35.0, 0, 43.0)
+if VIEW == "grinder":
+    bpy.data.objects["port"].hide_render = True
+    cyl("port_socket", 2.2, 0.6, (0.5, 0, 38.9), rot=(0, math.radians(90), 0), material=DARK, verts=64)
+    make_grinder(0.6, 38.9)
 
 # ---------- "work" animation: head lowers, dial turns to speed 2, dough hook spins (owner's product video) ----------
 if VIEW == "work":
@@ -351,6 +381,9 @@ cams = {
     "side": ((140, -8, 26), (22, 0, 24), 60),
     "top": ((22, -0.01, 150), (22, 0, 20), 45),
     "dial": ((44, -38, 16), (DX, FY, 12), 85),
+    "tools": ((-10, -110, 40), (12, -10, 22), 45),
+    "blender": ((-30, -100, 62), (24, 0, 36), 45),
+    "grinder": ((-60, -95, 50), (8, 0, 30), 45),
 }
 loc, tgt, lens = cams.get(VIEW, cams["front34"])
 bpy.ops.object.camera_add(location=loc); cam = bpy.context.object; sc.camera = cam; aim(cam, tgt)
