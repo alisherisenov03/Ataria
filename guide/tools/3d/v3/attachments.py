@@ -7,12 +7,14 @@ def collar(name, x, y, z, disc=0.0):
     if disc: objs.append(cyl(name + "_disc", disc, 0.15, (x, y, z - 2.3), material=STEEL, verts=96))
     return objs
 
-def make_whisk(x, y, z, wires=8):
+def make_whisk(x, y, z, wires=12):
     # balloon whisk: 4 loops (8 wires) in vertical planes, teardrop profile 16 cm long, 11 cm wide
     objs = collar("whisk", x, y, z) + [cyl("whisk_ferrule", 0.9, 1.6, (x, y, z - 2.9), material=STEEL, verts=32)]
-    L = 16.5
-    def r_of(t):  # t 0 (top) .. 1 (tip)
-        return 5.6 * math.sin(math.pi * min(1, t * 1.02)) ** 0.75 * (1.0 - 0.18 * t) + 0.5 * (1 - t) ** 6
+    L = 15.5
+    def r_of(t):  # t 0 (collar) .. 1 (tip): wide balloon, almost round, widest at 60 %, rounded tip (owner's note, photo 053)
+        R, c = 7.4, 0.6
+        if t < c: return 0.6 + (R - 0.6) * math.sin(math.pi / 2 * t / c) ** 0.7
+        return R * math.sqrt(max(0.0, 1 - ((t - c) / (1 - c)) ** 2))
     for k in range(wires // 2):
         a = math.pi * k / (wires // 2)
         pts = []
