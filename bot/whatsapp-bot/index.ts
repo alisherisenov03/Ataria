@@ -8,7 +8,7 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import Anthropic from "npm:@anthropic-ai/sdk";
 import { createClient } from "npm:@supabase/supabase-js@2";
 
-const env = (k: string) => Deno.env.get(k) ?? "";
+const env = (k: string) => (Deno.env.get(k) ?? "").trim(); // pasted secrets often carry stray spaces
 const db = createClient(env("SUPABASE_URL"), env("SUPABASE_SERVICE_ROLE_KEY"));
 const claude = new Anthropic({ apiKey: env("ANTHROPIC_API_KEY") });
 
@@ -126,7 +126,7 @@ async function sendText(to: string, body: string) {
 
 // Owner alerts are plain messages: they arrive only while the owner's 24h window with the bot is open.
 async function notifyOwner(text: string) {
-  const owner = env("OWNER_PHONE");
+  const owner = env("OWNER_PHONE").replace(/\D/g, ""); // "+7 701 ..." -> "7701..."
   if (owner) await sendText(owner, text);
 }
 
@@ -260,14 +260,18 @@ async function reply(phone: string) {
 
 async function verifySignature(raw: string, header: string | null): Promise<boolean> {
   const secret = env("WA_APP_SECRET");
-  if (!secret || !header?.startsWith("sha256=")) return false;
+  if (!secret || !header?.startsWith("sha256=")) {
+    console.warn("signature check skipped", { secretSet: secret !== "", headerPresent: !!header });
+    return false;
+  }
   const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
   const sig = new Uint8Array(await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(raw)));
   const hex = Array.from(sig, (b) => b.toString(16).padStart(2, "0")).join("");
   const given = header.slice(7);
-  if (given.length !== hex.length) return false;
-  let diff = 0;
+  let diff = given.length ^ hex.length;
   for (let i = 0; i < hex.length; i++) diff |= hex.charCodeAt(i) ^ given.charCodeAt(i);
+  // secret length only, never the value: an App ID (15–16 digits) pasted instead of the 32-char secret shows here
+  if (diff !== 0) console.warn("signature mismatch", { secretLength: secret.length, secretIsDigits: /^\d+$/.test(secret) });
   return diff === 0;
 }
 
