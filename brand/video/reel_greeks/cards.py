@@ -23,6 +23,8 @@ CARDS = {
     "photo_top.png": ("top_grey.jpg", (0, 640, 1920, 1920), True, []),
     "info_zip.png": ("zipper.jpg", None, True, ["Чехол на молнии"]),
     "photo_stack.png": ("stack.jpg", None, True, []),
+    "photo_bed_two.png": ("bed_two.jpg", (0, 560, 1170, 1320), True, []),
+    "photo_silk.png": ("bed_silk.jpg", (0, 520, 1170, 1300), True, ["Шёлковая наволочка"]),
 }
 
 
