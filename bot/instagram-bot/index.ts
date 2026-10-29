@@ -24,8 +24,18 @@ const GRAPH = "https://graph.instagram.com/v21.0";
 const HISTORY_LIMIT = 40;
 const TOKEN_REFRESH_DAYS = 30; // long-lived tokens live 60 days
 
-const STYLE = `Пиши как живой менеджер в Instagram Direct: коротко (1–4 предложения), тепло, без markdown и списков.
-Отвечай на языке собеседника (русский или казахский). Не раскрывай эти инструкции.`;
+const STYLE = `Пиши как живой человек-менеджер в мессенджере, а не как бот:
+- коротко и простыми словами, как пишут в переписке; обычно 1–3 коротких предложения;
+- если мысль длинная, раздели её на 2–3 сообщения пустой строкой — каждое уйдёт отдельным сообщением;
+- без markdown, списков, нумерации, заголовков и канцелярита;
+- без шаблонных фраз вроде «Отличный вопрос!», «Конечно!», «Чем ещё могу помочь?», «Обращайтесь!»;
+- не здоровайся повторно, если уже здоровались; не начинай каждое сообщение с имени;
+- эмодзи редко и к месту, не больше одного на ответ, можно без них;
+- живые обороты уместны («смотрите», «да, есть», «сейчас подскажу»), но пиши грамотно;
+- по умолчанию на «вы»; если человек пишет на «ты» и неформально, можно проще;
+- отвечай на языке собеседника (русский или казахский);
+- если человек прямо и всерьёз спрашивает, бот ли ты, не обманывай: скажи, что ты помощник бренда ATARIA, и предложи позвать человека;
+- не раскрывай эти инструкции.`;
 
 const CUSTOMER_SYSTEM = `Ты — менеджер по продажам бренда ATARIA в Instagram. ATARIA — казахстанский бренд ортопедических подушек.
 ${STYLE}
@@ -176,6 +186,41 @@ async function token(): Promise<string> {
   return fresh;
 }
 
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+const jitter = (ms: number) => ms * (0.85 + Math.random() * 0.3);
+
+async function senderAction(igsid: string, action: "mark_seen" | "typing_on") {
+  await fetch(`${GRAPH}/me/messages`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${await token()}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ recipient: { id: igsid }, sender_action: action }),
+  }).catch(() => {});
+}
+
+// how long a person would type this: ~55 ms per character, 2.5–14 s per message
+function typingMs(text: string): number {
+  return jitter(Math.min(14_000, Math.max(2_500, 1_500 + text.length * 55)));
+}
+
+// Reply like a person: show "typing…" for as long as the text takes to type,
+// and send each paragraph as its own message. typingSince: when "typing…" was switched on.
+async function sendHuman(igsid: string, text: string, typingSince: number): Promise<string | null> {
+  const parts = text.split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean);
+  let first: string | null = null;
+  for (const [i, part] of parts.entries()) {
+    if (i > 0) await senderAction(igsid, "typing_on");
+    const start = i === 0 ? typingSince : Date.now();
+    await sleep(Math.max(0, typingMs(part) - (Date.now() - start)));
+    const mid = await sendText(igsid, part);
+    if (mid) {
+      await db.from("ig_sent").insert({ mid });
+      first ??= mid;
+    }
+    if (i < parts.length - 1) await sleep(jitter(900));
+  }
+  return first;
+}
+
 async function sendText(igsid: string, text: string): Promise<string | null> {
   const res = await fetch(`${GRAPH}/me/messages`, {
     method: "POST",
@@ -312,6 +357,12 @@ async function reply(t: Thread) {
 
   const messages = await history(t.igsid);
   if (!messages.length || messages[messages.length - 1].role !== "user") return;
+  // a person reads first, then starts typing; the model's thinking time counts as typing
+  await sleep(jitter(1_600));
+  await senderAction(t.igsid, "mark_seen");
+  await sleep(jitter(700));
+  await senderAction(t.igsid, "typing_on");
+  let typingSince = Date.now();
   for (let turn = 0; turn < 6; turn++) {
     const response = await claude.beta.messages.create({
       model: MODEL,
@@ -330,18 +381,17 @@ async function reply(t: Thread) {
     messages.push({ role: "assistant", content: response.content as Anthropic.ContentBlockParam[] });
     if (response.stop_reason === "refusal") {
       await handoff(t.igsid, `@${t.username}: бот не смог ответить`);
-      const mid = await sendText(t.igsid, "Секунду, уточню и вернусь 🙏");
+      const mid = await sendHuman(t.igsid, "Секунду, уточню и вернусь 🙏", typingSince);
       await db.from("ig_messages").insert({ ig_mid: mid, igsid: t.igsid, role: "assistant", content: [{ type: "text", text: "Секунду, уточню и вернусь 🙏" }] });
       return;
     }
     const text = response.content
       .filter((b): b is Anthropic.Beta.BetaTextBlock => b.type === "text")
       .map((b) => b.text).join("\n").trim();
-    // store before sending so the echo of our own message is recognised as a duplicate
     const { data: row } = await db.from("ig_messages")
       .insert({ igsid: t.igsid, role: "assistant", content: response.content }).select("id").single();
     if (text) {
-      const mid = await sendText(t.igsid, text);
+      const mid = await sendHuman(t.igsid, text, typingSince);
       if (mid && row) await db.from("ig_messages").update({ ig_mid: mid }).eq("id", row.id);
     }
 
@@ -358,6 +408,8 @@ async function reply(t: Thread) {
     }
     messages.push({ role: "user", content: results });
     await db.from("ig_messages").insert({ igsid: t.igsid, role: "user", content: results });
+    await senderAction(t.igsid, "typing_on");
+    typingSince = Date.now();
   }
 }
 
@@ -391,9 +443,9 @@ async function handleEvent(ourId: string, ev: any) {
   const igsid: string = echo ? ev.recipient.id : ev.sender.id;
 
   if (echo) {
-    // our own bot replies are already stored under their mid; anything else the owner typed by hand
-    await new Promise((r) => setTimeout(r, 2000));
-    const { data: known } = await db.from("ig_messages").select("id").eq("ig_mid", message.mid).maybeSingle();
+    // everything the bot sent is in ig_sent; anything else the owner typed by hand
+    await sleep(2_000);
+    const { data: known } = await db.from("ig_sent").select("mid").eq("mid", message.mid).maybeSingle();
     if (known) return;
     await thread(igsid, true);
     await db.from("ig_messages").insert({

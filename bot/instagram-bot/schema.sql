@@ -47,3 +47,11 @@ alter table public.ugc_leads enable row level security;
 alter table public.ig_threads enable row level security;
 alter table public.ig_messages enable row level security;
 alter table public.ig_config enable row level security;
+
+-- ids of every message the bot sent (a reply can go out as several messages):
+-- their echoes must not be taken for the owner typing by hand
+create table public.ig_sent (
+  mid text primary key,
+  created_at timestamptz not null default now()
+);
+alter table public.ig_sent enable row level security;
