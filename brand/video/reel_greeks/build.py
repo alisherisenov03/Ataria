@@ -4,7 +4,7 @@ Layout: title + illustration on top, the horizontal footage in the middle, capti
 Audio: the owner's own voice, cleaned (rumble cut, denoise, compression, loudness);
 pauses inside phrases are cut and the whole reel runs at SPEED.
     python build.py RAW_DIR IMG_DIR OUT_DIR
-RAW_DIR holds v1..v5.mp4 (v5: the new hook take), IMG_DIR the illustrations named in EDL.
+RAW_DIR holds v1..v4.mp4, IMG_DIR the illustrations named in EDL.
 """
 import json
 import subprocess
@@ -12,8 +12,8 @@ import sys
 from pathlib import Path
 
 W, H = 1080, 1920
-VID_Y, VID_H = 1060, 602          # 832x464 source scaled to full width
-IMG_Y, IMG_SIZE = 300, 720
+VID_Y, VID_H = 700, 900           # the person is the main thing: 832x464 source scaled up, sides cropped
+IMG_Y, IMG_SIZE = 270, 400        # small product card between title and footage
 FONT = "/usr/share/fonts/opentype/inter/InterDisplay-Black.otf"
 CAP_FONT = "/usr/share/fonts/opentype/inter/Inter-ExtraBold.otf"
 BG = "0x16130f"
@@ -24,7 +24,7 @@ PAD, GAP = 0.12, 0.3  # keep this much around speech; pauses longer than GAP are
 # segments: (title, illustration, [(video, in, out, caption), ...])
 EDL = [
     ("НА ЧЁМ СПАЛИ\nДРЕВНИЕ ГРЕКИ?", "greek.png", [
-        (5, 3.6, 7.0, "Подушки древних греков, у которых были вот такие лица"),
+        (1, 3.05, 7.75, "Вот как спали древние греки, у которых были вот такие лица"),
         (1, 10.7, 13.75, "Это помогало им держать голову прямо"),
         (1, 15.3, 17.8, "и не перегружать шею"),
     ]),
@@ -46,15 +46,13 @@ EDL = [
     ("МОЖНО СПАТЬ\nНА СПИНЕ", "photo_bed.png", [
         (3, 8.9, 11.4, "На ортопедической подушке можно спать вот так"),
     ]),
-    ("НА БОКУ\nИ НА ЖИВОТЕ", "photo_bed.png", [
+    ("НА БОКУ\nИ НА ЖИВОТЕ", "photo_top.png", [
         (3, 20.85, 21.7, "А также можно спать"),
         (3, 26.9, 27.9, "вот так"),
         (3, 28.2, 29.9, "просунув сюда руки"),
-        (3, 35.0, 38.2, "А также вот так — и это не мешает"),
-        (3, 47.7, 50.0, "Или вот так — руки сюда"),
-        (3, 51.8, 56.5, "и вот так, руки сюда — и можно расслабленно спать"),
+        (3, 54.9, 56.5, "и можно расслабленно спать"),
     ]),
-    ("ВЫЕМКА —\nЧТОБЫ ДЫШАТЬ", "photo_table.png", [
+    ("ВЫЕМКА —\nЧТОБЫ ДЫШАТЬ", "photo_foam.png", [
         (3, 57.3, 60.4, "А эта выемка — чтобы можно было дышать"),
     ]),
     ("ЧЕХОЛ СНИМАЕТСЯ\nИ СТИРАЕТСЯ", "info_zip.png", [
@@ -66,7 +64,7 @@ EDL = [
     ("НА KASPI —\n600 ОТЗЫВОВ · 4,9", "kaspi.png", [
         (4, 37.85, 46.0, "Заказать можно на Kaspi: уже 600 отзывов и рейтинг 4,9"),
     ]),
-    ("НАПИШИ «ШЕЯ» —\nПРИШЛЮ ПРОМОКОД", "photo_table.png", [
+    ("НАПИШИ «ШЕЯ» —\nПРИШЛЮ ПРОМОКОД", "photo_stack.png", [
         (4, 80.5, 83.3, "Пишите в WhatsApp или заказывайте на Kaspi"),
     ]),
 ]
@@ -137,7 +135,7 @@ def build_part(raw, img_dir, tmp, idx, sub, title, image):
     for k, text in enumerate(parts):
         cap_filters.append(
             f"drawtext=fontfile='{CAP_FONT}':text='{esc(text)}':fontsize=60:fontcolor=white:"
-            f"box=1:boxcolor=black@0.55:boxborderw=18:x=(w-text_w)/2:y={VID_Y + VID_H + 70}:"
+            f"box=1:boxcolor=black@0.55:boxborderw=18:x=(w-text_w)/2:y={VID_Y + VID_H - 150}:"
             f"enable='between(t,{marks[k]:.3f},{marks[k + 1]:.3f})'"
         )
     title_lines = title.split("\n")
@@ -148,7 +146,7 @@ def build_part(raw, img_dir, tmp, idx, sub, title, image):
     ]
     graph = (
         f"color=c={BG}:s={W}x{H}:d={dur:.3f}:r=30[bg];"
-        f"[0:v]fps=30,select='{sel}',setpts=N/30/{SPEED}/TB,fps=30,scale={W}:{VID_H},eq=contrast=1.06:saturation=1.08[vid];"
+        f"[0:v]fps=30,select='{sel}',setpts=N/30/{SPEED}/TB,fps=30,scale=-2:{VID_H},crop={W}:{VID_H},eq=contrast=1.06:saturation=1.08[vid];"
         f"[1:v]scale={IMG_SIZE}:{IMG_SIZE}:force_original_aspect_ratio=increase,crop={IMG_SIZE}:{IMG_SIZE}[img];"
         f"[bg][img]overlay=(W-w)/2:{IMG_Y}[b1];"
         f"[b1][vid]overlay=0:{VID_Y}:eof_action=repeat[b2];"
@@ -179,7 +177,7 @@ def main():
     lst.write_text("".join(f"file '{p.resolve()}'\n" for p in parts))
     joined = out_dir / "joined.mp4"
     run(["ffmpeg", "-v", "error", "-y", "-f", "concat", "-safe", "0", "-i", str(lst), "-c", "copy", str(joined)])
-    final = out_dir / "reel_greeks_v2.mp4"
+    final = out_dir / "reel_greeks_v3.mp4"
     run(["ffmpeg", "-v", "error", "-y", "-i", str(joined), "-c:v", "copy",
          "-af", "loudnorm=I=-14:TP=-1.5:LRA=9", "-c:a", "aac", "-b:a", "192k", "-movflags", "+faststart", str(final)])
     print(json.dumps({"parts": len(parts), "seconds": round(total, 1), "out": str(final)}))
