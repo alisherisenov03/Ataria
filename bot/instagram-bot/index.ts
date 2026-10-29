@@ -486,8 +486,51 @@ async function handleEvent(ourId: string, ev: any) {
   if (!t.bot_paused) await reply(t);
 }
 
+// Business login: ataria.kz opens the login URL from the Meta dashboard, Instagram redirects back here
+// with ?code=..., we trade it for a long-lived token and subscribe the account to messages.
+// Only the brand account is accepted, so nobody can swap the bot onto their own account.
+const IG_APP_ID = "1112817277894250";
+const BRAND_ACCOUNT = "ataria.kz";
+const SELF_URL = "https://pepexjsboutlqmqjyemc.supabase.co/functions/v1/instagram-bot";
+
+// plain text: Supabase serves HTML from functions as text anyway
+function page(text: string, status = 200): Response {
+  return new Response(text, { status, headers: { "Content-Type": "text/plain; charset=utf-8" } });
+}
+
+async function businessLogin(code: string): Promise<Response> {
+  const form = new FormData();
+  form.set("client_id", IG_APP_ID);
+  form.set("client_secret", env("IG_APP_SECRET"));
+  form.set("grant_type", "authorization_code");
+  form.set("redirect_uri", SELF_URL);
+  form.set("code", code.replace(/#_$/, ""));
+  const short = await (await fetch("https://api.instagram.com/oauth/access_token", { method: "POST", body: form })).json();
+  if (!short.access_token) {
+    console.error("code exchange failed", short);
+    return page("Не получилось подключить аккаунт. Откройте ссылку для входа ещё раз.", 400);
+  }
+  const long = await (await fetch(
+    `https://graph.instagram.com/access_token?grant_type=ig_exchange_token&client_secret=${env("IG_APP_SECRET")}&access_token=${short.access_token}`,
+  )).json();
+  const t: string = long.access_token ?? short.access_token;
+  const me = await (await fetch(`${GRAPH}/me?fields=username&access_token=${t}`)).json();
+  if ((me.username ?? "").toLowerCase() !== BRAND_ACCOUNT) {
+    return page(`Это аккаунт @${me.username ?? "?"}. Подключить можно только @${BRAND_ACCOUNT}: войдите в него и откройте ссылку снова.`, 403);
+  }
+  const now = new Date().toISOString();
+  await db.from("ig_config").upsert([
+    { key: "token", value: t, updated_at: now },
+    { key: "seed", value: await sha256(env("IG_TOKEN")), updated_at: now },
+  ]);
+  await fetch(`${GRAPH}/me/subscribed_apps?subscribed_fields=messages&access_token=${t}`, { method: "POST" });
+  return page(`Готово ✅ @${BRAND_ACCOUNT} подключён, бот отвечает в Direct. Это окно можно закрыть.`);
+}
+
 Deno.serve(async (req) => {
   const url = new URL(req.url);
+  if (req.method === "GET" && url.searchParams.get("code")) return await businessLogin(url.searchParams.get("code")!);
+  if (req.method === "GET" && url.searchParams.get("error")) return page("Доступ не выдан. Откройте ссылку для входа ещё раз и нажмите «Разрешить».", 400);
   if (req.method === "GET") {
     const tokenOk = url.searchParams.get("hub.verify_token") === env("IG_VERIFY_TOKEN") && env("IG_VERIFY_TOKEN") !== "";
     // diagnostics for the owner: which account the token belongs to and whether it is subscribed to messages
