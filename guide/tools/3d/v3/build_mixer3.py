@@ -157,9 +157,6 @@ HZ0, HZ1 = 32.5, 42.4    # head underside / top of head body (cap above)
 # base: rounded plan, soft edges; raised seat ring for the bowl
 slab("base", plan_rect(0, W, -11.6, 11.6, 6.0), 0, 4.7, 2.3)
 cyl("base_foot", 1.0, 0.25, (4, -8, 0.0), material=DARK, verts=32)
-CORD = mat("cord", (0.015, 0.015, 0.016), rough=0.45)
-tube("cord", [(41.5, 10.8, 1.6), (42.5, 12.6, 1.0), (43.5, 15.5, 0.5), (43.0, 20, 0.4), (40.0, 25, 0.4), (36.5, 30.5, 0.4), (35.5, 33.5, -0.2), (35.2, 35.8, -1.6), (35.0, 36.6, -3.6)], 0.3, material=CORD)
-cyl("cord_boot", 0.55, 1.6, (41.4, 10.5, 1.7), rot=(math.radians(-65), 0, math.radians(-25)), material=CORD, verts=24)
 lathe("seat", [(7.0, 4.65), (9.8, 4.7), (10.3, 5.0), (9.9, 5.3), (7.4, 5.35)], (BX, 0, 0), material=GRAPHITE, thick=0, sub=1)
 
 # body: column + head as one piece. Side profile (XZ) intersected with the plan shape (XY): rounded ends like photo 035.
@@ -179,6 +176,21 @@ bpy.context.view_layer.objects.active = body
 for m in list(body.modifiers):
     if m.type == "BEVEL": bpy.ops.object.modifier_apply(modifier=m.name)
     else: body.modifiers.remove(m)
+# one molded shell: base, column fillet and body fused, remeshed and relaxed so every junction flows (owner's note)
+def apply_mods(o):
+    with bpy.context.temp_override(object=o, active_object=o):
+        for m in list(o.modifiers): bpy.ops.object.modifier_apply(modifier=m.name)
+for part in ("base", "fillet_base"):
+    p = bpy.data.objects[part]; apply_mods(p)
+    md = body.modifiers.new("u_" + part, "BOOLEAN"); md.operation = "UNION"; md.object = p; md.solver = "EXACT"
+    with bpy.context.temp_override(object=body, active_object=body): bpy.ops.object.modifier_apply(modifier=md.name)
+    bpy.data.objects.remove(p)
+if os.environ.get("VOXEL"):  # optional molded-shell smoothing (slow, softens seams); off by default
+    rm = body.modifiers.new("remesh", "REMESH"); rm.mode = "VOXEL"; rm.voxel_size = float(os.environ["VOXEL"]); rm.use_smooth_shade = True
+    sm = body.modifiers.new("relax", "CORRECTIVE_SMOOTH"); sm.factor = 0.5; sm.iterations = 6; sm.smooth_type = "LENGTH_WEIGHTED"
+    apply_mods(body)
+smooth(body)
+import time as _t; print("TIMING shell done", len(body.data.polygons), round(_t.time()), flush=True)
 RLX = 26.2
 for nm, size, loc in (("cut_tilt", (30, HD + 4, 0.2), (CX0 + 15, 0, 21.6)),
                       ("cut_cap", (50, HD + 4, 0.18), (22, 0, HZ1)),
@@ -202,6 +214,7 @@ box("seam_port_c", (0.14, 8.4, 0.04), (2.3, 0, 44.6), material=DARK)
 for yy in (-4.2, 4.2): box(f"seam_port_{yy}", (1.6, 0.14, 0.04), (1.5, yy, 44.6), material=DARK)
 
 # planetary hub under the head
+print("TIMING cuts done", round(__import__("time").time()), flush=True)
 cyl("hub", 7.4, 2.3, (BX, 0, HZ0 - 1.1), material=GRAPHITE, bev=0.9)
 cyl("hub_ring", 6.3, 0.8, (BX, 0, 29.9), material=DARK)
 cyl("shaft", 1.0, 2.2, (BX, 0, 28.6), material=STEEL, verts=48)
