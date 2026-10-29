@@ -162,7 +162,7 @@ def build_part(raw, img_dir, tmp, idx, sub, title, image):
     ]
     graph = (
         f"color=c={BG}:s={W}x{H}:d={dur:.3f}:r=30[bg];"
-        f"{vid_in}scale=-2:{VID_H}:flags=lanczos,crop={W}:{VID_H},eq=contrast=1.06:saturation=1.08[vid];"
+        f"{vid_in}scale=-2:{VID_H}:flags=lanczos,crop={W}:{VID_H},unsharp=5:5:0.6,eq=contrast=1.06:saturation=1.08[vid];"
         f"[1:v]scale={IMG_SIZE}:{IMG_SIZE}:force_original_aspect_ratio=increase,crop={IMG_SIZE}:{IMG_SIZE}[img];"
         f"[bg][img]overlay=(W-w)/2:{IMG_Y}[b1];"
         f"[b1][vid]overlay=0:{VID_Y}:eof_action=repeat[b2];"
@@ -193,7 +193,7 @@ def main():
     lst.write_text("".join(f"file '{p.resolve()}'\n" for p in parts))
     joined = out_dir / "joined.mp4"
     run(["ffmpeg", "-v", "error", "-y", "-f", "concat", "-safe", "0", "-i", str(lst), "-c", "copy", str(joined)])
-    final = out_dir / "reel_greeks_ai.mp4"
+    final = out_dir / "reel_greeks_final.mp4"
     run(["ffmpeg", "-v", "error", "-y", "-i", str(joined), "-c:v", "copy",
          "-af", "loudnorm=I=-14:TP=-1.5:LRA=9", "-c:a", "aac", "-b:a", "192k", "-movflags", "+faststart", str(final)])
     print(json.dumps({"parts": len(parts), "seconds": round(total, 1), "out": str(final)}))
