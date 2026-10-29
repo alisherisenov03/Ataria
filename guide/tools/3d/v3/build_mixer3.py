@@ -157,6 +157,9 @@ HZ0, HZ1 = 32.5, 42.4    # head underside / top of head body (cap above)
 # base: rounded plan, soft edges; raised seat ring for the bowl
 slab("base", plan_rect(0, W, -11.6, 11.6, 6.0), 0, 4.7, 2.3)
 cyl("base_foot", 1.0, 0.25, (4, -8, 0.0), material=DARK, verts=32)
+CORD = mat("cord", (0.015, 0.015, 0.016), rough=0.45)
+tube("cord", [(41.5, 10.8, 1.6), (42.5, 12.6, 1.0), (43.5, 15.5, 0.5), (43.0, 20, 0.4), (40.0, 25, 0.4), (36.5, 30.5, 0.4), (35.5, 33.5, -0.2), (35.2, 35.8, -1.6), (35.0, 36.6, -3.6)], 0.3, material=CORD)
+cyl("cord_boot", 0.55, 1.6, (41.4, 10.5, 1.7), rot=(math.radians(-65), 0, math.radians(-25)), material=CORD, verts=24)
 lathe("seat", [(7.0, 4.65), (9.8, 4.7), (10.3, 5.0), (9.9, 5.3), (7.4, 5.35)], (BX, 0, 0), material=GRAPHITE, thick=0, sub=1)
 
 # body: column + head as one piece. Side profile (XZ) intersected with the plan shape (XY): rounded ends like photo 035.
@@ -202,12 +205,16 @@ for yy in (-4.2, 4.2): box(f"seam_port_{yy}", (1.6, 0.14, 0.04), (1.5, yy, 44.6)
 cyl("hub", 7.4, 2.3, (BX, 0, HZ0 - 1.1), material=GRAPHITE, bev=0.9)
 cyl("hub_ring", 6.3, 0.8, (BX, 0, 29.9), material=DARK)
 cyl("shaft", 1.0, 2.2, (BX, 0, 28.6), material=STEEL, verts=48)
+cyl("shaft_pin", 0.22, 2.8, (BX, 0, 27.9), rot=(math.radians(90), 0, 0), material=STEEL, verts=16)
 
 # port cover on the bowl end of the head (photo 034/041): U outline, two lines and a triangle
 decal("port", "port.png", 8.4, 7.8, (0.7 - 0.03, 0, 38.9), rot=(math.radians(90), 0, math.radians(-90)), rough=0.5)
 
 # ---------- bowl 7 L: r 13.5, from z 5.5 to 28, sticks out past the head end ----------
 lathe("bowl", [(0.01, 5.6), (7.6, 5.8), (10.9, 8.6), (12.9, 13.0), (13.5, 18.5), (13.5, 24.2), (13.7, 27.3), (14.05, 27.85), (14.05, 28.05)], (BX, 0, 0), thick=0.18)
+bpy.ops.mesh.primitive_torus_add(major_radius=14.12, minor_radius=0.2, location=(BX, 0, 28.05), major_segments=160, minor_segments=16)
+rim = bpy.context.object; rim.name = "bowl_rim"; rim.data.materials.append(STEEL); smooth(rim); link(rim)
+lathe("bowl_dome", [(0.01, 7.4), (2.5, 7.1), (5.0, 6.3), (7.4, 5.9)], (BX, 0, 0), thick=0.1)
 lathe("bowl_foot", [(7.0, 4.9), (8.4, 5.0), (8.8, 6.2), (7.4, 6.4)], (BX, 0, 0), material=DARK, thick=0, sub=1)
 # riveted handles front and back: wide arcs (+-45 deg) standing 1.6 cm off the wall at z 23.5
 for side in (-1, 1):
@@ -241,6 +248,9 @@ DXc = 36.1
 fr = box("display_frame", (7.6, 0.55, 5.6), (DXc, FY - 0.2, 28.8), material=SATIN, bev=0.7, segs=8)
 gl = box("display_glass", (6.7, 0.5, 4.7), (DXc, FY - 0.35, 28.8), material=GLASS, bev=0.35)
 decal("display", "display3.png", 6.5, 6.5 * 1000 / 1400, (DXc, FY - 0.62, 28.8), rough=0.1, emit=True, alpha=False)
+gc = mat("display_cover", (0.0, 0.0, 0.0), rough=0.02, coat=1.0, alpha=0.06)
+bpy.ops.mesh.primitive_plane_add(size=1, location=(DXc, FY - 0.66, 28.8), rotation=(math.radians(90), 0, 0))
+cv = bpy.context.object; cv.name = "display_cover"; cv.scale = (6.7, 4.7, 1); cv.data.materials.append(gc); link(cv)
 
 # lever: chrome "comma" with a ring pivot, open-padlock mark below (photo 037)
 LX, LZ = 33.0, 18.3
@@ -263,7 +273,7 @@ cyl("dial_cap", 3.0, 0.45, (DX, FY - 2.85, DZ), rot=(math.radians(90), 0, 0), ma
 decal("dial_face", "dial_cap.png", 5.9, 5.9, (DX, FY - 3.09, DZ), rough=0.2, metal=0.0)
 
 # ---------- head decals: logo and the three speed pills ----------
-decal("logo", "logo.png", 8.1, 8.1 * 297 / 2367, (21.5, FY - 0.02, 38.2), rough=0.4)
+decal("logo", "logo.png", 8.1, 8.1 * 297 / 2367, (21.5, FY - 0.02, 38.2), rough=0.32, metal=0.65)
 decal("icons", "icons.png", 5.2, 5.2 * 902 / 806, (36.3, FY - 0.02, 36.45), rough=0.4)
 
 # ---------- attachment scenes ----------
@@ -361,7 +371,7 @@ if VIEW == "glb":
     bpy.ops.object.convert(target="MESH")  # bake bevels/solidify/subsurf at cm scale first
     for o in prod.all_objects: o.location.x -= W / 2
     sc.cursor.location = (0, 0, 0)
-    bpy.ops.transform.resize(value=(0.01, 0.01, 0.01), center_override=(0, 0, 0))
+    bpy.ops.transform.resize(value=(0.0095, 0.0095, 0.0095), center_override=(0, 0, 0))
     bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
     bpy.ops.export_scene.gltf(filepath=OUT, export_format="GLB", use_selection=True, export_apply=True,
                               export_yup=True, export_image_format="AUTO")
@@ -400,6 +410,12 @@ cams = {
     "blender": ((-30, -100, 62), (24, 0, 36), 45),
     "grinder": ((-60, -95, 50), (8, 0, 30), 45),
 }
+SCALE = 0.95
+root = bpy.data.objects.new("product_root", None); prod.objects.link(root); root.location = (22, 0, 0); bpy.context.view_layer.update()
+for o in list(prod.objects):
+    if o.parent is None and o is not root:
+        o.parent = root; o.matrix_parent_inverse = root.matrix_world.inverted()
+root.scale = (SCALE, SCALE, SCALE)
 loc, tgt, lens = cams.get(VIEW, cams["front34"])
 bpy.ops.object.camera_add(location=loc); cam = bpy.context.object; sc.camera = cam; aim(cam, tgt)
 sc.render.resolution_x, sc.render.resolution_y = 1200, 1500
