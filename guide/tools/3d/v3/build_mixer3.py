@@ -1,0 +1,300 @@
+# ATARIA AT-SM23 — model v3, measured on the owner's straight front photo (ref-front.jpg: 44 cm = 895 px).
+# 1 unit = 1 cm. X: width (bowl left, column right). Y: depth (front = -Y). Z: up.
+# Usage: python build_mixer3.py -- OUT VIEW [SAMPLES]
+#   VIEW = front | front34 | back34 | end | side | top | dial | glb | blend
+import bpy, bmesh, math, sys, os
+from mathutils import Vector
+
+args = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
+OUT = args[0] if args else "/tmp/r.png"
+VIEW = args[1] if len(args) > 1 else "front34"
+SAMPLES = int(args[2]) if len(args) > 2 else 48
+TEX = os.path.dirname(os.path.abspath(__file__))
+
+bpy.ops.wm.read_factory_settings(use_empty=True)
+sc = bpy.context.scene
+prod = bpy.data.collections.new("product"); sc.collection.children.link(prod)
+studio = bpy.data.collections.new("studio"); sc.collection.children.link(studio)
+COL = [prod]
+
+def link(o):
+    for c in o.users_collection: c.objects.unlink(o)
+    COL[0].objects.link(o)
+    return o
+
+# ---------- materials ----------
+def mat(name, color, metal=0.0, rough=0.5, trans=0.0, ior=1.45, coat=0.0, emit=None, alpha=1.0):
+    m = bpy.data.materials.new(name); m.use_nodes = True
+    b = m.node_tree.nodes["Principled BSDF"]
+    b.inputs["Base Color"].default_value = (*color, 1)
+    b.inputs["Metallic"].default_value = metal
+    b.inputs["Roughness"].default_value = rough
+    b.inputs["Transmission Weight"].default_value = trans
+    b.inputs["IOR"].default_value = ior
+    b.inputs["Coat Weight"].default_value = coat
+    if alpha < 1: b.inputs["Alpha"].default_value = alpha; m.blend_method = "BLEND"
+    if emit: b.inputs["Emission Color"].default_value = (*emit, 1); b.inputs["Emission Strength"].default_value = 1.0
+    return m
+
+GRAPHITE = mat("graphite", (0.045, 0.045, 0.048), rough=0.55, coat=0.05)
+DARK = mat("dark", (0.012, 0.012, 0.013), rough=0.6)
+STEEL = mat("steel", (0.9, 0.9, 0.91), metal=1.0, rough=0.1)
+CHROME = mat("chrome", (0.96, 0.96, 0.97), metal=1.0, rough=0.035)
+SATIN = mat("satin", (0.62, 0.63, 0.64), metal=1.0, rough=0.38)  # matte-silver display frame
+CLEAR = mat("clear", (0.97, 0.98, 1.0), rough=0.02, trans=1.0, ior=1.49)
+GLASS = mat("glass", (0.004, 0.004, 0.006), rough=0.05, coat=1.0)
+
+def tex_mat(name, img, rough=0.45, metal=0.0, emit=False, alpha=True):
+    m = bpy.data.materials.new(name); m.use_nodes = True
+    nt = m.node_tree; b = nt.nodes["Principled BSDF"]
+    t = nt.nodes.new("ShaderNodeTexImage"); t.image = bpy.data.images.load(os.path.join(TEX, img))
+    nt.links.new(t.outputs["Color"], b.inputs["Base Color"])
+    if alpha: nt.links.new(t.outputs["Alpha"], b.inputs["Alpha"]); m.blend_method = "BLEND"
+    if emit:
+        nt.links.new(t.outputs["Color"], b.inputs["Emission Color"]); b.inputs["Emission Strength"].default_value = 1.6
+    b.inputs["Roughness"].default_value = rough; b.inputs["Metallic"].default_value = metal
+    return m
+
+def smooth(o):
+    for p in o.data.polygons: p.use_smooth = True
+
+def decal(name, img, w, h, loc, rot=(math.radians(90), 0, 0), **kw):
+    bpy.ops.mesh.primitive_plane_add(size=1, location=loc, rotation=rot)
+    o = bpy.context.object; o.name = name; o.scale = (w, h, 1)
+    bpy.ops.object.transform_apply(scale=True)
+    o.data.materials.append(tex_mat(name, img, **kw))
+    return link(o)
+
+def cyl(name, r, h, loc, rot=(0, 0, 0), material=STEEL, verts=128, bev=0.0):
+    bpy.ops.mesh.primitive_cylinder_add(radius=r, depth=h, location=loc, rotation=rot, vertices=verts)
+    o = bpy.context.object; o.name = name; o.data.materials.append(material); smooth(o)
+    if bev:
+        md = o.modifiers.new("b", "BEVEL"); md.width = bev; md.segments = 4; md.limit_method = "ANGLE"
+    return link(o)
+
+def box(name, size, loc, material=GRAPHITE, bev=0.0, segs=6):
+    bpy.ops.mesh.primitive_cube_add(size=1, location=loc)
+    o = bpy.context.object; o.name = name; o.scale = size
+    bpy.ops.object.transform_apply(scale=True)
+    o.data.materials.append(material)
+    if bev:
+        md = o.modifiers.new("b", "BEVEL"); md.width = bev; md.segments = segs; smooth(o)
+    return link(o)
+
+def rounded_poly(pts, radii, seg=14):
+    out = []; n = len(pts)
+    for i in range(n):
+        p0, p1, p2 = Vector(pts[i - 1]), Vector(pts[i]), Vector(pts[(i + 1) % n]); r = radii[i]
+        if r <= 0: out.append(p1); continue
+        a = (p0 - p1).normalized(); b = (p2 - p1).normalized(); ang = a.angle(b)
+        t = r / math.tan(ang / 2); s1 = p1 + a * t; s2 = p1 + b * t
+        c = p1 + (a + b).normalized() * (r / math.sin(ang / 2))
+        a1 = math.atan2((s1 - c).y, (s1 - c).x); a2 = math.atan2((s2 - c).y, (s2 - c).x); da = a2 - a1
+        while da > math.pi: da -= math.tau
+        while da < -math.pi: da += math.tau
+        for k in range(seg + 1):
+            aa = a1 + da * k / seg; out.append(c + Vector((math.cos(aa), math.sin(aa))) * r)
+    return out
+
+def slab(name, outline, z0, z1, edge, material=GRAPHITE, plane="xy", y0=None, y1=None):
+    # outline: list of 2D points. plane "xy": extrude along Z from z0 to z1. plane "xz": extrude along Y from y0 to y1.
+    me = bpy.data.meshes.new(name); o = bpy.data.objects.new(name, me); sc.collection.objects.link(o)
+    bm = bmesh.new()
+    if plane == "xy": vs = [bm.verts.new((v[0], v[1], z0)) for v in outline]
+    else: vs = [bm.verts.new((v[0], y0, v[1])) for v in outline]
+    f = bm.faces.new(vs)
+    r = bmesh.ops.extrude_face_region(bm, geom=[f])
+    for v in [e for e in r["geom"] if isinstance(e, bmesh.types.BMVert)]:
+        if plane == "xy": v.co.z = z1
+        else: v.co.y = y1
+    bmesh.ops.recalc_face_normals(bm, faces=bm.faces); bm.to_mesh(me); bm.free()
+    o.data.materials.append(material)
+    if edge:
+        md = o.modifiers.new("bev", "BEVEL"); md.width = edge; md.segments = 8; md.limit_method = "ANGLE"; md.angle_limit = math.radians(50)
+    o.modifiers.new("wn", "WEIGHTED_NORMAL"); smooth(o)
+    return link(o)
+
+def plan_rect(x0, x1, y0, y1, r):
+    return rounded_poly([(x0, y0), (x1, y0), (x1, y1), (x0, y1)], r if isinstance(r, (list, tuple)) else [r] * 4)
+
+def lathe(name, profile, loc, material=STEEL, thick=0.22, sub=2):
+    me = bpy.data.meshes.new(name); o = bpy.data.objects.new(name, me); sc.collection.objects.link(o)
+    bm = bmesh.new(); vs = [bm.verts.new((r, 0, z)) for r, z in profile]
+    for a, b in zip(vs, vs[1:]): bm.edges.new((a, b))
+    bmesh.ops.spin(bm, geom=bm.verts[:] + bm.edges[:], cent=(0, 0, 0), axis=(0, 0, 1), angle=math.tau, steps=160)
+    bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=1e-4); bm.to_mesh(me); bm.free()
+    o.location = loc; o.data.materials.append(material)
+    if thick: o.modifiers.new("s", "SOLIDIFY").thickness = thick
+    if sub: o.modifiers.new("sub", "SUBSURF").levels = sub
+    smooth(o)
+    return link(o)
+
+def tube(name, pts, r, material=CHROME):
+    cu = bpy.data.curves.new(name, "CURVE"); cu.dimensions = "3D"; cu.bevel_depth = r; cu.bevel_resolution = 6
+    sp = cu.splines.new("POLY"); sp.points.add(len(pts) - 1)
+    for p, q in zip(sp.points, pts): p.co = (*q, 1)
+    o = bpy.data.objects.new(name, cu); sc.collection.objects.link(o); o.data.materials.append(material)
+    bpy.context.view_layer.objects.active = o; o.select_set(True); bpy.ops.object.convert(target="MESH"); o.select_set(False)
+    smooth(o)
+    return link(o)
+
+def fillet_xz(name, cx, cz, r, quadrant, y0, y1):
+    # concave fillet block in the XZ plane: square r x r at corner (cx, cz) minus a quarter circle; quadrant = (sx, sz)
+    sx, sz = quadrant; pts = [(cx, cz)]
+    for k in range(17):
+        a = math.pi / 2 * k / 16
+        pts.append((cx + sx * r - sx * r * math.sin(a), cz + sz * r - sz * r * math.cos(a)))
+    return slab(name, pts, 0, 0, 0, plane="xz", y0=y0, y1=y1)
+
+# ---------- dimensions (cm) ----------
+W = 44.0                 # base width
+HD = 19.0                # head and column depth
+FY = -HD / 2             # front face
+BX = 10.8                # bowl / hub axis
+CX0, CX1 = 25.6, 42.4    # column left / right
+HZ0, HZ1 = 32.5, 42.4    # head underside / top of head body (cap above)
+
+# base: rounded plan, soft edges; raised seat ring for the bowl
+slab("base", plan_rect(0, W, -11.6, 11.6, 4.5), 0, 4.7, 1.9)
+cyl("base_foot", 1.0, 0.25, (4, -8, 0.0), material=DARK, verts=32)
+lathe("seat", [(7.0, 4.65), (9.8, 4.7), (10.3, 5.0), (9.9, 5.3), (7.4, 5.35)], (BX, 0, 0), material=GRAPHITE, thick=0, sub=1)
+
+# body: column + head as one piece. Side profile (XZ) intersected with the plan shape (XY): rounded ends like photo 035.
+prof = [(CX0, 4.6), (CX1, 4.6), (CX1, 31.4), (43.6, 32.8), (43.6, HZ1), (0.7, HZ1), (0.7, HZ0), (CX0, HZ0)]
+body = slab("body", rounded_poly(prof, [0, 0, 1.0, 1.0, 1.4, 1.4, 1.6, 4.0]), 0, 0, 0, plane="xz", y0=-HD / 2, y1=HD / 2)
+body.modifiers.clear()
+plan = slab("plan", rounded_poly([(0.7, -HD / 2), (43.6, -HD / 2), (43.6, HD / 2), (0.7, HD / 2)], [6.0, 3.2, 3.2, 6.0]), 0, 50, 0)
+plan.modifiers.clear()
+md = body.modifiers.new("i", "BOOLEAN"); md.operation = "INTERSECT"; md.object = plan; md.solver = "EXACT"
+bpy.context.view_layer.objects.active = body; bpy.ops.object.modifier_apply(modifier=md.name); bpy.data.objects.remove(plan)
+md = body.modifiers.new("bev", "BEVEL"); md.width = 1.3; md.segments = 8; md.limit_method = "ANGLE"; md.angle_limit = math.radians(40)
+body.modifiers.new("wn", "WEIGHTED_NORMAL"); smooth(body)
+fb = fillet_xz("fillet_base", CX0 + 0.02, 4.55, 4.5, (-1, 1), -HD / 2 + 0.5, HD / 2 - 0.5)
+md = fb.modifiers.new("bev", "BEVEL"); md.width = 0.8; md.segments = 6; md.limit_method = "ANGLE"; md.angle_limit = math.radians(40)
+# tilt seam around the column and the cap seam
+slab("seam_tilt", rounded_poly([(CX0 + 0.3, -HD / 2 - 0.03), (CX1 + 0.03, -HD / 2 - 0.03), (CX1 + 0.03, HD / 2 + 0.03), (CX0 + 0.3, HD / 2 + 0.03)], [0, 3.2, 3.2, 0]), 21.5, 21.68, 0, material=DARK)
+box("seam_cap", (42.0, HD - 0.8, 0.2), (22.15, 0, HZ1 + 0.02), material=DARK)
+slab("cap", plan_rect(0.4, 43.9, -HD / 2 - 0.25, HD / 2 + 0.25, [6.2, 3.4, 3.4, 6.2]), HZ1 + 0.12, 44.6, 1.1)
+
+# planetary hub under the head
+cyl("hub", 7.4, 2.3, (BX, 0, HZ0 - 1.1), material=GRAPHITE, bev=0.5)
+cyl("hub_ring", 6.3, 0.8, (BX, 0, 29.9), material=DARK)
+cyl("shaft", 1.0, 2.2, (BX, 0, 28.6), material=STEEL, verts=48)
+
+# port cover on the bowl end of the head (photo 034/041): U outline, two lines and a triangle
+decal("port", "port.png", 8.4, 7.8, (0.7 - 0.03, 0, 38.9), rot=(math.radians(90), 0, math.radians(-90)), rough=0.5)
+
+# ---------- bowl 7 L: r 13.5, from z 5.5 to 28, sticks out past the head end ----------
+lathe("bowl", [(0.01, 5.6), (7.6, 5.8), (10.9, 8.6), (12.9, 13.0), (13.5, 18.5), (13.5, 24.2), (13.7, 27.3), (14.05, 27.85), (14.05, 28.05)], (BX, 0, 0), thick=0.18)
+lathe("bowl_foot", [(7.0, 4.9), (8.4, 5.0), (8.8, 6.2), (7.4, 6.4)], (BX, 0, 0), material=DARK, thick=0, sub=1)
+# riveted handles front and back: wide arcs (+-45 deg) standing 1.6 cm off the wall at z 23.5
+for side in (-1, 1):
+    pts = []
+    for k in range(41):
+        t = -1 + 2 * k / 40; a = math.radians(45) * t
+        rr = 13.75 + 1.65 * (1 - abs(t) ** 6) ** 0.5
+        zz = 23.5 + 0.15 * (1 - t * t)
+        pts.append((BX + rr * math.sin(a), side * rr * math.cos(a), zz))
+    tube(f"handle{side}", pts, 0.42)
+    for t in (-1, 1):
+        a = math.radians(45) * t; rr = 13.6
+        p = box(f"rivet{side}{t}", (1.4, 0.45, 2.4), (BX + rr * math.sin(a), side * rr * math.cos(a), 23.5), material=CHROME, bev=0.15)
+        p.rotation_euler = (0, 0, -a if side > 0 else a)
+        for dz in (-0.6, 0.6):
+            cyl(f"rv{side}{t}{dz}", 0.18, 0.2, (BX + (rr + 0.25) * math.sin(a), side * (rr + 0.25) * math.cos(a), 23.5 + dz), rot=(math.radians(90), 0, -a if side > 0 else a), material=STEEL, verts=16)
+
+# clear splash guard with feed chute at front-left
+lathe("lid", [(7.7, 30.25), (10.2, 29.95), (12.9, 29.25), (14.25, 28.45), (14.35, 27.85)], (BX, 0, 0), material=CLEAR, thick=0.25)
+ang = math.radians(195)
+ch = box("chute", (8.0, 6.0, 2.5), (BX + 14.2 * math.cos(ang), 14.2 * math.sin(ang), 29.6), material=CLEAR, bev=0.5)
+ch.rotation_euler = (0, math.radians(-8), ang)
+
+# ---------- controls on the column front ----------
+DXc = 36.1
+fr = box("display_frame", (7.6, 0.55, 5.6), (DXc, FY - 0.2, 28.8), material=SATIN, bev=0.7, segs=8)
+gl = box("display_glass", (6.7, 0.5, 4.7), (DXc, FY - 0.35, 28.8), material=GLASS, bev=0.35)
+decal("display", "display3.png", 6.5, 6.5 * 1000 / 1400, (DXc, FY - 0.62, 28.8), rough=0.1, emit=True, alpha=False)
+
+# lever: chrome "comma" with a ring pivot, open-padlock mark below (photo 037)
+LX, LZ = 33.0, 18.3
+cyl("lever_ring", 1.05, 0.9, (LX, FY - 0.45, LZ), rot=(math.radians(90), 0, 0), material=CHROME, verts=64, bev=0.25)
+cyl("lever_hole", 0.62, 0.4, (LX, FY - 0.95, LZ), rot=(math.radians(90), 0, 0), material=DARK, verts=48)
+arm = [(LX + 0.6, LZ + 0.95), (LX + 2.6, LZ + 0.55), (LX + 3.8, LZ - 0.3), (LX + 4.1, LZ - 1.35), (LX + 3.7, LZ - 1.4), (LX + 2.6, LZ - 0.55), (LX + 0.6, LZ - 0.9)]
+slab("lever_arm", rounded_poly(arm, [0.3, 1.5, 1.0, 0.35, 0.3, 1.2, 0.3], seg=8), 0, 0, 0.25, material=CHROME, plane="xz", y0=FY - 0.15, y1=FY - 0.85)
+decal("lock", "lock.png", 3.2, 3.2 * 400 / 700, (LX + 0.9, FY - 0.02, LZ - 2.6), rough=0.5)
+
+# speed dial: satin-chrome dish with the real number ring, knurled knob, brushed cap (photos 006/037)
+DX, DZ = 35.6, 10.3
+cyl("dial_dish", 4.15, 0.7, (DX, FY - 0.3, DZ), rot=(math.radians(90), 0, 0), material=CHROME, verts=160, bev=0.3)
+decal("dial_ring", "dial_ring.png", 8.1, 8.1, (DX, FY - 0.67, DZ), rough=0.15, metal=0.0)
+teeth = []
+for k in range(180):
+    a = math.tau * k / 180; rr = 2.95 if k % 2 == 0 else 2.78
+    teeth.append((DX + rr * math.cos(a), DZ + rr * math.sin(a)))
+slab("dial_knurl", teeth, 0, 0, 0.0, material=CHROME, plane="xz", y0=FY - 0.6, y1=FY - 2.7)
+cyl("dial_cap", 3.0, 0.45, (DX, FY - 2.85, DZ), rot=(math.radians(90), 0, 0), material=STEEL, verts=160, bev=0.15)
+decal("dial_face", "dial_cap.png", 5.9, 5.9, (DX, FY - 3.09, DZ), rough=0.2, metal=0.0)
+
+# ---------- head decals: logo and the three speed pills ----------
+decal("logo", "logo.png", 8.1, 8.1 * 297 / 2367, (21.5, FY - 0.02, 38.2), rough=0.4)
+decal("icons", "icons.png", 5.2, 5.2 * 902 / 806, (36.3, FY - 0.02, 36.45), rough=0.4)
+
+# ---------- export / studio ----------
+if VIEW == "glb":
+    # glTF is in metres: scale the product from cm, centred on the base footprint
+    bpy.ops.object.select_all(action="DESELECT")
+    for o in prod.all_objects: o.select_set(True)
+    bpy.context.view_layer.objects.active = prod.all_objects[0]
+    bpy.ops.object.convert(target="MESH")  # bake bevels/solidify/subsurf at cm scale first
+    for o in prod.all_objects: o.location.x -= W / 2
+    sc.cursor.location = (0, 0, 0)
+    bpy.ops.transform.resize(value=(0.01, 0.01, 0.01), center_override=(0, 0, 0))
+    bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
+    bpy.ops.export_scene.gltf(filepath=OUT, export_format="GLB", use_selection=True, export_apply=True,
+                              export_yup=True, export_image_format="AUTO")
+    print("exported", OUT); sys.exit(0)
+
+COL[0] = studio
+floor = box("floor", (800, 800, 1), (22, 0, -4.0), material=mat("floor", (0.40, 0.355, 0.32), rough=0.6))
+cyl("plinth", 36, 3.5, (22, 0, -1.75), material=mat("stone", (0.46, 0.41, 0.37), rough=0.85), verts=192)
+wallm = mat("wall", (0.54, 0.48, 0.43), rough=0.92)
+for i in range(150):
+    a = math.radians(-180 + i * 2.4)
+    cyl(f"fl{i}", 1.7, 170, (22 + 140 * math.sin(a), 140 * math.cos(a), 80), material=wallm, verts=20)
+
+def aim(o, tgt): o.rotation_euler = (Vector(tgt) - o.location).to_track_quat("-Z", "Y").to_euler()
+def light(loc, e, size, col=(1, 1, 1), tgt=(22, 0, 22)):
+    bpy.ops.object.light_add(type="AREA", location=loc); l = bpy.context.object
+    l.data.energy = e; l.data.size = size; l.data.color = col; aim(l, tgt); return l
+light((-60, -110, 90), 300000, 120, (1.0, 0.93, 0.84))
+light((120, -60, 60), 120000, 140, (0.96, 0.97, 1.0))
+light((20, 90, 120), 120000, 90)
+world = bpy.data.worlds.new("w"); sc.world = world; world.use_nodes = True
+world.node_tree.nodes["Background"].inputs["Color"].default_value = (0.36, 0.32, 0.29, 1)
+world.node_tree.nodes["Background"].inputs["Strength"].default_value = 0.35
+
+cams = {
+    "front": ((22.9, -300, 27.6), (22.9, 0, 27.6), 0),       # orthographic, matched to ref-front.jpg
+    "front34": ((-30, -105, 45), (22, 0, 22), 50),
+    "back34": ((80, 95, 50), (22, 0, 22), 50),
+    "end": ((-120, 0, 26), (22, 0, 24), 60),
+    "side": ((140, -8, 26), (22, 0, 24), 60),
+    "top": ((22, -0.01, 150), (22, 0, 20), 45),
+    "dial": ((44, -38, 16), (DX, FY, 12), 85),
+}
+loc, tgt, lens = cams.get(VIEW, cams["front34"])
+bpy.ops.object.camera_add(location=loc); cam = bpy.context.object; sc.camera = cam; aim(cam, tgt)
+sc.render.resolution_x, sc.render.resolution_y = 1200, 1500
+if VIEW == "front":
+    cam.data.type = "ORTHO"; cam.data.ortho_scale = 1600 / 20.34; sc.render.resolution_x, sc.render.resolution_y = 1200, 1600
+    for o in studio.objects: o.hide_render = o.name.startswith("fl") or o.name == "plinth"
+else:
+    cam.data.lens = lens
+sc.render.engine = "CYCLES"; sc.cycles.device = "CPU"; sc.cycles.samples = SAMPLES; sc.cycles.use_denoising = True
+sc.view_settings.view_transform = "AgX"; sc.view_settings.look = "AgX - Medium High Contrast"
+if VIEW == "blend":
+    bpy.ops.file.pack_all()
+    bpy.ops.wm.save_as_mainfile(filepath=OUT, compress=True); print("saved", OUT); sys.exit(0)
+sc.render.filepath = OUT
+bpy.ops.render.render(write_still=True)
+print("rendered", OUT)
