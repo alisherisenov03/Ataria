@@ -1,9 +1,10 @@
 """Reel «На чём спали древние греки» — vertical 1080x1920 montage of the owner's footage.
 
 Layout: title + illustration on top, the horizontal footage in the middle, captions below.
-Audio: the owner's own voice, cleaned (rumble cut, denoise, compression, loudness).
+Audio: the owner's own voice, cleaned (rumble cut, denoise, compression, loudness);
+pauses inside phrases are cut and the whole reel runs at SPEED.
     python build.py RAW_DIR IMG_DIR OUT_DIR
-RAW_DIR holds v1..v4.mp4, IMG_DIR the illustrations named in EDL.
+RAW_DIR holds v1..v5.mp4 (v5: the new hook take), IMG_DIR the illustrations named in EDL.
 """
 import json
 import subprocess
@@ -17,10 +18,13 @@ FONT = "/usr/share/fonts/opentype/inter/InterDisplay-Black.otf"
 CAP_FONT = "/usr/share/fonts/opentype/inter/Inter-ExtraBold.otf"
 BG = "0x16130f"
 
+SPEED = 1.12        # whole reel slightly faster
+PAD, GAP = 0.12, 0.3  # keep this much around speech; pauses longer than GAP are cut
+
 # segments: (title, illustration, [(video, in, out, caption), ...])
 EDL = [
     ("НА ЧЁМ СПАЛИ\nДРЕВНИЕ ГРЕКИ?", "greek.png", [
-        (1, 3.05, 7.75, "Вот как спали древние греки, у которых были вот такие лица"),
+        (5, 3.6, 7.0, "Подушки древних греков, у которых были вот такие лица"),
         (1, 10.7, 13.75, "Это помогало им держать голову прямо"),
         (1, 15.3, 17.8, "и не перегружать шею"),
     ]),
@@ -32,24 +36,37 @@ EDL = [
         (2, 12.55, 16.1, "и шея всю ночь прогибается"),
         (2, 17.5, 20.1, "отсюда и боли в шее"),
     ]),
-    ("ATARIA:\nШЕЯ ЛЕЖИТ РОВНО", "neck_ataria.png", [
+    ("ATARIA:\nШЕЯ ЛЕЖИТ РОВНО", "info_profile.png", [
         (1, 138.95, 147.85, "Это ортопедическая подушка: полная поддержка шеи, голова прямо, шея расслаблена"),
     ]),
-    ("НА БОКУ —\nТОЖЕ РОВНО", "neck_ataria.png", [
+    ("НА БОКУ —\nТОЖЕ РОВНО", "info_top.png", [
         (2, 38.45, 42.6, "Здесь нет провалов, шея плотно лежит на подушке"),
         (2, 46.75, 48.3, "и держится ровно"),
     ]),
-    ("НА СПИНЕ · НА БОКУ\nНА ЖИВОТЕ", "hero.jpg", [
-        (3, 8.8, 10.7, "Можно спать вот так"),
-        (3, 20.8, 23.2, "и вот так"),
-        (3, 48.9, 51.6, "а на животе — руки сюда"),
+    ("МОЖНО СПАТЬ\nНА СПИНЕ", "photo_bed.png", [
+        (3, 8.9, 11.4, "На ортопедической подушке можно спать вот так"),
     ]),
-    ("ЧЕХОЛ СНИМАЕТСЯ\nИ СТИРАЕТСЯ", "macro.jpg", [
-        (4, 53.55, 55.9, "Наволочку можно снимать и стирать"),
-        (4, 67.65, 69.0, "В комплекте"),
-        (4, 71.75, 74.3, "шёлковая наволочка, вот она"),
+    ("НА БОКУ\nИ НА ЖИВОТЕ", "photo_bed.png", [
+        (3, 20.85, 21.7, "А также можно спать"),
+        (3, 26.9, 27.9, "вот так"),
+        (3, 28.2, 29.9, "просунув сюда руки"),
+        (3, 35.0, 38.2, "А также вот так — и это не мешает"),
+        (3, 47.7, 50.0, "Или вот так — руки сюда"),
+        (3, 51.8, 56.5, "и вот так, руки сюда — и можно расслабленно спать"),
     ]),
-    ("НАПИШИ «ШЕЯ» —\nПРИШЛЮ ПРОМОКОД", "hero.jpg", [
+    ("ВЫЕМКА —\nЧТОБЫ ДЫШАТЬ", "photo_table.png", [
+        (3, 57.3, 60.4, "А эта выемка — чтобы можно было дышать"),
+    ]),
+    ("ЧЕХОЛ СНИМАЕТСЯ\nИ СТИРАЕТСЯ", "info_zip.png", [
+        (4, 52.85, 55.8, "Наволочку можно снимать и стирать"),
+        (4, 57.6, 58.85, "она легко снимается"),
+        (4, 67.7, 69.0, "В комплекте также"),
+        (4, 71.65, 74.2, "шёлковая наволочка — вот она"),
+    ]),
+    ("НА KASPI —\n600 ОТЗЫВОВ · 4,9", "kaspi.png", [
+        (4, 37.85, 46.0, "Заказать можно на Kaspi: уже 600 отзывов и рейтинг 4,9"),
+    ]),
+    ("НАПИШИ «ШЕЯ» —\nПРИШЛЮ ПРОМОКОД", "photo_table.png", [
         (4, 80.5, 83.3, "Пишите в WhatsApp или заказывайте на Kaspi"),
     ]),
 ]
@@ -63,24 +80,65 @@ def esc(text):
     return text.replace("\\", "\\\\").replace(":", "\\:").replace("'", "’").replace("%", "\\%")
 
 
-def chunks(text, n=4):
-    words = text.split()
-    return [" ".join(words[i:i + n]) for i in range(0, len(words), n)]
+def chunks(text, limit=24):
+    """Greedy word chunks that fit the frame width at the caption size."""
+    out = []
+    for word in text.split():
+        if out and len(out[-1]) + 1 + len(word) <= limit:
+            out[-1] += " " + word
+        else:
+            out.append(word)
+    return out
+
+
+def speech(path, cache={}):
+    """Speech intervals of a source, from ffmpeg silencedetect."""
+    if path not in cache:
+        log = subprocess.run(["ffmpeg", "-i", str(path), "-vn", "-af", "highpass=f=120,silencedetect=n=-32dB:d=0.35",
+                              "-f", "null", "-"], capture_output=True, text=True).stderr
+        starts = [float(l.split("silence_start: ")[1]) for l in log.splitlines() if "silence_start: " in l]
+        ends = [float(l.split("silence_end: ")[1].split()[0]) for l in log.splitlines() if "silence_end: " in l]
+        bounds, t = [], 0.0
+        for a, b in zip(starts, ends + [1e9] * (len(starts) - len(ends))):
+            if a > t:
+                bounds.append((t, a))
+            t = b
+        bounds.append((t, 1e9))
+        cache[path] = bounds
+    return cache[path]
+
+
+def keep_ranges(path, a, b):
+    """Parts of [a, b] around speech: long pauses inside a phrase are cut out."""
+    out = []
+    for s0, s1 in speech(path):
+        lo, hi = max(a, s0 - PAD), min(b, s1 + PAD)
+        if hi - lo < 0.05:
+            continue
+        if out and lo - out[-1][1] < GAP:
+            out[-1] = (out[-1][0], max(out[-1][1], hi))
+        else:
+            out.append((lo, hi))
+    return out or [(a, b)]
 
 
 def build_part(raw, img_dir, tmp, idx, sub, title, image):
     v, a, b, caption = sub
-    dur = b - a
+    src = raw / f"v{v}.mp4"
+    ranges = keep_ranges(src, a, b)
+    dur = sum(hi - lo for lo, hi in ranges) / SPEED
+    sel = "+".join(f"between(t,{lo:.3f},{hi:.3f})" for lo, hi in ranges)
     out = tmp / f"part{idx:02d}.mp4"
-    # captions: 4-word chunks spread evenly over the clip
+    # captions: short chunks spread over the clip by length
     parts = chunks(caption)
-    step = dur / len(parts)
+    weights = [len(t) + 4 for t in parts]
+    marks = [dur * sum(weights[:k]) / sum(weights) for k in range(len(parts) + 1)]
     cap_filters = []
     for k, text in enumerate(parts):
         cap_filters.append(
             f"drawtext=fontfile='{CAP_FONT}':text='{esc(text)}':fontsize=60:fontcolor=white:"
             f"box=1:boxcolor=black@0.55:boxborderw=18:x=(w-text_w)/2:y={VID_Y + VID_H + 70}:"
-            f"enable='between(t,{k * step:.3f},{(k + 1) * step:.3f})'"
+            f"enable='between(t,{marks[k]:.3f},{marks[k + 1]:.3f})'"
         )
     title_lines = title.split("\n")
     title_filters = [
@@ -90,20 +148,20 @@ def build_part(raw, img_dir, tmp, idx, sub, title, image):
     ]
     graph = (
         f"color=c={BG}:s={W}x{H}:d={dur:.3f}:r=30[bg];"
-        f"[0:v]trim={a}:{b},setpts=PTS-STARTPTS,fps=30,scale={W}:{VID_H},eq=contrast=1.06:saturation=1.08[vid];"
+        f"[0:v]fps=30,select='{sel}',setpts=N/30/{SPEED}/TB,fps=30,scale={W}:{VID_H},eq=contrast=1.06:saturation=1.08[vid];"
         f"[1:v]scale={IMG_SIZE}:{IMG_SIZE}:force_original_aspect_ratio=increase,crop={IMG_SIZE}:{IMG_SIZE}[img];"
         f"[bg][img]overlay=(W-w)/2:{IMG_Y}[b1];"
-        f"[b1][vid]overlay=0:{VID_Y}[b2];"
+        f"[b1][vid]overlay=0:{VID_Y}:eof_action=repeat[b2];"
         f"[b2]{','.join(title_filters + cap_filters)}[outv];"
-        f"[0:a]atrim={a}:{b},asetpts=PTS-STARTPTS,highpass=f=90,lowpass=f=12000,afftdn=nf=-25,"
+        f"[0:a]aselect='{sel}',asetpts=N/SR/TB,atempo={SPEED},highpass=f=90,lowpass=f=12000,afftdn=nf=-25,"
         f"acompressor=threshold=-20dB:ratio=3:attack=5:release=120,afade=t=in:d=0.04,"
         f"afade=t=out:st={dur - 0.06:.3f}:d=0.06,aresample=48000[outa]"
     )
-    run(["ffmpeg", "-v", "error", "-y", "-i", str(raw / f"v{v}.mp4"), "-loop", "1", "-t", f"{dur:.3f}",
+    run(["ffmpeg", "-v", "error", "-y", "-i", str(src), "-loop", "1", "-t", f"{dur:.3f}",
          "-i", str(img_dir / image), "-filter_complex", graph, "-map", "[outv]", "-map", "[outa]",
          "-c:v", "libx264", "-preset", "medium", "-crf", "19", "-pix_fmt", "yuv420p",
          "-c:a", "aac", "-b:a", "192k", "-t", f"{dur:.3f}", str(out)])
-    return out
+    return out, dur
 
 
 def main():
@@ -115,14 +173,15 @@ def main():
         for sub in subs:
             parts.append(build_part(raw, img_dir, tmp, idx, sub, title, image))
             idx += 1
+    total = sum(d for _, d in parts)
+    parts = [p for p, _ in parts]
     lst = tmp / "list.txt"
     lst.write_text("".join(f"file '{p.resolve()}'\n" for p in parts))
     joined = out_dir / "joined.mp4"
     run(["ffmpeg", "-v", "error", "-y", "-f", "concat", "-safe", "0", "-i", str(lst), "-c", "copy", str(joined)])
-    final = out_dir / "reel_greeks_draft.mp4"
+    final = out_dir / "reel_greeks_v2.mp4"
     run(["ffmpeg", "-v", "error", "-y", "-i", str(joined), "-c:v", "copy",
          "-af", "loudnorm=I=-14:TP=-1.5:LRA=9", "-c:a", "aac", "-b:a", "192k", "-movflags", "+faststart", str(final)])
-    total = sum(b - a for _, _, subs in EDL for _, a, b, _ in subs)
     print(json.dumps({"parts": len(parts), "seconds": round(total, 1), "out": str(final)}))
 
 
