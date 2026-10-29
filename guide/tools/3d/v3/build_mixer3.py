@@ -75,7 +75,7 @@ def cyl(name, r, h, loc, rot=(0, 0, 0), material=STEEL, verts=128, bev=0.0):
 def box(name, size, loc, material=GRAPHITE, bev=0.0, segs=6):
     bpy.ops.mesh.primitive_cube_add(size=1, location=loc)
     o = bpy.context.object; o.name = name; o.scale = size
-    bpy.ops.object.transform_apply(scale=True)
+    bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
     o.data.materials.append(material)
     if bev:
         md = o.modifiers.new("b", "BEVEL"); md.width = bev; md.segments = segs; smooth(o)
@@ -176,7 +176,9 @@ slab("seam_tilt", rounded_poly([(CX0 + 0.3, -HD / 2 - 0.03), (CX1 + 0.03, -HD / 
 # top cap is flush with the body: only a thin seam runs round the head at z 42.4 (photos 034/035)
 slab("seam_cap", rounded_poly([(0.68, -HD / 2 - 0.02), (43.62, -HD / 2 - 0.02), (43.62, HD / 2 + 0.02), (0.68, HD / 2 + 0.02)], [6.0, 3.2, 3.2, 6.0]), HZ1 - 0.08, HZ1 + 0.08, 0, material=DARK)
 # separate rear lid over the column: flush, seen only as a seam across the top
-box("seam_rear", (0.16, HD - 3.0, 0.04), (33.6, 0, 44.6), material=DARK)
+# rear top lid over the column (owner's note): a separate panel sitting on the head top, with a thin gap around it
+slab("rear_lid_gap", rounded_poly([(33.3, -HD / 2 + 0.9), (43.0, -HD / 2 + 0.9), (43.0, HD / 2 - 0.9), (33.3, HD / 2 - 0.9)], [0.6, 2.4, 2.4, 0.6]), 44.55, 44.62, 0, material=DARK)
+slab("rear_lid", rounded_poly([(33.45, -HD / 2 + 1.05), (42.85, -HD / 2 + 1.05), (42.85, HD / 2 - 1.05), (33.45, HD / 2 - 1.05)], [0.5, 2.25, 2.25, 0.5]), 44.5, 44.78, 0.12)
 # the port cover reaches over the top edge: short seams on the top surface at the bowl end
 box("seam_port_c", (0.14, 8.4, 0.04), (2.3, 0, 44.6), material=DARK)
 for yy in (-4.2, 4.2): box(f"seam_port_{yy}", (1.6, 0.14, 0.04), (1.5, yy, 44.6), material=DARK)
@@ -249,6 +251,64 @@ decal("dial_face", "dial_cap.png", 5.9, 5.9, (DX, FY - 3.09, DZ), rough=0.2, met
 decal("logo", "logo.png", 8.1, 8.1 * 297 / 2367, (21.5, FY - 0.02, 38.2), rough=0.4)
 decal("icons", "icons.png", 5.2, 5.2 * 902 / 806, (36.3, FY - 0.02, 36.45), rough=0.4)
 
+# ---------- "work" animation: head lowers, dial turns to speed 2, dough hook spins (owner's product video) ----------
+if VIEW == "work":
+    def apply_all(o):
+        bpy.context.view_layer.objects.active = o
+        for m in list(o.modifiers): bpy.ops.object.modifier_apply(modifier=m.name)
+    # split the one-piece body along the tilt seam: the upper part (head + top of the column) tilts
+    b = bpy.data.objects["body"]; apply_all(b)
+    up = b.copy(); up.data = b.data.copy(); up.name = "body_up"; prod.objects.link(up)
+    for o, keep_up in ((b, False), (up, True)):
+        bm = bmesh.new(); bm.from_mesh(o.data)
+        geom = bm.verts[:] + bm.edges[:] + bm.faces[:]
+        bmesh.ops.bisect_plane(bm, geom=geom, plane_co=(0, 0, 21.6), plane_no=(0, 0, 1), clear_inner=keep_up, clear_outer=not keep_up)
+        bmesh.ops.holes_fill(bm, edges=[e for e in bm.edges if e.is_boundary])
+        bm.to_mesh(o.data); bm.free()
+    HX, HZ = CX1 - 1.2, 21.6       # hinge at the back of the tilt seam
+    hinge = bpy.data.objects.new("hinge", None); prod.objects.link(hinge); hinge.location = (HX, 0, HZ); bpy.context.view_layer.update()
+    lower = {"body", "base", "base_foot", "seat", "fillet_base", "seam_tilt", "bowl", "bowl_foot", "lever_ring", "lever_hole", "lever_arm", "lock",
+             "dial_dish", "dial_ring", "dial_knurl", "dial_cap", "dial_face"}
+    lower |= {o.name for o in prod.objects if o.name.startswith(("handle", "rivet", "rv"))}
+    # dough hook: collar with a guard disc, bar out and down in an S, flat tip (photo 055, in working position)
+    hk = []
+    for k in range(31):
+        t = k / 30
+        x = 2.2 * math.sin(math.pi * t * 0.9) + 0.8 * t; z = 27.6 - 15.5 * t; yv = 0.6 * math.sin(math.pi * t)
+        hk.append((BX + 1.6 + x, yv, z))
+    hk += [(hk[-1][0] + 1.2, 0.2, hk[-1][2] - 0.5), (hk[-1][0] + 2.6, 0.0, hk[-1][2] - 0.4)]
+    COL[0] = prod
+    hook = tube("hook", hk, 0.55, material=STEEL)
+    cyl("hook_collar", 1.25, 2.0, (BX + 1.6, 0, 28.4), material=STEEL, verts=48)
+    cyl("hook_disc", 3.6, 0.15, (BX + 1.6, 0, 27.5), material=STEEL, verts=96)
+    spin = bpy.data.objects.new("spin", None); prod.objects.link(spin); spin.location = (BX + 1.6, 0, 27.5); bpy.context.view_layer.update()
+    for n in ("hook", "hook_collar", "hook_disc"):
+        o = bpy.data.objects[n]; o.parent = spin; o.matrix_parent_inverse = spin.matrix_world.inverted()
+    orbit = bpy.data.objects.new("planet", None); prod.objects.link(orbit); orbit.location = (BX, 0, 27.5); bpy.context.view_layer.update()
+    spin.parent = orbit; spin.matrix_parent_inverse = orbit.matrix_world.inverted()
+    orbit.parent = hinge; orbit.matrix_parent_inverse = hinge.matrix_world.inverted(); bpy.context.view_layer.update()
+    for o in list(prod.objects):
+        if o.type in ("MESH",) and o.name not in lower and o.parent is None:
+            o.parent = hinge; o.matrix_parent_inverse = hinge.matrix_world.inverted()
+    # knob rotates about its own axis (Y); pointer steps P(-36) 0(0) 1(36) 2(72) deg clockwise
+    knob = bpy.data.objects.new("knob", None); prod.objects.link(knob); knob.location = (DX, FY, DZ); bpy.context.view_layer.update()
+    for n in ("dial_knurl", "dial_cap", "dial_face"):
+        o = bpy.data.objects[n]; o.parent = knob; o.matrix_parent_inverse = knob.matrix_world.inverted()
+    def key(o, prop, frame, val, interp="BEZIER"):
+        setattr(o, prop, val); o.keyframe_insert(prop, frame=frame)
+    key(hinge, "rotation_euler", 1, (0, math.radians(44), 0)); key(hinge, "rotation_euler", 18, (0, math.radians(44), 0))
+    key(hinge, "rotation_euler", 52, (0, 0, 0))
+    key(knob, "rotation_euler", 1, (0, 0, 0)); key(knob, "rotation_euler", 62, (0, 0, 0)); key(knob, "rotation_euler", 82, (0, math.radians(72), 0))
+    key(orbit, "rotation_euler", 84, (0, 0, 0)); key(orbit, "rotation_euler", 168, (0, 0, math.radians(-300)))
+    key(spin, "rotation_euler", 84, (0, 0, 0)); key(spin, "rotation_euler", 168, (0, 0, math.radians(900)))
+    for o in (orbit, spin):
+        for fc in o.animation_data.action.fcurves:
+            kp = fc.keyframe_points; kp[0].interpolation = "BEZIER"; kp[0].easing = "EASE_IN"
+            kp[0].handle_right_type = "AUTO"
+    for o in (hinge, knob):
+        for fc in o.animation_data.action.fcurves:
+            for kp in fc.keyframe_points: kp.interpolation = "SINE"; kp.easing = "EASE_IN_OUT"
+
 # ---------- export / studio ----------
 if VIEW == "glb":
     # glTF is in metres: scale the product from cm, centred on the base footprint
@@ -305,6 +365,23 @@ sc.view_settings.view_transform = "AgX"; sc.view_settings.look = "AgX - Medium H
 if VIEW == "blend":
     bpy.ops.file.pack_all()
     bpy.ops.wm.save_as_mainfile(filepath=OUT, compress=True); print("saved", OUT); sys.exit(0)
+if VIEW == "work":
+    # 7 s: slow push-in at three quarters while the head lowers, the dial clicks to 2 and the hook starts
+    sc.render.resolution_x, sc.render.resolution_y = 1280, 720
+    cam.data.lens = 30; cam.data.keyframe_insert("lens", frame=1)
+    cam.location = (-26, -108, 54); aim(cam, (22, 0, 26)); cam.keyframe_insert("location", frame=1)
+    cam.data.lens = 38; cam.data.keyframe_insert("lens", frame=168)
+    cam.location = (-22, -84, 50); cam.keyframe_insert("location", frame=168)
+    tr = cam.constraints.new("TRACK_TO"); tgt = bpy.data.objects.new("look", None); studio.objects.link(tgt); tgt.location = (22, 0, 23)
+    tr.target = tgt; tr.track_axis = "TRACK_NEGATIVE_Z"; tr.up_axis = "UP_Y"
+    sc.frame_start, sc.frame_end = 1, 168; sc.render.fps = 24
+    sc.render.filepath = OUT.rstrip("/") + "/f_"
+    sc.render.image_settings.file_format = "JPEG"; sc.render.image_settings.quality = 93
+    if len(args) > 3:  # preview selected frames only
+        for fr in map(int, args[3].split(",")):
+            sc.frame_set(fr); sc.render.filepath = OUT.rstrip("/") + f"/p_{fr:04d}.jpg"; bpy.ops.render.render(write_still=True)
+        sys.exit(0)
+    bpy.ops.render.render(animation=True); print("rendered animation", OUT); sys.exit(0)
 if VIEW == "orbit":
     # 5 s at 24 fps, 16:9: slow 100-degree orbit from the bowl end to the controls
     sc.render.resolution_x, sc.render.resolution_y = 1280, 720
