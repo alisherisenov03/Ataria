@@ -361,6 +361,8 @@ wallm = mat("wall", (0.54, 0.48, 0.43), rough=0.92)
 for i in range(150):
     a = math.radians(-180 + i * 2.4)
     cyl(f"fl{i}", 1.7, 170, (22 + 140 * math.sin(a), 140 * math.cos(a), 80), material=wallm, verts=20)
+# solid backing behind the flutes so nothing shows through the gaps
+bk = lathe("wall_back", [(143.5, -4), (143.5, 170)], (22, 0, 0), material=wallm, thick=0, sub=0)
 
 def aim(o, tgt): o.rotation_euler = (Vector(tgt) - o.location).to_track_quat("-Z", "Y").to_euler()
 def light(loc, e, size, col=(1, 1, 1), tgt=(22, 0, 22)):
@@ -395,6 +397,95 @@ else:
     cam.data.lens = lens
 sc.render.engine = "CYCLES"; sc.cycles.device = "CPU"; sc.cycles.samples = SAMPLES; sc.cycles.use_denoising = True
 sc.view_settings.view_transform = "AgX"; sc.view_settings.look = "AgX - Medium High Contrast"
+# ---------- photoreal pass (REAL=1): studio HDRI, micro-surface materials, depth of field, motion blur ----------
+REAL = os.environ.get("REAL") == "1"
+def node_noise(nt, scale, detail=4, coord="Object"):
+    tc = nt.nodes.new("ShaderNodeTexCoord"); n = nt.nodes.new("ShaderNodeTexNoise")
+    n.inputs["Scale"].default_value = scale; n.inputs["Detail"].default_value = detail
+    nt.links.new(tc.outputs[coord], n.inputs["Vector"]); return n
+def add_bump(m, scale, strength, dist=0.02):
+    nt = m.node_tree; b = nt.nodes["Principled BSDF"]; n = node_noise(nt, scale, 6)
+    bu = nt.nodes.new("ShaderNodeBump"); bu.inputs["Strength"].default_value = strength; bu.inputs["Distance"].default_value = dist
+    nt.links.new(n.outputs["Fac"], bu.inputs["Height"]); nt.links.new(bu.outputs["Normal"], b.inputs["Normal"])
+def vary_rough(m, scale, lo, hi):
+    nt = m.node_tree; b = nt.nodes["Principled BSDF"]; n = node_noise(nt, scale, 3)
+    mr = nt.nodes.new("ShaderNodeMapRange"); mr.inputs["To Min"].default_value = lo; mr.inputs["To Max"].default_value = hi
+    nt.links.new(n.outputs["Fac"], mr.inputs["Value"]); nt.links.new(mr.outputs["Result"], b.inputs["Roughness"])
+def vary_color(m, scale, c1, c2):
+    nt = m.node_tree; b = nt.nodes["Principled BSDF"]; n = node_noise(nt, scale, 5)
+    cr = nt.nodes.new("ShaderNodeValToRGB"); cr.color_ramp.elements[0].color = (*c1, 1); cr.color_ramp.elements[1].color = (*c2, 1)
+    nt.links.new(n.outputs["Fac"], cr.inputs["Fac"]); nt.links.new(cr.outputs["Color"], b.inputs["Base Color"])
+if REAL and os.environ.get("HALF"): sc.render.resolution_percentage = 50
+if REAL:
+    # warm taupe studio, as on the site
+    for name, col in (("wall", (0.56, 0.48, 0.41)), ("stone", (0.44, 0.375, 0.32)), ("floor", (0.30, 0.255, 0.22))):
+        m = bpy.data.materials.get(name)
+        if m: m.node_tree.nodes["Principled BSDF"].inputs["Base Color"].default_value = (*col, 1)
+    # soft-touch graphite: fine grain + gentle roughness drift; dark trims slightly glossier
+    add_bump(GRAPHITE, 70, 0.08, 0.003); vary_rough(GRAPHITE, 0.35, 0.46, 0.54)
+    GRAPHITE.node_tree.nodes["Principled BSDF"].inputs["Base Color"].default_value = (0.034, 0.034, 0.036, 1)
+    vary_rough(STEEL, 0.25, 0.045, 0.11)            # polished steel with faint smudges
+    vary_rough(CHROME, 0.3, 0.02, 0.06)
+    sb = SATIN.node_tree.nodes["Principled BSDF"]; sb.inputs["Anisotropic"].default_value = 0.6; add_bump(SATIN, 400, 0.05, 0.002)
+    cb = CLEAR.node_tree.nodes["Principled BSDF"]; cb.inputs["Base Color"].default_value = (0.93, 0.95, 0.96, 1); cb.inputs["Roughness"].default_value = 0.008
+    for name, sc_, st in (("wall", 3.0, 0.35), ("floor", 1.2, 0.15)):
+        m = bpy.data.materials.get(name)
+        if m: add_bump(m, sc_, st, 0.05); vary_color(m, 0.08, tuple(v * 0.93 for v in m.node_tree.nodes["Principled BSDF"].inputs["Base Color"].default_value[:3]), tuple(v * 1.05 for v in m.node_tree.nodes["Principled BSDF"].inputs["Base Color"].default_value[:3]))
+    st_ = bpy.data.materials.get("stone")
+    if st_:
+        add_bump(st_, 9.0, 0.45, 0.04); vary_color(st_, 0.5, (0.44, 0.37, 0.31), (0.53, 0.46, 0.39)); vary_rough(st_, 2.0, 0.7, 0.92)
+    # studio HDRI drives reflections; area lights stay as soft key/fill
+    hdr = os.path.join(TEX, "hdri", os.environ.get("HDRI", "studio_small_09") + ".hdr")
+    wn = world.node_tree; env = wn.nodes.new("ShaderNodeTexEnvironment"); env.image = bpy.data.images.load(hdr)
+    mp = wn.nodes.new("ShaderNodeMapping"); tc = wn.nodes.new("ShaderNodeTexCoord"); mp.inputs["Rotation"].default_value[2] = math.radians(float(os.environ.get("HDRI_ROT", "35")))
+    wn.links.new(tc.outputs["Generated"], mp.inputs["Vector"]); wn.links.new(mp.outputs["Vector"], env.inputs["Vector"])
+    wn.links.new(env.outputs["Color"], wn.nodes["Background"].inputs["Color"]); wn.nodes["Background"].inputs["Strength"].default_value = float(os.environ.get("HDRI_STR", "0.35"))
+    lights = [o for o in sc.objects if o.type == "LIGHT"]
+    lights[0].data.energy *= 1.1; lights[0].data.size = 70      # warm key from front-left: smaller = more shape
+    lights[1].data.energy *= 0.35                                # cool fill from the right
+    lights[2].data.energy *= 0.9                                 # rim from behind
+    # product-photo strip softboxes: seen in reflections only, they draw crisp highlights on steel and soft-touch
+    def strip(name, loc, size, power, tgt=(22, 0, 22), col=(1, 0.97, 0.92)):
+        # softbox with a soft gradient falloff along its length: smooth, premium highlights without hard edges
+        bpy.ops.mesh.primitive_plane_add(size=1, location=loc); p = bpy.context.object; p.name = name; p.scale = size
+        em = bpy.data.materials.new(name); em.use_nodes = True; nt = em.node_tree
+        for nd in list(nt.nodes):
+            if nd.type == "BSDF_PRINCIPLED": nt.nodes.remove(nd)
+        tc = nt.nodes.new("ShaderNodeTexCoord"); sep = nt.nodes.new("ShaderNodeSeparateXYZ"); nt.links.new(tc.outputs["UV"], sep.inputs["Vector"])
+        # bell-shaped profile across the short side (x) and the long side (y)
+        def bell(sock):
+            m1 = nt.nodes.new("ShaderNodeMath"); m1.operation = "SUBTRACT"; m1.inputs[1].default_value = 0.5; nt.links.new(sock, m1.inputs[0])
+            m2 = nt.nodes.new("ShaderNodeMath"); m2.operation = "MULTIPLY"; nt.links.new(m1.outputs[0], m2.inputs[0]); nt.links.new(m1.outputs[0], m2.inputs[1])
+            m3 = nt.nodes.new("ShaderNodeMath"); m3.operation = "MULTIPLY"; m3.inputs[1].default_value = -8.0; nt.links.new(m2.outputs[0], m3.inputs[0])
+            m4 = nt.nodes.new("ShaderNodeMath"); m4.operation = "EXPONENT"; nt.links.new(m3.outputs[0], m4.inputs[0]); return m4.outputs[0]
+        bx, by = bell(sep.outputs["X"]), bell(sep.outputs["Y"])
+        mul = nt.nodes.new("ShaderNodeMath"); mul.operation = "MULTIPLY"; nt.links.new(bx, mul.inputs[0]); nt.links.new(by, mul.inputs[1])
+        st = nt.nodes.new("ShaderNodeMath"); st.operation = "MULTIPLY"; st.inputs[1].default_value = power; nt.links.new(mul.outputs[0], st.inputs[0])
+        e = nt.nodes.new("ShaderNodeEmission"); e.inputs["Color"].default_value = (*col, 1); nt.links.new(st.outputs[0], e.inputs["Strength"])
+        nt.links.new(e.outputs["Emission"], nt.nodes["Material Output"].inputs["Surface"])
+        p.data.materials.append(em); aim(p, tgt); p.rotation_euler.rotate_axis("X", math.radians(180))
+        p.visible_camera = False; p.visible_shadow = False
+        for c in p.users_collection: c.objects.unlink(p)
+        studio.objects.link(p)
+    strip("soft_L", (-75, -55, 42), (22, 100, 1), 14.0)
+    strip("soft_R", (100, -70, 46), (22, 100, 1), 7.0, col=(0.95, 0.97, 1.0))
+    strip("soft_T", (20, -15, 125), (90, 40, 1), 5.0)
+    strip("rim_B", (30, 110, 60), (60, 18, 1), 10.0)
+    # soft pool of light on the fluted wall behind the machine, darker towards the edges
+    bpy.ops.object.light_add(type="SPOT", location=(22, -60, 150)); wl = bpy.context.object
+    wl.data.energy = 420000; wl.data.spot_size = math.radians(60); wl.data.spot_blend = 1.0; wl.data.shadow_soft_size = 25; wl.data.color = (1.0, 0.9, 0.78)
+    aim(wl, (22, 120, 50))
+    for c in wl.users_collection: c.objects.unlink(wl)
+    studio.objects.link(wl)
+    # camera: depth of field on the machine, motion blur, more light bounces through the clear lid
+    foc = bpy.data.objects.new("focus", None); studio.objects.link(foc); foc.location = (24, -6, 24)
+    cam.data.dof.use_dof = True; cam.data.dof.focus_object = foc; cam.data.dof.aperture_fstop = float(os.environ.get("FSTOP", "4.0"))
+    sc.render.use_motion_blur = True; sc.render.motion_blur_shutter = 0.4
+    sc.cycles.max_bounces = 10; sc.cycles.transmission_bounces = 10; sc.cycles.glossy_bounces = 6
+    sc.cycles.adaptive_threshold = 0.015; sc.cycles.denoiser = "OPENIMAGEDENOISE"
+    sc.render.filter_size = 1.2
+    sc.view_settings.look = "AgX - Medium High Contrast"; sc.view_settings.exposure = float(os.environ.get("EXPO", "0.0"))
+
 if VIEW == "blend":
     bpy.ops.file.pack_all()
     bpy.ops.wm.save_as_mainfile(filepath=OUT, compress=True); print("saved", OUT); sys.exit(0)
