@@ -45,7 +45,11 @@ developers.facebook.com → приложение → WhatsApp → **Configuratio
 - Verify token: то же слово, что в `WA_VERIFY_TOKEN`
 - Verify and save → в Webhook fields подписаться на **messages**.
 
-Затем перевести приложение в режим **Live** (нужна ссылка на политику конфиденциальности, её добавим на сайт).
+Затем перевести приложение в режим **Live**. Meta попросит:
+- Privacy Policy URL: `https://ataria-legal.vercel.app/`
+- User data deletion (инструкции): `https://ataria-legal.vercel.app/#delete`
+
+Исходник страницы: `brand/legal/index.html` (Vercel-проект `ataria-legal`).
 
 ## 6. Проверка
 Напишите боту со своего телефона «Здравствуйте, какую подушку посоветуете?».
