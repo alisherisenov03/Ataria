@@ -160,7 +160,7 @@ cyl("base_foot", 1.0, 0.25, (4, -8, 0.0), material=DARK, verts=32)
 lathe("seat", [(7.0, 4.65), (9.8, 4.7), (10.3, 5.0), (9.9, 5.3), (7.4, 5.35)], (BX, 0, 0), material=GRAPHITE, thick=0, sub=1)
 
 # body: column + head as one piece. Side profile (XZ) intersected with the plan shape (XY): rounded ends like photo 035.
-prof = [(CX0, 4.6), (CX1, 4.6), (CX1, 31.4), (43.6, 32.8), (43.6, HZ1), (0.7, HZ1), (0.7, HZ0), (CX0, HZ0)]
+prof = [(CX0, 4.6), (CX1, 4.6), (CX1, 31.4), (43.6, 32.8), (43.6, 44.6), (0.7, 44.6), (0.7, HZ0), (CX0, HZ0)]
 body = slab("body", rounded_poly(prof, [0, 0, 1.0, 1.0, 1.4, 1.4, 1.6, 4.0]), 0, 0, 0, plane="xz", y0=-HD / 2, y1=HD / 2)
 body.modifiers.clear()
 plan = slab("plan", rounded_poly([(0.7, -HD / 2), (43.6, -HD / 2), (43.6, HD / 2), (0.7, HD / 2)], [6.0, 3.2, 3.2, 6.0]), 0, 50, 0)
@@ -173,8 +173,13 @@ fb = fillet_xz("fillet_base", CX0 + 0.02, 4.55, 4.5, (-1, 1), -HD / 2 + 0.5, HD 
 md = fb.modifiers.new("bev", "BEVEL"); md.width = 0.8; md.segments = 6; md.limit_method = "ANGLE"; md.angle_limit = math.radians(40)
 # tilt seam around the column and the cap seam
 slab("seam_tilt", rounded_poly([(CX0 + 0.3, -HD / 2 - 0.03), (CX1 + 0.03, -HD / 2 - 0.03), (CX1 + 0.03, HD / 2 + 0.03), (CX0 + 0.3, HD / 2 + 0.03)], [0, 3.2, 3.2, 0]), 21.5, 21.68, 0, material=DARK)
-box("seam_cap", (42.0, HD - 0.8, 0.2), (22.15, 0, HZ1 + 0.02), material=DARK)
-slab("cap", plan_rect(0.4, 43.9, -HD / 2 - 0.25, HD / 2 + 0.25, [6.2, 3.4, 3.4, 6.2]), HZ1 + 0.12, 44.6, 1.1)
+# top cap is flush with the body: only a thin seam runs round the head at z 42.4 (photos 034/035)
+slab("seam_cap", rounded_poly([(0.68, -HD / 2 - 0.02), (43.62, -HD / 2 - 0.02), (43.62, HD / 2 + 0.02), (0.68, HD / 2 + 0.02)], [6.0, 3.2, 3.2, 6.0]), HZ1 - 0.08, HZ1 + 0.08, 0, material=DARK)
+# separate rear lid over the column: flush, seen only as a seam across the top
+box("seam_rear", (0.16, HD - 3.0, 0.04), (33.6, 0, 44.6), material=DARK)
+# the port cover reaches over the top edge: short seams on the top surface at the bowl end
+box("seam_port_c", (0.14, 8.4, 0.04), (2.3, 0, 44.6), material=DARK)
+for yy in (-4.2, 4.2): box(f"seam_port_{yy}", (1.6, 0.14, 0.04), (1.5, yy, 44.6), material=DARK)
 
 # planetary hub under the head
 cyl("hub", 7.4, 2.3, (BX, 0, HZ0 - 1.1), material=GRAPHITE, bev=0.5)
@@ -205,9 +210,14 @@ for side in (-1, 1):
 
 # clear splash guard with feed chute at front-left
 lathe("lid", [(7.7, 30.25), (10.2, 29.95), (12.9, 29.25), (14.25, 28.45), (14.35, 27.85)], (BX, 0, 0), material=CLEAR, thick=0.25)
-ang = math.radians(195)
-ch = box("chute", (8.0, 6.0, 2.5), (BX + 14.2 * math.cos(ang), 14.2 * math.sin(ang), 29.6), material=CLEAR, bev=0.5)
-ch.rotation_euler = (0, math.radians(-8), ang)
+# feed chute faces the bowl end of the machine (photo 035): an open trapezoid frame on the lid edge
+cpts = [(8.5, -6.6), (15.4, -5.6), (16.3, -4.0), (16.3, 4.0), (15.4, 5.6), (8.5, 6.6)]
+ch = slab("chute", [(BX - u, v) for u, v in reversed(cpts)], 28.2, 31.0, 0, material=CLEAR)
+inner = slab("chute_in", [(BX - u, v) for u, v in reversed([(8.1, -6.2), (15.0, -5.25), (15.9, -3.7), (15.9, 3.7), (15.0, 5.25), (8.1, 6.2)])], 27.0, 32.0, 0, material=CLEAR)
+ch.modifiers.clear(); inner.modifiers.clear()
+md = ch.modifiers.new("d", "BOOLEAN"); md.operation = "DIFFERENCE"; md.object = inner; md.solver = "EXACT"
+bpy.context.view_layer.objects.active = ch; bpy.ops.object.modifier_apply(modifier=md.name); bpy.data.objects.remove(inner)
+md = ch.modifiers.new("bev", "BEVEL"); md.width = 0.12; md.segments = 3
 
 # ---------- controls on the column front ----------
 DXc = 36.1
@@ -295,6 +305,20 @@ sc.view_settings.view_transform = "AgX"; sc.view_settings.look = "AgX - Medium H
 if VIEW == "blend":
     bpy.ops.file.pack_all()
     bpy.ops.wm.save_as_mainfile(filepath=OUT, compress=True); print("saved", OUT); sys.exit(0)
+if VIEW == "orbit":
+    # 5 s at 24 fps, 16:9: slow 100-degree orbit from the bowl end to the controls
+    sc.render.resolution_x, sc.render.resolution_y = 1280, 720
+    bpy.ops.object.empty_add(location=(22, 0, 23)); pivot = bpy.context.object
+    cam.parent = pivot; cam.location = (0, -128, 21); cam.rotation_euler = (math.radians(82), 0, 0); cam.data.lens = 38
+    sc.frame_start, sc.frame_end = 1, 120
+    pivot.rotation_euler = (0, 0, math.radians(-60)); pivot.keyframe_insert("rotation_euler", frame=1)
+    pivot.rotation_euler = (0, 0, math.radians(40)); pivot.keyframe_insert("rotation_euler", frame=120)
+    for fc in pivot.animation_data.action.fcurves:
+        for kp in fc.keyframe_points: kp.interpolation = "SINE"
+    sc.render.fps = 24
+    sc.render.filepath = OUT.rstrip("/") + "/f_"
+    sc.render.image_settings.file_format = "JPEG"; sc.render.image_settings.quality = 93
+    bpy.ops.render.render(animation=True); print("rendered animation", OUT); sys.exit(0)
 sc.render.filepath = OUT
 bpy.ops.render.render(write_still=True)
 print("rendered", OUT)
