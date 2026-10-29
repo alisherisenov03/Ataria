@@ -1,8 +1,9 @@
 import sys
 from PIL import Image, ImageDraw, ImageFilter
 src, out, cx, cy, rx, ry, rot = sys.argv[1], sys.argv[2], *map(float, sys.argv[3:8])
+DIAL = sys.argv[8] if len(sys.argv) > 8 else "zip/x/006.png"
 im = Image.open(src).convert("RGB")
-d = Image.open("zip/x/006.png").convert("RGB")
+d = Image.open(DIAL).convert("RGB")
 R = 490; d = d.crop((512-R, 512-R, 512+R, 512+R))
 w, h = int(2*rx), int(2*ry)
 d = d.resize((w, h), Image.LANCZOS).rotate(rot, resample=Image.BICUBIC, expand=False)

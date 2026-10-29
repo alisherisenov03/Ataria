@@ -178,8 +178,8 @@ if os.path.exists(os.path.join(TEX, "dial.png")): decal("dialface", "dial.png", 
 floor = box("floor", (600, 600, 1), (22, 0, -4.0), material=mat("floor", (0.40, 0.355, 0.32), rough=0.6))
 cyl("plinth", 34, 3.5, (22, 0, -1.75), material=mat("stone", (0.46, 0.41, 0.37), rough=0.85, bump=0.6), verts=192)
 wallm = mat("wall", (0.54, 0.48, 0.43), rough=0.92)
-for i in range(70):
-    a = math.radians(-80 + i * 2.3)
+for i in range(96):
+    a = math.radians(-110 + i * 2.3)
     cyl(f"fl{i}", 1.7, 160, (22 + 130 * math.sin(a), 110 * math.cos(a) + 20, 76), material=wallm, verts=24)
 
 def aim(o, tgt): o.rotation_euler = (Vector(tgt) - o.location).to_track_quat("-Z", "Y").to_euler()
@@ -227,7 +227,7 @@ if VIEW == "orbit":
     # slow 100-degree orbit with a gentle rise, 4 s at 24 fps, 16:9
     sc.render.resolution_x = 960; sc.render.resolution_y = 540
     bpy.ops.object.empty_add(location=(22, 0, 22)); pivot = bpy.context.object
-    cam.parent = pivot; cam.location = (0, -118, 18); cam.rotation_euler = (math.radians(82), 0, 0); cam.data.lens = 50
+    cam.parent = pivot; cam.location = (0, -125, 20); cam.rotation_euler = (math.radians(82), 0, 0); cam.data.lens = 38
     sc.frame_start, sc.frame_end = 1, 96
     pivot.rotation_euler = (0, 0, math.radians(-60)); pivot.keyframe_insert("rotation_euler", frame=1)
     pivot.rotation_euler = (0, 0, math.radians(40)); pivot.keyframe_insert("rotation_euler", frame=96)
