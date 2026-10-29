@@ -318,6 +318,7 @@ ${bare ? "" : footer()}
     desc: sm.intro,
     image: sm.hero,
     active: "about",
+    extraHead: `<script type="module" src="https://cdn.jsdelivr.net/npm/@google/model-viewer@3.5.0/dist/model-viewer.min.js"></script>`,
     body: `
 <section class="p-hero wrap">
   <div class="txt">
@@ -332,6 +333,12 @@ ${bare ? "" : footer()}
 </section>
 <div class="wrap">
   <div class="specs">${sm.specs.map((s) => `<div class="spec"><div class="k">${esc(s.label)}</div><div class="v">${esc(s.value)}</div></div>`).join("")}</div>
+
+  <section class="m3d block-section" aria-label="${T("3D-модель", "3D-модель")}">
+    <div class="sec-head"><h2>${T("Покрутите машину", "Машинаны айналдырып көріңіз")}</h2><p class="lead">${T("Вращайте пальцем или мышью, приближайте двумя пальцами.", "Саусақпен немесе тінтуірмен айналдырыңыз, екі саусақпен жақындатыңыз.")}</p></div>
+    <model-viewer class="m3d-view" src="/3d/ataria-sm23.glb" alt="${esc(sm.name)} 3D" camera-controls touch-action="pan-y" auto-rotate auto-rotate-delay="2500" rotation-per-second="16deg"
+      camera-orbit="-35deg 75deg auto" field-of-view="28deg" shadow-intensity="1" exposure="1.05" tone-mapping="aces" environment-image="neutral" interaction-prompt="none" loading="lazy" ar ar-modes="webxr scene-viewer quick-look"></model-viewer>
+  </section>
 
   <div class="tiles block-section">
     <a href="${P}/sm23/start/"><span class="ic">${ICONS.book}</span><h3>${L.start}</h3><p>${T("Первый запуск за 5 шагов.", "Алғашқы іске қосу 5 қадамда.")}</p></a>
