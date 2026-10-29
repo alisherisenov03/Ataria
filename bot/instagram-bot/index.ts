@@ -170,19 +170,41 @@ async function activePromo(code: string | null): Promise<string | null> {
   return data ? c : null;
 }
 
-// Long-lived token: the secret is the seed, the refreshed one lives in ig_config.
+async function sha256(s: string): Promise<string> {
+  const h = new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s)));
+  return Array.from(h, (b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+// Long-lived token: the secret is the seed, the refreshed one lives in ig_config
+// together with a hash of the seed it came from, so a new secret replaces it at once.
 async function token(): Promise<string> {
-  const { data } = await db.from("ig_config").select("value,updated_at").eq("key", "token").maybeSingle();
-  const current = data?.value ?? env("IG_TOKEN");
-  const age = data ? (Date.now() - new Date(data.updated_at).getTime()) / 86_400_000 : Infinity;
+  const seed = env("IG_TOKEN");
+  const seedHash = await sha256(seed);
+  const { data } = await db.from("ig_config").select("key,value,updated_at").in("key", ["token", "seed"]);
+  const cached = data?.find((r) => r.key === "token");
+  const cachedSeed = data?.find((r) => r.key === "seed")?.value;
+  const fromSeed = !cached || cachedSeed !== seedHash;
+  const current = fromSeed ? seed : cached!.value;
+  const age = fromSeed ? Infinity : (Date.now() - new Date(cached!.updated_at).getTime()) / 86_400_000;
   if (age < TOKEN_REFRESH_DAYS) return current;
   const res = await fetch(`https://graph.instagram.com/refresh_access_token?grant_type=ig_refresh_token&access_token=${current}`);
+  const now = new Date().toISOString();
   if (!res.ok) {
+    // a token under 24 h old cannot be refreshed yet: keep it and try again in TOKEN_REFRESH_DAYS
     console.error("token refresh failed", res.status, await res.text());
+    if (fromSeed) {
+      await db.from("ig_config").upsert([
+        { key: "token", value: current, updated_at: now },
+        { key: "seed", value: seedHash, updated_at: now },
+      ]);
+    }
     return current;
   }
   const fresh = (await res.json()).access_token as string;
-  await db.from("ig_config").upsert({ key: "token", value: fresh, updated_at: new Date().toISOString() });
+  await db.from("ig_config").upsert([
+    { key: "token", value: fresh, updated_at: now },
+    { key: "seed", value: seedHash, updated_at: now },
+  ]);
   return fresh;
 }
 
