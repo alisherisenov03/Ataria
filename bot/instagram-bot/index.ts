@@ -514,9 +514,13 @@ async function businessLogin(code: string): Promise<Response> {
     `https://graph.instagram.com/access_token?grant_type=ig_exchange_token&client_secret=${env("IG_APP_SECRET")}&access_token=${short.access_token}`,
   )).json();
   const t: string = long.access_token ?? short.access_token;
-  const me = await (await fetch(`${GRAPH}/me?fields=username&access_token=${t}`)).json();
-  if ((me.username ?? "").toLowerCase() !== BRAND_ACCOUNT) {
-    return page(`Это аккаунт @${me.username ?? "?"}. Подключить можно только @${BRAND_ACCOUNT}: войдите в него и откройте ссылку снова.`, 403);
+  const me = await (await fetch(`${GRAPH}/me?fields=user_id,username&access_token=${t}`)).json();
+  console.log("business login", { short_user: short.user_id, long_error: long.error, me });
+  if (!me.username) {
+    return page(`Instagram не отдал имя аккаунта: ${JSON.stringify(me.error ?? me)}. Пришлите этот текст ассистенту.`, 502);
+  }
+  if (me.username.toLowerCase() !== BRAND_ACCOUNT) {
+    return page(`Это аккаунт @${me.username}. Подключить можно только @${BRAND_ACCOUNT}: войдите в него и откройте ссылку снова.`, 403);
   }
   const now = new Date().toISOString();
   await db.from("ig_config").upsert([
