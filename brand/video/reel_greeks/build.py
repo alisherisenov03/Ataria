@@ -193,7 +193,7 @@ def main():
     lst.write_text("".join(f"file '{p.resolve()}'\n" for p in parts))
     joined = out_dir / "joined.mp4"
     run(["ffmpeg", "-v", "error", "-y", "-f", "concat", "-safe", "0", "-i", str(lst), "-c", "copy", str(joined)])
-    final = out_dir / "reel_greeks_v3.mp4"
+    final = out_dir / "reel_greeks_ai.mp4"
     run(["ffmpeg", "-v", "error", "-y", "-i", str(joined), "-c:v", "copy",
          "-af", "loudnorm=I=-14:TP=-1.5:LRA=9", "-c:a", "aac", "-b:a", "192k", "-movflags", "+faststart", str(final)])
     print(json.dumps({"parts": len(parts), "seconds": round(total, 1), "out": str(final)}))
