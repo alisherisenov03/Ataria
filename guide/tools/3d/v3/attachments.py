@@ -43,13 +43,16 @@ def make_beater(x, y, z):
     def fp(deg):  # point on the frame at parameter angle deg
         a = math.radians(deg)
         return (x + Wd * math.sin(a) * (0.55 + 0.45 * (1 - math.cos(a)) / 2), y, z - 2.6 - H * (1 - math.cos(a)) / 2)
-    spine = [(x, y, z - 2.6 - H * f) for f in (0.0, 0.25, 0.5, 0.72)]
-    objs.append(tube("beater_spine", spine, 0.4, material=SATIN))
-    # two ribs from the spine to the right side of the frame, one to the left (photo 054)
-    for k, (f, deg) in enumerate(((0.25, 75), (0.5, 120), (0.38, -100))):
-        p0 = (x, y, z - 2.6 - H * f); p1 = fp(deg)
-        mid = ((p0[0] + p1[0]) / 2, y, (p0[2] + p1[2]) / 2 - 0.8)
-        objs.append(tube(f"beater_rib{k}", [p0, mid, p1], 0.36, material=SATIN))
+    bot = fp(160)
+    spine = []
+    for k in range(13):
+        t = k / 12
+        spine.append((x + (bot[0] - x) * t ** 1.6 + 0.8 * math.sin(math.pi * t), y, z - 2.6 + (bot[2] - (z - 2.6)) * t))
+    objs.append(tube("beater_spine", spine, 0.42, material=SATIN))
+    for k, (i0, deg) in enumerate(((4, 75), (8, 118))):
+        p0 = spine[i0]; p1 = fp(deg)
+        mid = ((p0[0] + p1[0]) / 2, y, (p0[2] + p1[2]) / 2 + 0.6)
+        objs.append(tube(f"beater_rib{k}", [p0, mid, p1], 0.38, material=SATIN))
     return objs
 
 def make_hook(x, y, z):
@@ -66,16 +69,32 @@ def make_blender(x, y, ztop):
     # blender jar standing on the rear top port: black base collar, clear faceted jar, handle, black lid with cap
     BLK = mat("blk", (0.02, 0.02, 0.022), rough=0.35, coat=0.3)
     objs = [lathe("bl_base", [(5.6, 0), (6.4, 0.3), (6.6, 3.6), (6.2, 4.2), (5.6, 4.3)], (x, y, ztop), material=BLK, thick=0, sub=1)]
-    objs.append(lathe("bl_jar", [(5.4, 4.2), (6.3, 6.5), (7.0, 14), (7.6, 22), (7.9, 25.5), (8.0, 25.8)], (x, y, ztop), material=CLEAR, thick=0.35, sub=1))
-    objs.append(lathe("bl_lid", [(0.01, 26.9), (6.0, 26.8), (8.1, 26.2), (8.2, 25.6)], (x, y, ztop), material=BLK, thick=0.3, sub=1))
+    # glass jar with 10 vertical flutes (photo 007): radius modulated around the axis
+    prof = [(5.4, 4.2), (6.2, 6.0), (6.8, 10), (7.2, 16), (7.6, 22), (7.9, 25.0), (8.0, 25.8)]
+    me = bpy.data.meshes.new("bl_jar"); jar = bpy.data.objects.new("bl_jar", me); sc.collection.objects.link(jar)
+    bm = bmesh.new(); N = 160; rows = []
+    for r0, zz in prof:
+        row = []
+        for k in range(N):
+            th = math.tau * k / N; f = 1 + (0.045 if zz < 24.5 else 0.0) * abs(math.cos(5 * th)) ** 0.6
+            row.append(bm.verts.new((r0 * f * math.cos(th), r0 * f * math.sin(th), zz)))
+        rows.append(row)
+    for r1, r2 in zip(rows, rows[1:]):
+        for k in range(N): bm.faces.new((r1[k], r1[(k + 1) % N], r2[(k + 1) % N], r2[k]))
+    bm.faces.new(list(reversed(rows[0])))
+    bm.to_mesh(me); bm.free(); jar.location = (x, y, ztop); jar.data.materials.append(CLEAR)
+    jar.modifiers.new("s", "SOLIDIFY").thickness = 0.4; jar.modifiers.new("sub", "SUBSURF").levels = 1; smooth(jar)
+    objs.append(link(jar))
+    objs.append(lathe("bl_lid", [(1.2, 26.7), (6.5, 26.6), (8.5, 26.3), (8.6, 25.3), (8.1, 25.2)], (x, y, ztop), material=BLK, thick=0.35, sub=1))
     objs.append(cyl("bl_cap", 1.6, 1.6, (x, y, ztop + 27.6), material=BLK, verts=48, bev=0.2))
     objs.append(cyl("bl_blade_hub", 1.0, 1.4, (x, y, ztop + 5.0), material=STEEL, verts=32))
     for k in range(4):
         a = math.pi / 2 * k
         b = box(f"bl_blade{k}", (3.2, 0.9, 0.08), (x + 1.6 * math.cos(a), y + 1.6 * math.sin(a), ztop + 5.6 + 0.3 * (k % 2)), material=STEEL)
         b.rotation_euler = (math.radians(12 if k % 2 else -12), 0, a); objs.append(b)
-    hp = [(x + 7.2, y, ztop + 22.5), (x + 11.0, y, ztop + 21.5), (x + 11.8, y, ztop + 17), (x + 11.2, y, ztop + 9.5), (x + 6.8, y, ztop + 8.5)]
-    objs.append(tube("bl_handle", hp, 0.9, material=CLEAR))
+    hp = [(x + 7.4, y, ztop + 23.0), (x + 10.5, y, ztop + 22.6), (x + 12.4, y, ztop + 20.5), (x + 12.6, y, ztop + 14), (x + 12.0, y, ztop + 9.6), (x + 9.5, y, ztop + 8.4), (x + 6.6, y, ztop + 8.2)]
+    objs.append(tube("bl_handle", hp, 1.05, material=CLEAR))
+    objs.append(cyl("bl_tamper", 0.55, 14, (x, y, ztop + 31), material=BLK, verts=24))
     return objs
 
 def make_grinder(x, z):
@@ -88,8 +107,18 @@ def make_grinder(x, z):
         objs.append(box(f"gr_lug{k}", (1.6, 1.2, 1.2), (x - 14.0, 4.4 * math.cos(a), z - 0.8 + 4.4 * math.sin(a)), material=SATIN, bev=0.3))
     objs.append(cyl("gr_plate", 3.6, 0.3, (x - 15.0, 0, z - 0.8), rot=(0, math.radians(90), 0), material=STEEL, verts=64))
     objs.append(cyl("gr_feed", 2.4, 9.0, (x - 6.8, 0, z + 4.5), material=SATIN, verts=48, bev=0.3))
-    tr = slab("gr_tray", rounded_poly([(x - 14.5, -6.0), (x + 0.5, -6.0), (x + 0.5, 6.0), (x - 14.5, 6.0)], [1.5] * 4), z + 9.0, z + 9.5, 0.2, material=STEEL)
-    objs.append(tr)
-    objs.append(lathe("gr_tray_rim", [(0.01, 0), (0.01, 0)], (0, 0, 0), material=STEEL, thick=0, sub=0))
+    # deep rectangular tray with sloped walls and a rolled rim (photo 048)
+    cx_, cz_ = x - 6.8, z + 9.0
+    me = bpy.data.meshes.new("gr_tray"); tr = bpy.data.objects.new("gr_tray", me); sc.collection.objects.link(tr)
+    bm = bmesh.new()
+    def ring(hw, hd, zz):
+        return [bm.verts.new((cx_ + p.x, p.y, zz)) for p in rounded_poly([(-hw, -hd), (hw, -hd), (hw, hd), (-hw, hd)], [1.6] * 4, seg=6)]
+    bottom = ring(8.5, 5.6, cz_); top = ring(11.0, 7.6, cz_ + 2.6)
+    bm.faces.new(bottom)
+    for k in range(len(bottom)): bm.faces.new((bottom[k], bottom[(k + 1) % len(bottom)], top[(k + 1) % len(top)], top[k]))
+    bm.to_mesh(me); bm.free(); tr.data.materials.append(STEEL)
+    tr.modifiers.new("s", "SOLIDIFY").thickness = 0.25; smooth(tr); objs.append(link(tr))
+    rim = [(cx_ + p.x, p.y, cz_ + 2.6) for p in rounded_poly([(-11.0, -7.6), (11.0, -7.6), (11.0, 7.6), (-11.0, 7.6)], [1.6] * 4, seg=6)]
+    objs.append(tube("gr_tray_rim", rim + [rim[0]], 0.22, material=STEEL))
     objs.append(cyl("gr_pusher", 1.9, 9.0, (x - 6.8, 0, z + 12.0), material=mat("pblk", (0.02, 0.02, 0.022), rough=0.5), verts=48, bev=0.3))
     return objs

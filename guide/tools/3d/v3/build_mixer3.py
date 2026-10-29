@@ -36,7 +36,7 @@ def mat(name, color, metal=0.0, rough=0.5, trans=0.0, ior=1.45, coat=0.0, emit=N
     if emit: b.inputs["Emission Color"].default_value = (*emit, 1); b.inputs["Emission Strength"].default_value = 1.0
     return m
 
-GRAPHITE = mat("graphite", (0.045, 0.045, 0.048), rough=0.55, coat=0.05)
+GRAPHITE = mat("graphite", (0.034, 0.034, 0.036), rough=0.5, coat=0.03)
 DARK = mat("dark", (0.012, 0.012, 0.013), rough=0.6)
 STEEL = mat("steel", (0.9, 0.9, 0.91), metal=1.0, rough=0.1)
 CHROME = mat("chrome", (0.96, 0.96, 0.97), metal=1.0, rough=0.035)
@@ -155,7 +155,7 @@ CX0, CX1 = 25.6, 42.4    # column left / right
 HZ0, HZ1 = 32.5, 42.4    # head underside / top of head body (cap above)
 
 # base: rounded plan, soft edges; raised seat ring for the bowl
-slab("base", plan_rect(0, W, -11.6, 11.6, 4.5), 0, 4.7, 1.9)
+slab("base", plan_rect(0, W, -11.6, 11.6, 6.0), 0, 4.7, 2.3)
 cyl("base_foot", 1.0, 0.25, (4, -8, 0.0), material=DARK, verts=32)
 lathe("seat", [(7.0, 4.65), (9.8, 4.7), (10.3, 5.0), (9.9, 5.3), (7.4, 5.35)], (BX, 0, 0), material=GRAPHITE, thick=0, sub=1)
 
@@ -163,29 +163,43 @@ lathe("seat", [(7.0, 4.65), (9.8, 4.7), (10.3, 5.0), (9.9, 5.3), (7.4, 5.35)], (
 prof = [(CX0, 4.6), (CX1, 4.6), (CX1, 31.4), (43.6, 32.8), (43.6, 44.6), (0.7, 44.6), (0.7, HZ0), (CX0, HZ0)]
 body = slab("body", rounded_poly(prof, [0, 0, 1.0, 1.0, 1.4, 1.4, 1.6, 4.0]), 0, 0, 0, plane="xz", y0=-HD / 2, y1=HD / 2)
 body.modifiers.clear()
-plan = slab("plan", rounded_poly([(0.7, -HD / 2), (43.6, -HD / 2), (43.6, HD / 2), (0.7, HD / 2)], [6.0, 3.2, 3.2, 6.0]), 0, 50, 0)
+plan = slab("plan", rounded_poly([(0.7, -HD / 2), (43.6, -HD / 2), (43.6, HD / 2), (0.7, HD / 2)], [7.0, 4.6, 4.6, 7.0]), 0, 50, 0)
 plan.modifiers.clear()
 md = body.modifiers.new("i", "BOOLEAN"); md.operation = "INTERSECT"; md.object = plan; md.solver = "EXACT"
 bpy.context.view_layer.objects.active = body; bpy.ops.object.modifier_apply(modifier=md.name); bpy.data.objects.remove(plan)
-md = body.modifiers.new("bev", "BEVEL"); md.width = 1.3; md.segments = 8; md.limit_method = "ANGLE"; md.angle_limit = math.radians(40)
+md = body.modifiers.new("bev", "BEVEL"); md.width = 2.3; md.segments = 14; md.profile = 0.55; md.limit_method = "ANGLE"; md.angle_limit = math.radians(40)
 body.modifiers.new("wn", "WEIGHTED_NORMAL"); smooth(body)
 fb = fillet_xz("fillet_base", CX0 + 0.02, 4.55, 4.5, (-1, 1), -HD / 2 + 0.5, HD / 2 - 0.5)
 md = fb.modifiers.new("bev", "BEVEL"); md.width = 0.8; md.segments = 6; md.limit_method = "ANGLE"; md.angle_limit = math.radians(40)
-# tilt seam around the column and the cap seam
-slab("seam_tilt", rounded_poly([(CX0 + 0.3, -HD / 2 - 0.03), (CX1 + 0.03, -HD / 2 - 0.03), (CX1 + 0.03, HD / 2 + 0.03), (CX0 + 0.3, HD / 2 + 0.03)], [0, 3.2, 3.2, 0]), 21.5, 21.68, 0, material=DARK)
-# top cap is flush with the body: only a thin seam runs round the head at z 42.4 (photos 034/035)
-slab("seam_cap", rounded_poly([(0.68, -HD / 2 - 0.02), (43.62, -HD / 2 - 0.02), (43.62, HD / 2 + 0.02), (0.68, HD / 2 + 0.02)], [6.0, 3.2, 3.2, 6.0]), HZ1 - 0.08, HZ1 + 0.08, 0, material=DARK)
-# separate rear lid over the column: flush, seen only as a seam across the top
-# rear top lid = cover of the blender socket (owner's photo 019): the whole rear part of the top cap from x 25 to the end,
-# flush with the cap; seen only as a seam across the top that runs down both sides to the cap seam
+# seams are real grooves cut into the body after the soft bevel: tilt line, cap line, blender-lid line
+bpy.context.view_layer.objects.active = body
+for m in list(body.modifiers):
+    if m.type == "BEVEL": bpy.ops.object.modifier_apply(modifier=m.name)
+    else: body.modifiers.remove(m)
 RLX = 26.2
-box("seam_rear", (0.14, HD + 0.06, 44.66 - HZ1), (RLX, 0, (44.66 + HZ1) / 2), material=DARK)
+for nm, size, loc in (("cut_tilt", (30, HD + 4, 0.2), (CX0 + 15, 0, 21.6)),
+                      ("cut_cap", (50, HD + 4, 0.18), (22, 0, HZ1)),
+                      ("cut_rear", (0.18, HD + 4, 44.7 - HZ1 + 0.5), (RLX, 0, (44.7 + HZ1) / 2 + 0.2))):
+    c = box(nm, size, loc, material=DARK)
+    md = body.modifiers.new(nm, "BOOLEAN"); md.operation = "DIFFERENCE"; md.object = c; md.solver = "EXACT"
+    bpy.context.view_layer.objects.active = body
+    with bpy.context.temp_override(object=body, active_object=body):
+        bpy.ops.object.modifier_apply(modifier=md.name)
+    bpy.data.objects.remove(c)
+body.modifiers.new("wn", "WEIGHTED_NORMAL")
+# dark cores inside the grooves, set 0.12 cm below the surface, so each seam reads as a fine dark line
+def core(name, pts, radii, z0, z1):
+    slab(name, rounded_poly(pts, radii), z0, z1, 0, material=DARK)
+i = 0.14
+core("seam_tilt", [(CX0 + i, -HD / 2 + i), (CX1 - i, -HD / 2 + i), (CX1 - i, HD / 2 - i), (CX0 + i, HD / 2 - i)], [0, 4.4, 4.4, 0], 21.48, 21.72)
+core("seam_cap", [(0.7 + i, -HD / 2 + i), (43.6 - i, -HD / 2 + i), (43.6 - i, HD / 2 - i), (0.7 + i, HD / 2 - i)], [6.8, 4.4, 4.4, 6.8], HZ1 - 0.12, HZ1 + 0.12)
+box("seam_rear", (0.24, HD - 2 * 2.4, 44.6 - HZ1 - 0.12), (RLX, 0, (44.6 + HZ1) / 2 - 0.06), material=DARK)
 # the port cover reaches over the top edge: short seams on the top surface at the bowl end
 box("seam_port_c", (0.14, 8.4, 0.04), (2.3, 0, 44.6), material=DARK)
 for yy in (-4.2, 4.2): box(f"seam_port_{yy}", (1.6, 0.14, 0.04), (1.5, yy, 44.6), material=DARK)
 
 # planetary hub under the head
-cyl("hub", 7.4, 2.3, (BX, 0, HZ0 - 1.1), material=GRAPHITE, bev=0.5)
+cyl("hub", 7.4, 2.3, (BX, 0, HZ0 - 1.1), material=GRAPHITE, bev=0.9)
 cyl("hub_ring", 6.3, 0.8, (BX, 0, 29.9), material=DARK)
 cyl("shaft", 1.0, 2.2, (BX, 0, 28.6), material=STEEL, verts=48)
 
@@ -272,7 +286,6 @@ if VIEW == "blender":
     md = b.modifiers.new("well", "BOOLEAN"); md.operation = "DIFFERENCE"; md.object = cut; md.solver = "EXACT"
     b.modifiers.move(len(b.modifiers) - 1, 0)
     cut.hide_render = True; cut.hide_viewport = True
-    bpy.data.objects["seam_rear"].hide_render = True
     cyl("socket_ring", 6.4, 0.6, (35.0, 0, 43.3), material=DARK, verts=96)
     cyl("socket_drive", 1.1, 0.9, (35.0, 0, 43.6), material=STEEL, verts=12)
     make_blender(35.0, 0, 43.0)
