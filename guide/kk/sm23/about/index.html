@@ -21,7 +21,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600&family=Unbounded:wght@300;400&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/style.css">
-<script type="module" src="https://cdn.jsdelivr.net/npm/@google/model-viewer@3.5.0/dist/model-viewer.min.js"></script>
+
 <script>document.documentElement.classList.add("anim")</script>
 </head>
 <body class="">
@@ -77,10 +77,31 @@
 <div class="wrap">
   <div class="specs"><div class="spec"><div class="k">Қуаты</div><div class="v">2000 Вт</div></div><div class="spec"><div class="k">Тостаған</div><div class="v">7 л, тот баспайтын болат</div></div><div class="spec"><div class="k">Жылдамдық</div><div class="v">6 + P импульстік режимі</div></div><div class="spec"><div class="k">Айналу</div><div class="v">Планетарлық</div></div><div class="spec"><div class="k">Дисплей</div><div class="v">Таймері бар LED</div></div><div class="spec"><div class="k">Қорғаныс</div><div class="v">Қызып кетуден, астында сорғыш аяқтар</div></div><div class="spec"><div class="k">Таймер</div><div class="v">15 минутқа дейін</div></div></div>
 
-  <section class="m3d block-section" aria-label="3D-модель">
-    <div class="sec-head"><h2>Машинаны айналдырып көріңіз</h2><p class="lead">Саусақпен немесе тінтуірмен айналдырыңыз, екі саусақпен жақындатыңыз.</p></div>
-    <model-viewer class="m3d-view" src="/3d/ataria-sm23.glb" alt="ATARIA AT-SM23 3D" camera-controls touch-action="pan-y" auto-rotate auto-rotate-delay="2500" rotation-per-second="16deg"
-      camera-orbit="-35deg 75deg auto" field-of-view="28deg" shadow-intensity="1.1" shadow-softness="0.9" exposure="1.35" tone-mapping="neutral" environment-image="/3d/studio.hdr" interaction-prompt="none" loading="lazy" ar ar-modes="webxr scene-viewer quick-look"></model-viewer>
+  <section class="m3d block-section" aria-label="Машина жан-жағынан">
+    <div class="sec-head"><h2>Машинаны айналдырып көріңіз</h2><p class="lead">Машинаны бұру үшін бейнені саусақпен немесе тінтуірмен жылжытыңыз.</p></div>
+    <div class="m3d-view" id="orbit" role="img" aria-label="ATARIA AT-SM23: жан-жағынан көрінісі">
+      <video poster="/img/sm23-orbit.jpg?v=b72b3605" muted loop playsinline preload="metadata"><source src="/video/sm23-orbit.mp4" type="video/mp4"><source src="/video/sm23-orbit.webm" type="video/webm"></video>
+      <span class="m3d-hint" aria-hidden="true">⟷</span>
+    </div>
+    <script>
+    (() => {
+      // Boomerang orbit clip: plays on its own when visible; dragging scrubs the forward half like turning the machine.
+      const box = document.getElementById("orbit"), v = box.querySelector("video");
+      const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
+      let seen = false, drag = null;
+      new IntersectionObserver(([e]) => { seen = e.isIntersecting; if (!still && !drag) seen ? v.play().catch(() => {}) : v.pause(); }, { threshold: 0.3 }).observe(box);
+      const half = () => (v.duration || 7.4) / 2;
+      box.addEventListener("pointerdown", (e) => {
+        v.pause(); box.classList.add("on");
+        const t = v.currentTime; drag = { x: e.clientX, t: t > half() ? 2 * half() - t : t };
+      });
+      addEventListener("pointermove", (e) => {
+        if (!drag) return;
+        v.currentTime = Math.min(half(), Math.max(0, drag.t + ((e.clientX - drag.x) / box.clientWidth) * half() * 1.6));
+      });
+      addEventListener("pointerup", () => { if (!drag) return; drag = null; if (!still && seen) setTimeout(() => !drag && v.play().catch(() => {}), 2500); });
+    })();
+    </script>
   </section>
 
   <div class="tiles block-section">

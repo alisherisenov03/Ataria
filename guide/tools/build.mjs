@@ -318,7 +318,6 @@ ${bare ? "" : footer()}
     desc: sm.intro,
     image: sm.hero,
     active: "about",
-    extraHead: `<script type="module" src="https://cdn.jsdelivr.net/npm/@google/model-viewer@3.5.0/dist/model-viewer.min.js"></script>`,
     body: `
 <section class="p-hero wrap">
   <div class="txt">
@@ -334,10 +333,31 @@ ${bare ? "" : footer()}
 <div class="wrap">
   <div class="specs">${sm.specs.map((s) => `<div class="spec"><div class="k">${esc(s.label)}</div><div class="v">${esc(s.value)}</div></div>`).join("")}</div>
 
-  <section class="m3d block-section" aria-label="${T("3D-модель", "3D-модель")}">
-    <div class="sec-head"><h2>${T("Покрутите машину", "Машинаны айналдырып көріңіз")}</h2><p class="lead">${T("Вращайте пальцем или мышью, приближайте двумя пальцами.", "Саусақпен немесе тінтуірмен айналдырыңыз, екі саусақпен жақындатыңыз.")}</p></div>
-    <model-viewer class="m3d-view" src="/3d/ataria-sm23.glb" alt="${esc(sm.name)} 3D" camera-controls touch-action="pan-y" auto-rotate auto-rotate-delay="2500" rotation-per-second="16deg"
-      camera-orbit="-35deg 75deg auto" field-of-view="28deg" shadow-intensity="1.1" shadow-softness="0.9" exposure="1.35" tone-mapping="neutral" environment-image="/3d/studio.hdr" interaction-prompt="none" loading="lazy" ar ar-modes="webxr scene-viewer quick-look"></model-viewer>
+  <section class="m3d block-section" aria-label="${T("Машина со всех сторон", "Машина жан-жағынан")}">
+    <div class="sec-head"><h2>${T("Покрутите машину", "Машинаны айналдырып көріңіз")}</h2><p class="lead">${T("Ведите пальцем или мышью по видео, чтобы повернуть машину.", "Машинаны бұру үшін бейнені саусақпен немесе тінтуірмен жылжытыңыз.")}</p></div>
+    <div class="m3d-view" id="orbit" role="img" aria-label="${esc(sm.name)}: ${T("вид со всех сторон", "жан-жағынан көрінісі")}">
+      <video poster="/img/sm23-orbit.jpg" muted loop playsinline preload="metadata"><source src="/video/sm23-orbit.mp4" type="video/mp4"><source src="/video/sm23-orbit.webm" type="video/webm"></video>
+      <span class="m3d-hint" aria-hidden="true">⟷</span>
+    </div>
+    <script>
+    (() => {
+      // Boomerang orbit clip: plays on its own when visible; dragging scrubs the forward half like turning the machine.
+      const box = document.getElementById("orbit"), v = box.querySelector("video");
+      const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
+      let seen = false, drag = null;
+      new IntersectionObserver(([e]) => { seen = e.isIntersecting; if (!still && !drag) seen ? v.play().catch(() => {}) : v.pause(); }, { threshold: 0.3 }).observe(box);
+      const half = () => (v.duration || 7.4) / 2;
+      box.addEventListener("pointerdown", (e) => {
+        v.pause(); box.classList.add("on");
+        const t = v.currentTime; drag = { x: e.clientX, t: t > half() ? 2 * half() - t : t };
+      });
+      addEventListener("pointermove", (e) => {
+        if (!drag) return;
+        v.currentTime = Math.min(half(), Math.max(0, drag.t + ((e.clientX - drag.x) / box.clientWidth) * half() * 1.6));
+      });
+      addEventListener("pointerup", () => { if (!drag) return; drag = null; if (!still && seen) setTimeout(() => !drag && v.play().catch(() => {}), 2500); });
+    })();
+    </script>
   </section>
 
   <div class="tiles block-section">
