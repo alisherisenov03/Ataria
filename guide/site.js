@@ -281,7 +281,7 @@ if (splitScreen) {
 
 // Cinematic hero clip: plays only while on screen, stays on its poster for reduced motion.
 (() => {
-  const v = document.querySelector(".cine-v");
+  const v = document.querySelector("video.cine-v");
   if (!v) return;
   if (matchMedia("(prefers-reduced-motion: reduce)").matches) { v.removeAttribute("autoplay"); v.pause(); return; }
   new IntersectionObserver(([e]) => (e.isIntersecting ? v.play().catch(() => {}) : v.pause()), { threshold: 0.1 }).observe(v);

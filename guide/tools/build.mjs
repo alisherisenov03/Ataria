@@ -59,6 +59,10 @@ function buildSite(lang) {
   const KASPI_CARD = DATA.support.kaspi_card;
   const sm = DATA.products.find((p) => p.id === "sm23");
   const af = DATA.products.find((p) => p.id === "airfryer");
+  // A recipe whose photo is not shot yet shows a typographic placeholder instead of a broken image.
+  for (const r of sm.recipes) if (r.image && !fs.existsSync(path.join(ROOT, r.image))) r.image = null;
+  const noImg = (r) => `<div class="noimg" aria-hidden="true"><span>${esc(r.title)}</span></div>`;
+  const kbju = (r) => (r.nutrition ? T(`${r.nutrition.kcal} ккал · Б ${r.nutrition.p} · Ж ${r.nutrition.f} · У ${r.nutrition.c}`, `${r.nutrition.kcal} ккал · А ${r.nutrition.p} · М ${r.nutrition.f} · К ${r.nutrition.c}`) : "");
   const att = (p, id) => p.attachments.find((a) => a.id === id);
   const minutesLabel = (m) => (m >= 60 ? `${Math.floor(m / 60)} ${T("ч", "сағ")}${m % 60 ? " " + (m % 60) + " " + T("мин", "мин") : ""}` : `${m} ${T("мин", "мин")}`);
   const media = (item) => (item.image ? `<img src="/${esc(item.image)}" alt="${esc(item.name || item.title)}" loading="lazy">` : ICONS[item.id] || "");
@@ -186,8 +190,8 @@ ${bare ? "" : footer()}
     <div class="body"><span class="meta">${esc(a.group)}${a.speed ? ` · ${T("скорость", "жылдамдық")} ${esc(a.speed)}` : ""}</span><h3>${esc(a.name)}</h3><span class="meta">${esc(a.short)}</span></div></a>`).join("")}</div>`;
 
   const recGrid = (p, list, cls = "") => `<div class="grid ${cls}">${list.map((r) => `<a class="card" href="${P}/${p.id}/recipes/${r.id}/">
-    <div class="ph">${r.image ? `<img src="/${esc(r.image)}" alt="${esc(r.title)}" loading="lazy">` : ""}<span class="time">${ICONS.clock}${esc(r.time)}</span></div>
-    <div class="body"><span class="meta">${esc(r.tag)}</span><h3>${esc(r.title)}</h3>
+    <div class="ph">${r.image ? `<img src="/${esc(r.image)}" alt="${esc(r.title)}" loading="lazy">` : noImg(r)}<span class="time">${ICONS.clock}${esc(r.time)}</span></div>
+    <div class="body"><span class="meta">${esc(r.tag)}${r.nutrition ? ` · ${r.nutrition.kcal} ${T("ккал", "ккал")}` : ""}</span><h3>${esc(r.title)}</h3>
       <div class="chips">${r.attachments.map((id) => `<span class="chip">${esc(att(p, id)?.name || id)}</span>`).join("")}</div></div></a>`).join("")}</div>`;
 
   function reviewBlock(p, big = false) {
@@ -245,7 +249,7 @@ ${bare ? "" : footer()}
     desc: T("Как пользоваться техникой ATARIA: насадки, скорости, пошаговые рецепты и уход.", "ATARIA техникасын қалай қолдану керек: қондырмалар, жылдамдықтар, қадамдық рецепттер және күтім."),
     body: `
 <section class="cine" aria-label="${T("Кухонная машина ATARIA AT-SM23", "ATARIA AT-SM23 асүй машинасы")}">
-  <video class="cine-v" poster="/img/sm23-orbit.jpg" muted loop playsinline autoplay preload="auto" aria-hidden="true"><source src="/video/sm23-orbit.mp4" type="video/mp4"><source src="/video/sm23-orbit.webm" type="video/webm"></video>
+  <img class="cine-v" src="/img/sm23-studio.jpg" srcset="/img/sm23-studio-1200.jpg 1200w, /img/sm23-studio.jpg 2336w" sizes="100vw" alt="" fetchpriority="high">
   <div class="cine-in wrap">
     <p class="eyebrow">ATARIA AT-SM23</p>
     <h1>${T("Готовьте на кухонной машине по шагам", "Асүй машинасында қадамдап дайындаңыз")}</h1>
@@ -509,14 +513,14 @@ ${bare ? "" : footer()}
       ${pageHead(sm.name, L.recipes, T("Точные граммы, скорости и время. Откройте рецепт и нажмите «Готовить по шагам»: крупный текст и таймер прямо в телефоне.", "Нақты граммдар, жылдамдықтар және уақыт. Рецептті ашып, «Қадамдап дайындау» түймесін басыңыз: ірі мәтін және таймер телефоныңызда."))}
       <div class="filters" id="filters">${tags.map((t, i) => `<button data-tag="${esc(t)}" data-all="${i === 0 ? 1 : 0}" class="${i === 0 ? "on" : ""}">${esc(t)}</button>`).join("")}</div>
       <div class="grid mag" id="rgrid">${sm.recipes.map((r) => `<a class="card" data-tag="${esc(r.tag)}" href="${P}/sm23/recipes/${r.id}/">
-        <div class="ph"><img src="/${esc(r.image)}" alt="${esc(r.title)}" loading="lazy"><span class="time">${ICONS.clock}${esc(r.time)}</span></div>
-        <div class="body"><span class="meta">${esc(r.tag)} · ${esc(r.servings)}</span><h3>${esc(r.title)}</h3>
+        <div class="ph">${r.image ? `<img src="/${esc(r.image)}" alt="${esc(r.title)}" loading="lazy">` : noImg(r)}<span class="time">${ICONS.clock}${esc(r.time)}</span></div>
+        <div class="body"><span class="meta">${esc(r.tag)} · ${esc(r.servings)}${r.nutrition ? ` · ${r.nutrition.kcal} ${T("ккал", "ккал")}` : ""}</span><h3>${esc(r.title)}</h3>${r.nutrition ? `<span class="kbju">${kbju(r)}</span>` : ""}
         <div class="chips">${r.attachments.map((id) => `<span class="chip">${esc(att(sm, id)?.name || id)}</span>`).join("")}</div></div></a>`).join("")}</div>`)}</div>`,
     });
     sm.recipes.forEach((r, idx) => {
       const others = sm.recipes.filter((x) => x.id !== r.id);
       const side = `<p class="eyebrow" style="margin-top:26px">${T("Все рецепты", "Барлық рецепттер")}</p><nav>${sm.recipes.map((x) => `<a href="${P}/sm23/recipes/${x.id}/" class="${x.id === r.id ? "on" : ""}">${esc(x.title)}</a>`).join("")}</nav>`;
-      const ld = { "@context": "https://schema.org", "@type": "Recipe", name: r.title, image: `${SITE}/${r.image}`, description: r.intro, inLanguage: lang,
+      const ld = { "@context": "https://schema.org", "@type": "Recipe", name: r.title, image: `${SITE}/${r.image || "img/m-hero.jpg"}`, description: r.intro, inLanguage: lang,
         recipeYield: r.servings, recipeIngredient: r.ingredients, recipeInstructions: r.steps.map((s) => ({ "@type": "HowToStep", text: s.text })) };
       const labels = { step: T("шаг", "қадам"), of: T("из", "/"), close: T("Закрыть", "Жабу"), start: T("Запустить таймер", "Таймерді қосу"), pause: T("Пауза", "Кідірту"), back: T("Назад", "Артқа"), next: T("Дальше", "Әрі қарай"), done: T("Готово", "Дайын"), speed: T("скорость", "жылдамдық"), alarm: T("Время вышло!", "Уақыт бітті!"), stopSound: T("Выключить сигнал", "Дыбысты өшіру"), notifyTitle: T("Таймер ATARIA", "ATARIA таймері"), notifyBody: T("Время вышло — загляните на кухню", "Уақыт бітті — асүйге қараңыз"), resume: T("Таймер идёт", "Таймер жүріп жатыр") };
       page({
@@ -527,12 +531,13 @@ ${bare ? "" : footer()}
         active: "recipes",
         extraHead: `<script type="application/ld+json">${JSON.stringify(ld)}</script>`,
         body: `<div class="wrap">${crumbs([[HOME, `${P}/sm23/`], [sm.kind, `${P}/sm23/`], [L.recipes, `${P}/sm23/recipes/`], [r.title, ""]])}${layout(sm, "recipes", `
-        <div class="cover"><img src="/${esc(r.image)}" alt="${esc(r.title)}"></div>
+        <div class="cover">${r.image ? `<img src="/${esc(r.image)}" alt="${esc(r.title)}">` : noImg(r)}</div>
         <div class="page-head tight"><p class="eyebrow">${esc(r.tag)}</p><h1>${esc(r.title)}</h1><p class="lead">${esc(r.intro)}</p></div>
         <div class="meta-strip">
           <div>${ICONS.clock}<span><b>${esc(r.time)}</b>${T("время", "уақыты")}</span></div>
           <div>${ICONS.people}<span><b id="yield">${esc(r.servings)}</b>${T("порций", "порция")}</span></div>
           <div>${ICONS.parts}<span><b>${r.attachments.map((id) => esc(att(sm, id)?.name || id)).join(", ")}</b>${T("насадки", "қондырмалар")}</span></div>
+          ${r.nutrition ? `<div class="kbju-cell"><span><b>${r.nutrition.kcal} ${T("ккал", "ккал")}</b>${T(`на порцию · белки ${r.nutrition.p} г, жиры ${r.nutrition.f} г, углеводы ${r.nutrition.c} г`, `порцияға · ақуыз ${r.nutrition.p} г, май ${r.nutrition.f} г, көмірсу ${r.nutrition.c} г`)}</span></div>` : ""}
         </div>
         <div class="actions"><button class="btn" id="cook">${T("Готовить по шагам", "Қадамдап дайындау")}</button>
           ${r.attachments.map((id) => `<a class="btn ghost" href="${P}/sm23/attachments/${id}/">${esc(att(sm, id)?.name || id)}</a>`).join("")}</div>
