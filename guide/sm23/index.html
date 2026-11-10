@@ -19,7 +19,7 @@
 <link rel="apple-touch-icon" href="/img/icon-192.png?v=80cc690e">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600&family=Unbounded:wght@300;400&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/style.css">
 
 <script>document.documentElement.classList.add("anim")</script>
@@ -63,13 +63,43 @@
 </div>
 <main id="main">
 
-<section class="hero">
-  <div class="hero-txt">
-    <p class="eyebrow">Инструкция и рецепты · ATARIA AT-SM23</p>
-    <h1>Как готовить на вашей кухонной машине</h1>
-    <p class="lead">Какую насадку поставить, на какой скорости включать и что приготовить. Всё по шагам, с граммами и таймером.</p>
-    <button class="hero-search" id="hero-search" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></svg><span>Например: тесто, фарш, взбить сливки</span></button>
-    <p class="eyebrow" style="margin-top:26px">Что хотите сделать?</p>
+<section class="cine" aria-label="Кухонная машина ATARIA AT-SM23">
+  <video class="cine-v" poster="/img/sm23-orbit.jpg?v=b72b3605" muted loop playsinline autoplay preload="auto" aria-hidden="true"><source src="/video/sm23-orbit.mp4" type="video/mp4"><source src="/video/sm23-orbit.webm" type="video/webm"></video>
+  <div class="cine-in wrap">
+    <p class="eyebrow">ATARIA AT-SM23</p>
+    <h1>Готовьте на кухонной машине по шагам</h1>
+    <p class="lead">Какую насадку поставить, на какой скорости включать и что приготовить. С граммами и таймером.</p>
+    <div class="actions"><a class="btn" href="/sm23/start/">Первый запуск за 5 шагов <i>→</i></a><a class="btn ghost" href="/sm23/recipes/">Все рецепты</a></div>
+    <button class="hero-search" id="hero-search" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></svg><span>Найти: тесто, фарш, взбить сливки</span></button>
+  </div>
+</section>
+
+<section class="tech fluted">
+  <div class="wrap">
+    <div class="tech-strip">
+      <div><b>2000</b><span>Вт мощность</span></div>
+      <div><b>7</b><span>литров чаша</span></div>
+      <div><b>15</b><span>минут таймер, шаг 30 с</span></div>
+      <div><b>P·6</b><span>импульс и 6 скоростей</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="look" id="look" aria-label="Машина вблизи">
+  <div class="look-stage">
+    <div class="look-frame"><img src="/img/sm23-studio.jpg?v=af4731f2" alt="ATARIA AT-SM23 в студии" loading="lazy"></div>
+    <div class="look-txt wrap">
+      <h2>Посмотрите ближе</h2>
+      <ol class="look-list">
+        <li data-x="50" data-y="52" data-z="1" class="on"><b>Тёмно-серый матовый корпус</b><span>Мотор 2000 Вт, чаша 7 литров, шесть насадок в комплекте.</span></li><li data-x="64.8" data-y="27.8" data-z="2.5" class=""><b>Подсказки на голове</b><span>Крюк на скорости 1–2, венчик и лопатка от 1 до максимума.</span></li><li data-x="64.9" data-y="38.8" data-z="2.7" class=""><b>Таймер до 15 минут</b><span>Кнопки TIME, + и −, шаг 30 секунд. Машина сама остановится.</span></li><li data-x="64.6" data-y="64.8" data-z="2.5" class=""><b>Ручка скоростей</b><span>P — импульс, 0 — стоп, 1–6 — скорости по часовой стрелке.</span></li><li data-x="37" data-y="50" data-z="1.8" class=""><b>Чаша 7 литров</b><span>Сталь и прозрачная крышка с окном, чтобы добавлять продукты на ходу.</span></li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<section class="light sect">
+  <div class="wrap">
+    <div class="sec-head"><h2>Что хотите сделать?</h2><p class="lead">Выберите задачу, покажем насадку, скорость и шаги.</p></div>
     <div class="tasks">
       <a href="/sm23/attachments/hook/">Замесить тесто <i>→</i></a>
       <a href="/sm23/attachments/grinder/">Прокрутить фарш <i>→</i></a>
@@ -78,38 +108,34 @@
       <a href="/sm23/attachments/slicer/">Натереть или нарезать овощи <i>→</i></a>
       <a href="/sm23/attachments/noodle/">Нарезать лапшу <i>→</i></a>
     </div>
-    <div class="actions"><a class="btn" href="/sm23/start/">Первый запуск за 5 шагов</a><a class="btn ghost" href="/sm23/recipes/">Все рецепты</a></div>
   </div>
-  <div class="hero-ph tall"><img src="/img/m-side.jpg?v=f5f5951c" alt="Кухонная машина ATARIA AT-SM23"></div>
 </section>
 
-<section class="tech">
+<section class="sect fluted">
   <div class="wrap">
-    <div class="tech-strip">
-      <div><b>2000</b><span>Вт мощность</span></div>
-      <div><b>7</b><span>литров чаша</span></div>
-      <div><b>15</b><span>минут таймер, шаг 30 с</span></div>
-      <div><b>P·6</b><span>импульс и 6 скоростей</span></div>
+    <div class="sec-head"><h2>Что умеет машина</h2></div>
+    <article class="feat"><figure><img src="/img/t-planet.jpg?v=6061ac47" alt="Планетарное вращение" loading="lazy"></figure><div class="txt"><h3>Планетарное вращение</h3><p>Насадка вращается вокруг своей оси и одновременно обходит всю чашу. Тесто вымешивается равномерно, без комков у стенок.</p></div></article><article class="feat"><figure><img src="/img/t-bowl.jpg?v=1c8ce46f" alt="Чаша 7 литров с крышкой" loading="lazy"></figure><div class="txt"><h3>Чаша 7 литров с крышкой</h3><p>Стальная чаша вмещает тесто на большую семью. Прозрачная крышка не даёт муке разлетаться, а через носик удобно добавлять продукты на ходу.</p></div></article><article class="feat"><figure><img src="/img/t-power.jpg?v=66324ffb" alt="Мотор 2000 Вт" loading="lazy"></figure><div class="txt"><h3>Мотор 2000 Вт</h3><p>Мощности хватает на тугое тесто для беша, мантов и лапши. Машина работает уверенно, не перегреваясь на долгом замесе.</p></div></article><article class="feat"><figure><img src="/img/t-timer.jpg?v=114a5e47" alt="Таймер до 15 минут" loading="lazy"></figure><div class="txt"><h3>Таймер до 15 минут</h3><p>Задайте время кнопками TIME, + и − с шагом 30 секунд. По окончании машина сама остановится, можно не стоять рядом.</p></div></article><article class="feat"><figure><img src="/img/t-speed.jpg?v=5436553c" alt="Импульс и 6 скоростей" loading="lazy"></figure><div class="txt"><h3>Импульс и 6 скоростей</h3><p>Ноль сверху, справа скорости от 1 до 6, слева импульс P. Крюку хватает 1–2, венчик и лопатка работают на всех скоростях.</p></div></article><article class="feat"><figure><img src="/img/t-port.jpg?v=a331dbea" alt="Боковой разъём под насадки" loading="lazy"></figure><div class="txt"><h3>Боковой разъём под насадки</h3><p>Поднимите крышку с треугольником и подключите мясорубку, овощерезку, тестораскатку или лапшерезку. Одна машина вместо шести приборов.</p></div></article>
+    <div class="actions center"><a class="btn" href="/sm23/attachments/">Все насадки <i>→</i></a><a class="btn ghost" href="/sm23/about/">Характеристики</a></div>
+  </div>
+</section>
+
+<section class="light sect">
+  <div class="wrap">
+    <div class="sec-head"><h2>Что можно приготовить</h2></div>
+    <div class="scenes">
+      <a class="scene-card big" href="/sm23/attachments/hook/"><img src="/img/a-hook.jpg?v=29fd5133" alt="" loading="lazy"><span><b>Тесто</b>Крюк, скорость 1–2</span></a>
+      <a class="scene-card" href="/sm23/attachments/whisk/"><img src="/img/a-whisk.jpg?v=fa7d1466" alt="" loading="lazy"><span><b>Крем и безе</b>Венчик, скорость 1–6</span></a>
+      <a class="scene-card" href="/sm23/attachments/roller/"><img src="/img/a-roller.jpg?v=e549d56e" alt="" loading="lazy"><span><b>Раскатка и лапша</b>8 уровней толщины</span></a>
+      <a class="scene-card" href="/sm23/attachments/slicer/"><img src="/img/a-slicer.jpg?v=1840bae2" alt="" loading="lazy"><span><b>Овощи и сыр</b>Три барабана</span></a>
+      <a class="scene-card" href="/sm23/attachments/grinder/"><img src="/img/a-grinder.jpg?v=696e9a77" alt="" loading="lazy"><span><b>Фарш</b>Мясорубка, скорость 1–6</span></a>
     </div>
-    <article class="feat"><figure><img src="/img/t-planet.jpg?v=6061ac47" alt="Планетарное вращение" loading="lazy"></figure><div class="txt"><p class="eyebrow">01</p><h3>Планетарное вращение</h3><p>Насадка вращается вокруг своей оси и одновременно обходит всю чашу. Тесто вымешивается равномерно, без комков у стенок.</p></div></article><article class="feat"><figure><img src="/img/t-bowl.jpg?v=1c8ce46f" alt="Чаша 7 литров с крышкой" loading="lazy"></figure><div class="txt"><p class="eyebrow">02</p><h3>Чаша 7 литров с крышкой</h3><p>Стальная чаша вмещает тесто на большую семью. Прозрачная крышка не даёт муке разлетаться, а через носик удобно добавлять продукты на ходу.</p></div></article><article class="feat"><figure><img src="/img/t-power.jpg?v=66324ffb" alt="Мотор 2000 Вт" loading="lazy"></figure><div class="txt"><p class="eyebrow">03</p><h3>Мотор 2000 Вт</h3><p>Мощности хватает на тугое тесто для беша, мантов и лапши. Машина работает уверенно, не перегреваясь на долгом замесе.</p></div></article><article class="feat"><figure><img src="/img/t-timer.jpg?v=114a5e47" alt="Таймер до 15 минут" loading="lazy"></figure><div class="txt"><p class="eyebrow">04</p><h3>Таймер до 15 минут</h3><p>Задайте время кнопками TIME, + и − с шагом 30 секунд. По окончании машина сама остановится, можно не стоять рядом.</p></div></article><article class="feat"><figure><img src="/img/t-speed.jpg?v=5436553c" alt="Импульс и 6 скоростей" loading="lazy"></figure><div class="txt"><p class="eyebrow">05</p><h3>Импульс и 6 скоростей</h3><p>Ноль сверху, справа скорости от 1 до 6, слева импульс P. Крюку хватает 1–2, венчик и лопатка работают на всех скоростях.</p></div></article><article class="feat"><figure><img src="/img/t-port.jpg?v=a331dbea" alt="Боковой разъём под насадки" loading="lazy"></figure><div class="txt"><p class="eyebrow">06</p><h3>Боковой разъём под насадки</h3><p>Поднимите крышку с треугольником и подключите мясорубку, овощерезку, тестораскатку или лапшерезку. Одна машина вместо шести приборов.</p></div></article>
-    <div class="actions center"><a class="btn" href="/sm23/attachments/">Все насадки</a><a class="btn ghost" href="/sm23/about/">Характеристики</a></div>
   </div>
 </section>
 
-<section class="wrap block-section">
-  <div class="sec-head"><h2>Что можно приготовить</h2></div>
-  <div class="scenes">
-    <a class="scene-card big" href="/sm23/attachments/hook/"><img src="/img/a-hook.jpg?v=29fd5133" alt="" loading="lazy"><span><b>Тесто</b>Крюк, скорость 1–2</span></a>
-    <a class="scene-card" href="/sm23/attachments/whisk/"><img src="/img/a-whisk.jpg?v=fa7d1466" alt="" loading="lazy"><span><b>Крем и безе</b>Венчик, скорость 1–6</span></a>
-    <a class="scene-card" href="/sm23/attachments/roller/"><img src="/img/a-roller.jpg?v=e549d56e" alt="" loading="lazy"><span><b>Раскатка и лапша</b>8 уровней толщины</span></a>
-    <a class="scene-card" href="/sm23/attachments/slicer/"><img src="/img/a-slicer.jpg?v=1840bae2" alt="" loading="lazy"><span><b>Овощи и сыр</b>Три барабана</span></a>
-    <a class="scene-card" href="/sm23/attachments/grinder/"><img src="/img/a-grinder.jpg?v=696e9a77" alt="" loading="lazy"><span><b>Фарш</b>Мясорубка, скорость 1–6</span></a>
-  </div>
-</section>
-
-<section class="wrap block-section">
-  <div class="sec-head"><h2>Что приготовить сегодня</h2><a href="/sm23/recipes/">Все рецепты →</a></div>
-  <div class="grid"><a class="card" href="/sm23/recipes/besh/">
+<section class="sect">
+  <div class="wrap">
+    <div class="sec-head"><h2>Что приготовить сегодня</h2><a href="/sm23/recipes/">Все рецепты →</a></div>
+    <div class="grid mag"><a class="card" href="/sm23/recipes/besh/">
     <div class="ph"><img src="/img/f-besh.jpg?v=b6ae482b" alt="Тесто для бешбармака" loading="lazy"><span class="time"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>40 мин</span></div>
     <div class="body"><span class="meta">Национальное</span><h3>Тесто для бешбармака</h3>
       <div class="chips"><span class="chip">Крюк для теста</span><span class="chip">Тестораскатка</span></div></div></a><a class="card" href="/sm23/recipes/manty/">
@@ -121,16 +147,22 @@
       <div class="chips"><span class="chip">Крюк для теста</span></div></div></a><a class="card" href="/sm23/recipes/pizza/">
     <div class="ph"><img src="/img/f-pizza.jpg?v=5d47f955" alt="Пицца дома" loading="lazy"><span class="time"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>1 ч 30 мин</span></div>
     <div class="body"><span class="meta">Выпечка</span><h3>Пицца дома</h3>
-      <div class="chips"><span class="chip">Крюк для теста</span><span class="chip">Овощерезка</span></div></div></a></div>
+      <div class="chips"><span class="chip">Крюк для теста</span><span class="chip">Овощерезка</span></div></div></a><a class="card" href="/sm23/recipes/lagman/">
+    <div class="ph"><img src="/img/f-lagman.jpg?v=733bec3f" alt="Лапша для лагмана" loading="lazy"><span class="time"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>50 мин</span></div>
+    <div class="body"><span class="meta">Национальное</span><h3>Лапша для лагмана</h3>
+      <div class="chips"><span class="chip">Крюк для теста</span><span class="chip">Тестораскатка</span><span class="chip">Лапшерезка</span></div></div></a></div>
+  </div>
 </section>
 
-<section class="wrap block-section">
-  <div class="sec-head"><h2>Всё о вашей машине</h2></div>
-  <div class="tiles">
-    <a href="/sm23/start/"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M5 5.5C7.5 4.5 10 4.5 12 6c2-1.5 4.5-1.5 7-.5V19c-2.5-1-5-1-7 .5-2-1.5-4.5-1.5-7-.5z"/><path d="M12 6v13.5"/></svg></span><h3>С чего начать</h3><p>Пять шагов до первого замеса.</p></a>
-    <a href="/sm23/attachments/"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="4" y="4" width="7" height="7" rx="2"/><rect x="13" y="4" width="7" height="7" rx="2"/><rect x="4" y="13" width="7" height="7" rx="2"/><rect x="13" y="13" width="7" height="7" rx="2"/></svg></span><h3>Насадки</h3><p>Для чего каждая и как ею пользоваться.</p></a>
-    <a href="/sm23/speeds/"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M4 17a8 8 0 1 1 16 0"/><path d="m12 17 4-6"/></svg></span><h3>Скорости</h3><p>Какую выбрать для теста, крема и фарша.</p></a>
-    <a href="/sm23/care/"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M12 3c3 4 6 6.5 6 10a6 6 0 0 1-12 0c0-3.5 3-6 6-10z"/></svg></span><h3>Уход</h3><p>Как мыть и хранить, чтобы служила годами.</p></a>
+<section class="light sect">
+  <div class="wrap">
+    <div class="sec-head"><h2>Всё о вашей машине</h2></div>
+    <div class="tiles">
+      <a href="/sm23/start/"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M5 5.5C7.5 4.5 10 4.5 12 6c2-1.5 4.5-1.5 7-.5V19c-2.5-1-5-1-7 .5-2-1.5-4.5-1.5-7-.5z"/><path d="M12 6v13.5"/></svg></span><h3>С чего начать</h3><p>Пять шагов до первого замеса.</p></a>
+      <a href="/sm23/attachments/"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="4" y="4" width="7" height="7" rx="2"/><rect x="13" y="4" width="7" height="7" rx="2"/><rect x="4" y="13" width="7" height="7" rx="2"/><rect x="13" y="13" width="7" height="7" rx="2"/></svg></span><h3>Насадки</h3><p>Для чего каждая и как ею пользоваться.</p></a>
+      <a href="/sm23/speeds/"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M4 17a8 8 0 1 1 16 0"/><path d="m12 17 4-6"/></svg></span><h3>Скорости</h3><p>Какую выбрать для теста, крема и фарша.</p></a>
+      <a href="/sm23/care/"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M12 3c3 4 6 6.5 6 10a6 6 0 0 1-12 0c0-3.5 3-6 6-10z"/></svg></span><h3>Уход</h3><p>Как мыть и хранить, чтобы служила годами.</p></a>
+    </div>
   </div>
 </section>
 <div class="wrap"><section class="block-section"><div class="band">
@@ -144,6 +176,7 @@
     <div><p class="eyebrow">Рецепты</p><a href="/sm23/recipes/besh/">Тесто для бешбармака</a><a href="/sm23/recipes/manty/">Манты</a><a href="/sm23/recipes/baursaki/">Баурсаки</a><a href="/sm23/recipes/pizza/">Пицца дома</a><a href="/sm23/recipes/lagman/">Лапша для лагмана</a><a href="/sm23/recipes/">Все рецепты</a></div>
     <div><p class="eyebrow">Связь</p><a href="https://jarvis-backend-alisher25.vercel.app/go/wa?src=guide&amp;p=sm23_owner" target="_blank" rel="noopener">Поддержка в WhatsApp</a><a href="https://kaspi.kz/shop/p/kuhonnyi-kombain-ataria-at-sm23-temno-seryi-168203173/?m=30444998" target="_blank" rel="noopener">Карточка на Kaspi</a><a href="https://kaspi.kz/shop/p/kuhonnyi-kombain-ataria-at-sm23-temno-seryi-168203173/?c=750000000&amp;v=reviews" target="_blank" rel="noopener">Оставить отзыв</a></div>
   </div>
+  <p class="foot-word" aria-hidden="true">ATARIA</p>
   <p class="copy">© ATARIA</p>
 </footer>
 <script src="/motion.js" defer></script>

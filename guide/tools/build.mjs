@@ -117,6 +117,7 @@ function buildSite(lang) {
     <div><p class="eyebrow">${T("Рецепты", "Рецепттер")}</p>${sm.recipes.slice(0, 5).map((r) => `<a href="${P}/sm23/recipes/${r.id}/">${esc(r.title)}</a>`).join("")}<a href="${P}/sm23/recipes/">${T("Все рецепты", "Барлық рецепттер")}</a></div>
     <div><p class="eyebrow">${T("Связь", "Байланыс")}</p><a href="${esc(WA)}" target="_blank" rel="noopener">${T("Поддержка в WhatsApp", "WhatsApp қолдауы")}</a>${KASPI_CARD ? `<a href="${esc(KASPI_CARD)}" target="_blank" rel="noopener">${T("Карточка на Kaspi", "Kaspi-дегі карточка")}</a>` : ""}${KASPI_REVIEW ? `<a href="${esc(KASPI_REVIEW)}" target="_blank" rel="noopener">${T("Оставить отзыв", "Пікір қалдыру")}</a>` : ""}</div>
   </div>
+  <p class="foot-word" aria-hidden="true">ATARIA</p>
   <p class="copy">© ATARIA</p>
 </footer>`;
   }
@@ -145,7 +146,7 @@ function buildSite(lang) {
 <link rel="apple-touch-icon" href="/img/icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600&family=Unbounded:wght@300;400&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/style.css">
 ${extraHead}
 <script>document.documentElement.classList.add("anim")</script>
@@ -184,7 +185,7 @@ ${bare ? "" : footer()}
     <div class="ph">${media(a)}</div>
     <div class="body"><span class="meta">${esc(a.group)}${a.speed ? ` · ${T("скорость", "жылдамдық")} ${esc(a.speed)}` : ""}</span><h3>${esc(a.name)}</h3><span class="meta">${esc(a.short)}</span></div></a>`).join("")}</div>`;
 
-  const recGrid = (p, list) => `<div class="grid">${list.map((r) => `<a class="card" href="${P}/${p.id}/recipes/${r.id}/">
+  const recGrid = (p, list, cls = "") => `<div class="grid ${cls}">${list.map((r) => `<a class="card" href="${P}/${p.id}/recipes/${r.id}/">
     <div class="ph">${r.image ? `<img src="/${esc(r.image)}" alt="${esc(r.title)}" loading="lazy">` : ""}<span class="time">${ICONS.clock}${esc(r.time)}</span></div>
     <div class="body"><span class="meta">${esc(r.tag)}</span><h3>${esc(r.title)}</h3>
       <div class="chips">${r.attachments.map((id) => `<span class="chip">${esc(att(p, id)?.name || id)}</span>`).join("")}</div></div></a>`).join("")}</div>`;
@@ -243,13 +244,49 @@ ${bare ? "" : footer()}
     title: T("ATARIA — рецепты и инструкции", "ATARIA — рецепттер мен нұсқаулықтар"),
     desc: T("Как пользоваться техникой ATARIA: насадки, скорости, пошаговые рецепты и уход.", "ATARIA техникасын қалай қолдану керек: қондырмалар, жылдамдықтар, қадамдық рецепттер және күтім."),
     body: `
-<section class="hero">
-  <div class="hero-txt">
-    <p class="eyebrow">${T("Инструкция и рецепты · ATARIA AT-SM23", "Нұсқаулық және рецепттер · ATARIA AT-SM23")}</p>
-    <h1>${T("Как готовить на вашей кухонной машине", "Асүй комбайнында қалай дайындау керек")}</h1>
-    <p class="lead">${T("Какую насадку поставить, на какой скорости включать и что приготовить. Всё по шагам, с граммами и таймером.", "Қандай қондырма орнату керек, қай жылдамдықта қосу керек және не дайындауға болады. Бәрі қадамдап, грамммен және таймермен.")}</p>
-    <button class="hero-search" id="hero-search" type="button">${ICONS.search}<span>${T("Например: тесто, фарш, взбить сливки", "Мысалы: қамыр, қайма, кілегей көпіршіту")}</span></button>
-    <p class="eyebrow" style="margin-top:26px">${T("Что хотите сделать?", "Не істегіңіз келеді?")}</p>
+<section class="cine" aria-label="${T("Кухонная машина ATARIA AT-SM23", "ATARIA AT-SM23 асүй машинасы")}">
+  <video class="cine-v" poster="/img/sm23-orbit.jpg" muted loop playsinline autoplay preload="auto" aria-hidden="true"><source src="/video/sm23-orbit.mp4" type="video/mp4"><source src="/video/sm23-orbit.webm" type="video/webm"></video>
+  <div class="cine-in wrap">
+    <p class="eyebrow">ATARIA AT-SM23</p>
+    <h1>${T("Готовьте на кухонной машине по шагам", "Асүй машинасында қадамдап дайындаңыз")}</h1>
+    <p class="lead">${T("Какую насадку поставить, на какой скорости включать и что приготовить. С граммами и таймером.", "Қандай қондырма орнату керек, қай жылдамдықта қосу керек және не дайындауға болады. Грамммен және таймермен.")}</p>
+    <div class="actions"><a class="btn" href="${P}/sm23/start/">${T("Первый запуск за 5 шагов", "Алғашқы іске қосу — 5 қадам")} <i>→</i></a><a class="btn ghost" href="${P}/sm23/recipes/">${T("Все рецепты", "Барлық рецепттер")}</a></div>
+    <button class="hero-search" id="hero-search" type="button">${ICONS.search}<span>${T("Найти: тесто, фарш, взбить сливки", "Іздеу: қамыр, қайма, кілегей көпіршіту")}</span></button>
+  </div>
+</section>
+
+<section class="tech fluted">
+  <div class="wrap">
+    <div class="tech-strip">
+      <div><b>2000</b><span>${T("Вт мощность", "Вт қуат")}</span></div>
+      <div><b>7</b><span>${T("литров чаша", "литр тостаған")}</span></div>
+      <div><b>15</b><span>${T("минут таймер, шаг 30 с", "минут таймер, қадамы 30 с")}</span></div>
+      <div><b>P·6</b><span>${T("импульс и 6 скоростей", "импульс және 6 жылдамдық")}</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="look" id="look" aria-label="${T("Машина вблизи", "Машина жақыннан")}">
+  <div class="look-stage">
+    <div class="look-frame"><img src="/img/sm23-studio.jpg" alt="${T("ATARIA AT-SM23 в студии", "ATARIA AT-SM23 студияда")}" loading="lazy"></div>
+    <div class="look-txt wrap">
+      <h2>${T("Посмотрите ближе", "Жақынырақ қараңыз")}</h2>
+      <ol class="look-list">
+        ${[
+          [50, 52, 1, T("Тёмно-серый матовый корпус", "Күңгірт сұр матты корпус"), T("Мотор 2000 Вт, чаша 7 литров, шесть насадок в комплекте.", "2000 Вт мотор, 7 литрлік тостаған, жинақта алты қондырма.")],
+          [64.8, 27.8, 2.5, T("Подсказки на голове", "Бастағы кеңестер"), T("Крюк на скорости 1–2, венчик и лопатка от 1 до максимума.", "Ілгек 1–2 жылдамдықта, венчик пен көрекше 1-ден максимумға дейін.")],
+          [64.9, 38.8, 2.7, T("Таймер до 15 минут", "15 минутқа дейін таймер"), T("Кнопки TIME, + и −, шаг 30 секунд. Машина сама остановится.", "TIME, + және − түймелері, қадамы 30 секунд. Машина өзі тоқтайды.")],
+          [64.6, 64.8, 2.5, T("Ручка скоростей", "Жылдамдық тұтқасы"), T("P — импульс, 0 — стоп, 1–6 — скорости по часовой стрелке.", "P — импульс, 0 — тоқтату, 1–6 — сағат тілімен жылдамдықтар.")],
+          [37, 50, 1.8, T("Чаша 7 литров", "7 литрлік тостаған"), T("Сталь и прозрачная крышка с окном, чтобы добавлять продукты на ходу.", "Болат және терезесі бар мөлдір қақпақ, өнімді жұмыс кезінде қосуға болады.")],
+        ].map(([x, y, z, h, t], i) => `<li data-x="${x}" data-y="${y}" data-z="${z}" class="${i ? "" : "on"}"><b>${esc(h)}</b><span>${esc(t)}</span></li>`).join("")}
+      </ol>
+    </div>
+  </div>
+</section>
+
+<section class="light sect">
+  <div class="wrap">
+    <div class="sec-head"><h2>${T("Что хотите сделать?", "Не істегіңіз келеді?")}</h2><p class="lead">${T("Выберите задачу, покажем насадку, скорость и шаги.", "Тапсырманы таңдаңыз, қондырманы, жылдамдықты және қадамдарды көрсетеміз.")}</p></div>
     <div class="tasks">
       <a href="${P}/sm23/attachments/hook/">${T("Замесить тесто", "Қамыр илеу")} <i>→</i></a>
       <a href="${P}/sm23/attachments/grinder/">${T("Прокрутить фарш", "Қайма тарту")} <i>→</i></a>
@@ -258,19 +295,12 @@ ${bare ? "" : footer()}
       <a href="${P}/sm23/attachments/slicer/">${T("Натереть или нарезать овощи", "Көкөністі үгу немесе кесу")} <i>→</i></a>
       <a href="${P}/sm23/attachments/noodle/">${T("Нарезать лапшу", "Кеспе кесу")} <i>→</i></a>
     </div>
-    <div class="actions"><a class="btn" href="${P}/sm23/start/">${T("Первый запуск за 5 шагов", "Алғашқы іске қосу — 5 қадам")}</a><a class="btn ghost" href="${P}/sm23/recipes/">${T("Все рецепты", "Барлық рецепттер")}</a></div>
   </div>
-  <div class="hero-ph tall"><img src="/img/m-side.jpg" alt="${T("Кухонная машина ATARIA AT-SM23", "ATARIA AT-SM23 асүй машинасы")}"></div>
 </section>
 
-<section class="tech">
+<section class="sect fluted">
   <div class="wrap">
-    <div class="tech-strip">
-      <div><b>2000</b><span>${T("Вт мощность", "Вт қуат")}</span></div>
-      <div><b>7</b><span>${T("литров чаша", "литр тостаған")}</span></div>
-      <div><b>15</b><span>${T("минут таймер, шаг 30 с", "минут таймер, қадамы 30 с")}</span></div>
-      <div><b>P·6</b><span>${T("импульс и 6 скоростей", "импульс және 6 жылдамдық")}</span></div>
-    </div>
+    <div class="sec-head"><h2>${T("Что умеет машина", "Машина не істей алады")}</h2></div>
     ${[
       ["t-planet", T("Планетарное вращение", "Планеталық айналу"), T("Насадка вращается вокруг своей оси и одновременно обходит всю чашу. Тесто вымешивается равномерно, без комков у стенок.", "Қондырма өз осінен айналып, бір мезгілде бүкіл тостағанды айналып шығады. Қамыр қабырғаларда кесексіз біркелкі иленеді.")],
       ["t-bowl", T("Чаша 7 литров с крышкой", "Қақпағы бар 7 литрлік тостаған"), T("Стальная чаша вмещает тесто на большую семью. Прозрачная крышка не даёт муке разлетаться, а через носик удобно добавлять продукты на ходу.", "Болат тостағанға үлкен отбасына жететін қамыр сыяды. Мөлдір қақпақ ұнды шашыратпайды, ал шүмек арқылы өнімді жұмыс кезінде қосуға ыңғайлы.")],
@@ -278,34 +308,40 @@ ${bare ? "" : footer()}
       ["t-timer", T("Таймер до 15 минут", "15 минутқа дейін таймер"), T("Задайте время кнопками TIME, + и − с шагом 30 секунд. По окончании машина сама остановится, можно не стоять рядом.", "TIME, + және − түймелерімен уақытты 30 секунд қадаммен орнатыңыз. Уақыт біткенде машина өзі тоқтайды, қасында тұрудың қажеті жоқ.")],
       ["t-speed", T("Импульс и 6 скоростей", "Импульс және 6 жылдамдық"), T("Ноль сверху, справа скорости от 1 до 6, слева импульс P. Крюку хватает 1–2, венчик и лопатка работают на всех скоростях.", "Нөл жоғарыда, оң жақта 1-ден 6-ға дейінгі жылдамдықтар, сол жақта P импульсі. Ілгекке 1–2 жеткілікті, венчик пен көрекше барлық жылдамдықта жұмыс істейді.")],
       ["t-port", T("Боковой разъём под насадки", "Қондырмаларға арналған бүйір ұяшық"), T("Поднимите крышку с треугольником и подключите мясорубку, овощерезку, тестораскатку или лапшерезку. Одна машина вместо шести приборов.", "Үшбұрышты қақпақты көтеріп, ет тартқышты, көкөніс турағышты, қамыр жаятын немесе кеспе турағыш қондырманы қосыңыз. Алты құралдың орнына бір машина.")],
-    ].map(([img, h, t], i) => `<article class="feat"><figure><img src="/img/${img}.jpg" alt="${esc(h)}" loading="lazy"></figure><div class="txt"><p class="eyebrow">${String(i + 1).padStart(2, "0")}</p><h3>${esc(h)}</h3><p>${esc(t)}</p></div></article>`).join("")}
-    <div class="actions center"><a class="btn" href="${P}/sm23/attachments/">${T("Все насадки", "Барлық қондырмалар")}</a><a class="btn ghost" href="${P}/sm23/about/">${T("Характеристики", "Сипаттамалар")}</a></div>
+    ].map(([img, h, t]) => `<article class="feat"><figure><img src="/img/${img}.jpg" alt="${esc(h)}" loading="lazy"></figure><div class="txt"><h3>${esc(h)}</h3><p>${esc(t)}</p></div></article>`).join("")}
+    <div class="actions center"><a class="btn" href="${P}/sm23/attachments/">${T("Все насадки", "Барлық қондырмалар")} <i>→</i></a><a class="btn ghost" href="${P}/sm23/about/">${T("Характеристики", "Сипаттамалар")}</a></div>
   </div>
 </section>
 
-<section class="wrap block-section">
-  <div class="sec-head"><h2>${T("Что можно приготовить", "Не дайындауға болады")}</h2></div>
-  <div class="scenes">
-    <a class="scene-card big" href="${P}/sm23/attachments/hook/"><img src="/img/a-hook.jpg" alt="" loading="lazy"><span><b>${T("Тесто", "Қамыр")}</b>${T("Крюк, скорость 1–2", "Ілгек, 1–2 жылдамдық")}</span></a>
-    <a class="scene-card" href="${P}/sm23/attachments/whisk/"><img src="/img/a-whisk.jpg" alt="" loading="lazy"><span><b>${T("Крем и безе", "Крем және безе")}</b>${T("Венчик, скорость 1–6", "Венчик, 1–6 жылдамдық")}</span></a>
-    <a class="scene-card" href="${P}/sm23/attachments/roller/"><img src="/img/a-roller.jpg" alt="" loading="lazy"><span><b>${T("Раскатка и лапша", "Қамыр жаю және кеспе")}</b>${T("8 уровней толщины", "8 қалыңдық деңгейі")}</span></a>
-    <a class="scene-card" href="${P}/sm23/attachments/slicer/"><img src="/img/a-slicer.jpg" alt="" loading="lazy"><span><b>${T("Овощи и сыр", "Көкөніс және ірімшік")}</b>${T("Три барабана", "Үш барабан")}</span></a>
-    <a class="scene-card" href="${P}/sm23/attachments/grinder/"><img src="/img/a-grinder.jpg" alt="" loading="lazy"><span><b>${T("Фарш", "Қайма")}</b>${T("Мясорубка, скорость 1–6", "Ет тартқыш, 1–6 жылдамдық")}</span></a>
+<section class="light sect">
+  <div class="wrap">
+    <div class="sec-head"><h2>${T("Что можно приготовить", "Не дайындауға болады")}</h2></div>
+    <div class="scenes">
+      <a class="scene-card big" href="${P}/sm23/attachments/hook/"><img src="/img/a-hook.jpg" alt="" loading="lazy"><span><b>${T("Тесто", "Қамыр")}</b>${T("Крюк, скорость 1–2", "Ілгек, 1–2 жылдамдық")}</span></a>
+      <a class="scene-card" href="${P}/sm23/attachments/whisk/"><img src="/img/a-whisk.jpg" alt="" loading="lazy"><span><b>${T("Крем и безе", "Крем және безе")}</b>${T("Венчик, скорость 1–6", "Венчик, 1–6 жылдамдық")}</span></a>
+      <a class="scene-card" href="${P}/sm23/attachments/roller/"><img src="/img/a-roller.jpg" alt="" loading="lazy"><span><b>${T("Раскатка и лапша", "Қамыр жаю және кеспе")}</b>${T("8 уровней толщины", "8 қалыңдық деңгейі")}</span></a>
+      <a class="scene-card" href="${P}/sm23/attachments/slicer/"><img src="/img/a-slicer.jpg" alt="" loading="lazy"><span><b>${T("Овощи и сыр", "Көкөніс және ірімшік")}</b>${T("Три барабана", "Үш барабан")}</span></a>
+      <a class="scene-card" href="${P}/sm23/attachments/grinder/"><img src="/img/a-grinder.jpg" alt="" loading="lazy"><span><b>${T("Фарш", "Қайма")}</b>${T("Мясорубка, скорость 1–6", "Ет тартқыш, 1–6 жылдамдық")}</span></a>
+    </div>
   </div>
 </section>
 
-<section class="wrap block-section">
-  <div class="sec-head"><h2>${T("Что приготовить сегодня", "Бүгін не дайындаймыз")}</h2><a href="${P}/sm23/recipes/">${T("Все рецепты →", "Барлық рецепттер →")}</a></div>
-  ${recGrid(sm, sm.recipes.slice(0, 4))}
+<section class="sect">
+  <div class="wrap">
+    <div class="sec-head"><h2>${T("Что приготовить сегодня", "Бүгін не дайындаймыз")}</h2><a href="${P}/sm23/recipes/">${T("Все рецепты →", "Барлық рецепттер →")}</a></div>
+    ${recGrid(sm, sm.recipes.slice(0, 5), "mag")}
+  </div>
 </section>
 
-<section class="wrap block-section">
-  <div class="sec-head"><h2>${T("Всё о вашей машине", "Машинаңыз туралы бәрі")}</h2></div>
-  <div class="tiles">
-    <a href="${P}/sm23/start/"><span class="ic">${ICONS.book}</span><h3>${L.start}</h3><p>${T("Пять шагов до первого замеса.", "Алғашқы илеуге дейін бес қадам.")}</p></a>
-    <a href="${P}/sm23/attachments/"><span class="ic">${ICONS.parts}</span><h3>${L.attachments}</h3><p>${T("Для чего каждая и как ею пользоваться.", "Әрқайсысы не үшін және қалай қолданылады.")}</p></a>
-    <a href="${P}/sm23/speeds/"><span class="ic">${ICONS.speed}</span><h3>${L.speeds}</h3><p>${T("Какую выбрать для теста, крема и фарша.", "Қамырға, кремге және қаймаға қайсысын таңдау керек.")}</p></a>
-    <a href="${P}/sm23/care/"><span class="ic">${ICONS.care}</span><h3>${L.care}</h3><p>${T("Как мыть и хранить, чтобы служила годами.", "Жылдар бойы қызмет ету үшін қалай жуу және сақтау керек.")}</p></a>
+<section class="light sect">
+  <div class="wrap">
+    <div class="sec-head"><h2>${T("Всё о вашей машине", "Машинаңыз туралы бәрі")}</h2></div>
+    <div class="tiles">
+      <a href="${P}/sm23/start/"><span class="ic">${ICONS.book}</span><h3>${L.start}</h3><p>${T("Пять шагов до первого замеса.", "Алғашқы илеуге дейін бес қадам.")}</p></a>
+      <a href="${P}/sm23/attachments/"><span class="ic">${ICONS.parts}</span><h3>${L.attachments}</h3><p>${T("Для чего каждая и как ею пользоваться.", "Әрқайсысы не үшін және қалай қолданылады.")}</p></a>
+      <a href="${P}/sm23/speeds/"><span class="ic">${ICONS.speed}</span><h3>${L.speeds}</h3><p>${T("Какую выбрать для теста, крема и фарша.", "Қамырға, кремге және қаймаға қайсысын таңдау керек.")}</p></a>
+      <a href="${P}/sm23/care/"><span class="ic">${ICONS.care}</span><h3>${L.care}</h3><p>${T("Как мыть и хранить, чтобы служила годами.", "Жылдар бойы қызмет ету үшін қалай жуу және сақтау керек.")}</p></a>
+    </div>
   </div>
 </section>
 <div class="wrap">${helpBand()}</div>`,
@@ -328,7 +364,7 @@ ${bare ? "" : footer()}
     <p class="lead">${esc(sm.intro)}</p>
     <div class="actions"><a class="btn" href="${P}/sm23/start/">${L.start}</a><a class="btn ghost" href="${P}/sm23/recipes/">${L.recipes}</a></div>
   </div>
-  <div class="ph"><img src="/${esc(sm.hero)}" alt="${esc(sm.name)}"></div>
+  <div class="ph"><img src="/img/sm23-studio.jpg" alt="${esc(sm.name)}"></div>
 </section>
 <div class="wrap">
   <div class="specs">${sm.specs.map((s) => `<div class="spec"><div class="k">${esc(s.label)}</div><div class="v">${esc(s.value)}</div></div>`).join("")}</div>
@@ -472,7 +508,7 @@ ${bare ? "" : footer()}
       body: `<div class="wrap">${crumbs([[HOME, `${P}/sm23/`], [sm.kind, `${P}/sm23/`], [L.recipes, ""]])}${layout(sm, "recipes", `
       ${pageHead(sm.name, L.recipes, T("Точные граммы, скорости и время. Откройте рецепт и нажмите «Готовить по шагам»: крупный текст и таймер прямо в телефоне.", "Нақты граммдар, жылдамдықтар және уақыт. Рецептті ашып, «Қадамдап дайындау» түймесін басыңыз: ірі мәтін және таймер телефоныңызда."))}
       <div class="filters" id="filters">${tags.map((t, i) => `<button data-tag="${esc(t)}" data-all="${i === 0 ? 1 : 0}" class="${i === 0 ? "on" : ""}">${esc(t)}</button>`).join("")}</div>
-      <div class="grid" id="rgrid">${sm.recipes.map((r) => `<a class="card" data-tag="${esc(r.tag)}" href="${P}/sm23/recipes/${r.id}/">
+      <div class="grid mag" id="rgrid">${sm.recipes.map((r) => `<a class="card" data-tag="${esc(r.tag)}" href="${P}/sm23/recipes/${r.id}/">
         <div class="ph"><img src="/${esc(r.image)}" alt="${esc(r.title)}" loading="lazy"><span class="time">${ICONS.clock}${esc(r.time)}</span></div>
         <div class="body"><span class="meta">${esc(r.tag)} · ${esc(r.servings)}</span><h3>${esc(r.title)}</h3>
         <div class="chips">${r.attachments.map((id) => `<span class="chip">${esc(att(sm, id)?.name || id)}</span>`).join("")}</div></div></a>`).join("")}</div>`)}</div>`,

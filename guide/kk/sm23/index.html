@@ -19,7 +19,7 @@
 <link rel="apple-touch-icon" href="/img/icon-192.png?v=80cc690e">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600&family=Unbounded:wght@300;400&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/style.css">
 
 <script>document.documentElement.classList.add("anim")</script>
@@ -63,13 +63,43 @@
 </div>
 <main id="main">
 
-<section class="hero">
-  <div class="hero-txt">
-    <p class="eyebrow">Нұсқаулық және рецепттер · ATARIA AT-SM23</p>
-    <h1>Асүй комбайнында қалай дайындау керек</h1>
-    <p class="lead">Қандай қондырма орнату керек, қай жылдамдықта қосу керек және не дайындауға болады. Бәрі қадамдап, грамммен және таймермен.</p>
-    <button class="hero-search" id="hero-search" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></svg><span>Мысалы: қамыр, қайма, кілегей көпіршіту</span></button>
-    <p class="eyebrow" style="margin-top:26px">Не істегіңіз келеді?</p>
+<section class="cine" aria-label="ATARIA AT-SM23 асүй машинасы">
+  <video class="cine-v" poster="/img/sm23-orbit.jpg?v=b72b3605" muted loop playsinline autoplay preload="auto" aria-hidden="true"><source src="/video/sm23-orbit.mp4" type="video/mp4"><source src="/video/sm23-orbit.webm" type="video/webm"></video>
+  <div class="cine-in wrap">
+    <p class="eyebrow">ATARIA AT-SM23</p>
+    <h1>Асүй машинасында қадамдап дайындаңыз</h1>
+    <p class="lead">Қандай қондырма орнату керек, қай жылдамдықта қосу керек және не дайындауға болады. Грамммен және таймермен.</p>
+    <div class="actions"><a class="btn" href="/kk/sm23/start/">Алғашқы іске қосу — 5 қадам <i>→</i></a><a class="btn ghost" href="/kk/sm23/recipes/">Барлық рецепттер</a></div>
+    <button class="hero-search" id="hero-search" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></svg><span>Іздеу: қамыр, қайма, кілегей көпіршіту</span></button>
+  </div>
+</section>
+
+<section class="tech fluted">
+  <div class="wrap">
+    <div class="tech-strip">
+      <div><b>2000</b><span>Вт қуат</span></div>
+      <div><b>7</b><span>литр тостаған</span></div>
+      <div><b>15</b><span>минут таймер, қадамы 30 с</span></div>
+      <div><b>P·6</b><span>импульс және 6 жылдамдық</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="look" id="look" aria-label="Машина жақыннан">
+  <div class="look-stage">
+    <div class="look-frame"><img src="/img/sm23-studio.jpg?v=af4731f2" alt="ATARIA AT-SM23 студияда" loading="lazy"></div>
+    <div class="look-txt wrap">
+      <h2>Жақынырақ қараңыз</h2>
+      <ol class="look-list">
+        <li data-x="50" data-y="52" data-z="1" class="on"><b>Күңгірт сұр матты корпус</b><span>2000 Вт мотор, 7 литрлік тостаған, жинақта алты қондырма.</span></li><li data-x="64.8" data-y="27.8" data-z="2.5" class=""><b>Бастағы кеңестер</b><span>Ілгек 1–2 жылдамдықта, венчик пен көрекше 1-ден максимумға дейін.</span></li><li data-x="64.9" data-y="38.8" data-z="2.7" class=""><b>15 минутқа дейін таймер</b><span>TIME, + және − түймелері, қадамы 30 секунд. Машина өзі тоқтайды.</span></li><li data-x="64.6" data-y="64.8" data-z="2.5" class=""><b>Жылдамдық тұтқасы</b><span>P — импульс, 0 — тоқтату, 1–6 — сағат тілімен жылдамдықтар.</span></li><li data-x="37" data-y="50" data-z="1.8" class=""><b>7 литрлік тостаған</b><span>Болат және терезесі бар мөлдір қақпақ, өнімді жұмыс кезінде қосуға болады.</span></li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<section class="light sect">
+  <div class="wrap">
+    <div class="sec-head"><h2>Не істегіңіз келеді?</h2><p class="lead">Тапсырманы таңдаңыз, қондырманы, жылдамдықты және қадамдарды көрсетеміз.</p></div>
     <div class="tasks">
       <a href="/kk/sm23/attachments/hook/">Қамыр илеу <i>→</i></a>
       <a href="/kk/sm23/attachments/grinder/">Қайма тарту <i>→</i></a>
@@ -78,38 +108,34 @@
       <a href="/kk/sm23/attachments/slicer/">Көкөністі үгу немесе кесу <i>→</i></a>
       <a href="/kk/sm23/attachments/noodle/">Кеспе кесу <i>→</i></a>
     </div>
-    <div class="actions"><a class="btn" href="/kk/sm23/start/">Алғашқы іске қосу — 5 қадам</a><a class="btn ghost" href="/kk/sm23/recipes/">Барлық рецепттер</a></div>
   </div>
-  <div class="hero-ph tall"><img src="/img/m-side.jpg?v=f5f5951c" alt="ATARIA AT-SM23 асүй машинасы"></div>
 </section>
 
-<section class="tech">
+<section class="sect fluted">
   <div class="wrap">
-    <div class="tech-strip">
-      <div><b>2000</b><span>Вт қуат</span></div>
-      <div><b>7</b><span>литр тостаған</span></div>
-      <div><b>15</b><span>минут таймер, қадамы 30 с</span></div>
-      <div><b>P·6</b><span>импульс және 6 жылдамдық</span></div>
+    <div class="sec-head"><h2>Машина не істей алады</h2></div>
+    <article class="feat"><figure><img src="/img/t-planet.jpg?v=6061ac47" alt="Планеталық айналу" loading="lazy"></figure><div class="txt"><h3>Планеталық айналу</h3><p>Қондырма өз осінен айналып, бір мезгілде бүкіл тостағанды айналып шығады. Қамыр қабырғаларда кесексіз біркелкі иленеді.</p></div></article><article class="feat"><figure><img src="/img/t-bowl.jpg?v=1c8ce46f" alt="Қақпағы бар 7 литрлік тостаған" loading="lazy"></figure><div class="txt"><h3>Қақпағы бар 7 литрлік тостаған</h3><p>Болат тостағанға үлкен отбасына жететін қамыр сыяды. Мөлдір қақпақ ұнды шашыратпайды, ал шүмек арқылы өнімді жұмыс кезінде қосуға ыңғайлы.</p></div></article><article class="feat"><figure><img src="/img/t-power.jpg?v=66324ffb" alt="2000 Вт мотор" loading="lazy"></figure><div class="txt"><h3>2000 Вт мотор</h3><p>Қуаты бесбармаққа, мантыға және кеспеге арналған қатты қамырға жетеді. Ұзақ илеуде қызып кетпей, сенімді жұмыс істейді.</p></div></article><article class="feat"><figure><img src="/img/t-timer.jpg?v=114a5e47" alt="15 минутқа дейін таймер" loading="lazy"></figure><div class="txt"><h3>15 минутқа дейін таймер</h3><p>TIME, + және − түймелерімен уақытты 30 секунд қадаммен орнатыңыз. Уақыт біткенде машина өзі тоқтайды, қасында тұрудың қажеті жоқ.</p></div></article><article class="feat"><figure><img src="/img/t-speed.jpg?v=5436553c" alt="Импульс және 6 жылдамдық" loading="lazy"></figure><div class="txt"><h3>Импульс және 6 жылдамдық</h3><p>Нөл жоғарыда, оң жақта 1-ден 6-ға дейінгі жылдамдықтар, сол жақта P импульсі. Ілгекке 1–2 жеткілікті, венчик пен көрекше барлық жылдамдықта жұмыс істейді.</p></div></article><article class="feat"><figure><img src="/img/t-port.jpg?v=a331dbea" alt="Қондырмаларға арналған бүйір ұяшық" loading="lazy"></figure><div class="txt"><h3>Қондырмаларға арналған бүйір ұяшық</h3><p>Үшбұрышты қақпақты көтеріп, ет тартқышты, көкөніс турағышты, қамыр жаятын немесе кеспе турағыш қондырманы қосыңыз. Алты құралдың орнына бір машина.</p></div></article>
+    <div class="actions center"><a class="btn" href="/kk/sm23/attachments/">Барлық қондырмалар <i>→</i></a><a class="btn ghost" href="/kk/sm23/about/">Сипаттамалар</a></div>
+  </div>
+</section>
+
+<section class="light sect">
+  <div class="wrap">
+    <div class="sec-head"><h2>Не дайындауға болады</h2></div>
+    <div class="scenes">
+      <a class="scene-card big" href="/kk/sm23/attachments/hook/"><img src="/img/a-hook.jpg?v=29fd5133" alt="" loading="lazy"><span><b>Қамыр</b>Ілгек, 1–2 жылдамдық</span></a>
+      <a class="scene-card" href="/kk/sm23/attachments/whisk/"><img src="/img/a-whisk.jpg?v=fa7d1466" alt="" loading="lazy"><span><b>Крем және безе</b>Венчик, 1–6 жылдамдық</span></a>
+      <a class="scene-card" href="/kk/sm23/attachments/roller/"><img src="/img/a-roller.jpg?v=e549d56e" alt="" loading="lazy"><span><b>Қамыр жаю және кеспе</b>8 қалыңдық деңгейі</span></a>
+      <a class="scene-card" href="/kk/sm23/attachments/slicer/"><img src="/img/a-slicer.jpg?v=1840bae2" alt="" loading="lazy"><span><b>Көкөніс және ірімшік</b>Үш барабан</span></a>
+      <a class="scene-card" href="/kk/sm23/attachments/grinder/"><img src="/img/a-grinder.jpg?v=696e9a77" alt="" loading="lazy"><span><b>Қайма</b>Ет тартқыш, 1–6 жылдамдық</span></a>
     </div>
-    <article class="feat"><figure><img src="/img/t-planet.jpg?v=6061ac47" alt="Планеталық айналу" loading="lazy"></figure><div class="txt"><p class="eyebrow">01</p><h3>Планеталық айналу</h3><p>Қондырма өз осінен айналып, бір мезгілде бүкіл тостағанды айналып шығады. Қамыр қабырғаларда кесексіз біркелкі иленеді.</p></div></article><article class="feat"><figure><img src="/img/t-bowl.jpg?v=1c8ce46f" alt="Қақпағы бар 7 литрлік тостаған" loading="lazy"></figure><div class="txt"><p class="eyebrow">02</p><h3>Қақпағы бар 7 литрлік тостаған</h3><p>Болат тостағанға үлкен отбасына жететін қамыр сыяды. Мөлдір қақпақ ұнды шашыратпайды, ал шүмек арқылы өнімді жұмыс кезінде қосуға ыңғайлы.</p></div></article><article class="feat"><figure><img src="/img/t-power.jpg?v=66324ffb" alt="2000 Вт мотор" loading="lazy"></figure><div class="txt"><p class="eyebrow">03</p><h3>2000 Вт мотор</h3><p>Қуаты бесбармаққа, мантыға және кеспеге арналған қатты қамырға жетеді. Ұзақ илеуде қызып кетпей, сенімді жұмыс істейді.</p></div></article><article class="feat"><figure><img src="/img/t-timer.jpg?v=114a5e47" alt="15 минутқа дейін таймер" loading="lazy"></figure><div class="txt"><p class="eyebrow">04</p><h3>15 минутқа дейін таймер</h3><p>TIME, + және − түймелерімен уақытты 30 секунд қадаммен орнатыңыз. Уақыт біткенде машина өзі тоқтайды, қасында тұрудың қажеті жоқ.</p></div></article><article class="feat"><figure><img src="/img/t-speed.jpg?v=5436553c" alt="Импульс және 6 жылдамдық" loading="lazy"></figure><div class="txt"><p class="eyebrow">05</p><h3>Импульс және 6 жылдамдық</h3><p>Нөл жоғарыда, оң жақта 1-ден 6-ға дейінгі жылдамдықтар, сол жақта P импульсі. Ілгекке 1–2 жеткілікті, венчик пен көрекше барлық жылдамдықта жұмыс істейді.</p></div></article><article class="feat"><figure><img src="/img/t-port.jpg?v=a331dbea" alt="Қондырмаларға арналған бүйір ұяшық" loading="lazy"></figure><div class="txt"><p class="eyebrow">06</p><h3>Қондырмаларға арналған бүйір ұяшық</h3><p>Үшбұрышты қақпақты көтеріп, ет тартқышты, көкөніс турағышты, қамыр жаятын немесе кеспе турағыш қондырманы қосыңыз. Алты құралдың орнына бір машина.</p></div></article>
-    <div class="actions center"><a class="btn" href="/kk/sm23/attachments/">Барлық қондырмалар</a><a class="btn ghost" href="/kk/sm23/about/">Сипаттамалар</a></div>
   </div>
 </section>
 
-<section class="wrap block-section">
-  <div class="sec-head"><h2>Не дайындауға болады</h2></div>
-  <div class="scenes">
-    <a class="scene-card big" href="/kk/sm23/attachments/hook/"><img src="/img/a-hook.jpg?v=29fd5133" alt="" loading="lazy"><span><b>Қамыр</b>Ілгек, 1–2 жылдамдық</span></a>
-    <a class="scene-card" href="/kk/sm23/attachments/whisk/"><img src="/img/a-whisk.jpg?v=fa7d1466" alt="" loading="lazy"><span><b>Крем және безе</b>Венчик, 1–6 жылдамдық</span></a>
-    <a class="scene-card" href="/kk/sm23/attachments/roller/"><img src="/img/a-roller.jpg?v=e549d56e" alt="" loading="lazy"><span><b>Қамыр жаю және кеспе</b>8 қалыңдық деңгейі</span></a>
-    <a class="scene-card" href="/kk/sm23/attachments/slicer/"><img src="/img/a-slicer.jpg?v=1840bae2" alt="" loading="lazy"><span><b>Көкөніс және ірімшік</b>Үш барабан</span></a>
-    <a class="scene-card" href="/kk/sm23/attachments/grinder/"><img src="/img/a-grinder.jpg?v=696e9a77" alt="" loading="lazy"><span><b>Қайма</b>Ет тартқыш, 1–6 жылдамдық</span></a>
-  </div>
-</section>
-
-<section class="wrap block-section">
-  <div class="sec-head"><h2>Бүгін не дайындаймыз</h2><a href="/kk/sm23/recipes/">Барлық рецепттер →</a></div>
-  <div class="grid"><a class="card" href="/kk/sm23/recipes/besh/">
+<section class="sect">
+  <div class="wrap">
+    <div class="sec-head"><h2>Бүгін не дайындаймыз</h2><a href="/kk/sm23/recipes/">Барлық рецепттер →</a></div>
+    <div class="grid mag"><a class="card" href="/kk/sm23/recipes/besh/">
     <div class="ph"><img src="/img/f-besh.jpg?v=b6ae482b" alt="Бесбармаққа қамыр" loading="lazy"><span class="time"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>40 мин</span></div>
     <div class="body"><span class="meta">Ұлттық</span><h3>Бесбармаққа қамыр</h3>
       <div class="chips"><span class="chip">Қамырға арналған ілгек</span><span class="chip">Қамыр жаятын қондырма</span></div></div></a><a class="card" href="/kk/sm23/recipes/manty/">
@@ -121,16 +147,22 @@
       <div class="chips"><span class="chip">Қамырға арналған ілгек</span></div></div></a><a class="card" href="/kk/sm23/recipes/pizza/">
     <div class="ph"><img src="/img/f-pizza.jpg?v=5d47f955" alt="Үйде пицца" loading="lazy"><span class="time"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>1 сағ 30 мин</span></div>
     <div class="body"><span class="meta">Нан өнімдері</span><h3>Үйде пицца</h3>
-      <div class="chips"><span class="chip">Қамырға арналған ілгек</span><span class="chip">Көкөніс турағыш</span></div></div></a></div>
+      <div class="chips"><span class="chip">Қамырға арналған ілгек</span><span class="chip">Көкөніс турағыш</span></div></div></a><a class="card" href="/kk/sm23/recipes/lagman/">
+    <div class="ph"><img src="/img/f-lagman.jpg?v=733bec3f" alt="Лағманға кеспе" loading="lazy"><span class="time"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>50 мин</span></div>
+    <div class="body"><span class="meta">Ұлттық</span><h3>Лағманға кеспе</h3>
+      <div class="chips"><span class="chip">Қамырға арналған ілгек</span><span class="chip">Қамыр жаятын қондырма</span><span class="chip">Кеспе турағыш</span></div></div></a></div>
+  </div>
 </section>
 
-<section class="wrap block-section">
-  <div class="sec-head"><h2>Машинаңыз туралы бәрі</h2></div>
-  <div class="tiles">
-    <a href="/kk/sm23/start/"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M5 5.5C7.5 4.5 10 4.5 12 6c2-1.5 4.5-1.5 7-.5V19c-2.5-1-5-1-7 .5-2-1.5-4.5-1.5-7-.5z"/><path d="M12 6v13.5"/></svg></span><h3>Қалай бастау керек</h3><p>Алғашқы илеуге дейін бес қадам.</p></a>
-    <a href="/kk/sm23/attachments/"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="4" y="4" width="7" height="7" rx="2"/><rect x="13" y="4" width="7" height="7" rx="2"/><rect x="4" y="13" width="7" height="7" rx="2"/><rect x="13" y="13" width="7" height="7" rx="2"/></svg></span><h3>Қондырмалар</h3><p>Әрқайсысы не үшін және қалай қолданылады.</p></a>
-    <a href="/kk/sm23/speeds/"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M4 17a8 8 0 1 1 16 0"/><path d="m12 17 4-6"/></svg></span><h3>Жылдамдықтар</h3><p>Қамырға, кремге және қаймаға қайсысын таңдау керек.</p></a>
-    <a href="/kk/sm23/care/"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M12 3c3 4 6 6.5 6 10a6 6 0 0 1-12 0c0-3.5 3-6 6-10z"/></svg></span><h3>Күтім</h3><p>Жылдар бойы қызмет ету үшін қалай жуу және сақтау керек.</p></a>
+<section class="light sect">
+  <div class="wrap">
+    <div class="sec-head"><h2>Машинаңыз туралы бәрі</h2></div>
+    <div class="tiles">
+      <a href="/kk/sm23/start/"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M5 5.5C7.5 4.5 10 4.5 12 6c2-1.5 4.5-1.5 7-.5V19c-2.5-1-5-1-7 .5-2-1.5-4.5-1.5-7-.5z"/><path d="M12 6v13.5"/></svg></span><h3>Қалай бастау керек</h3><p>Алғашқы илеуге дейін бес қадам.</p></a>
+      <a href="/kk/sm23/attachments/"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="4" y="4" width="7" height="7" rx="2"/><rect x="13" y="4" width="7" height="7" rx="2"/><rect x="4" y="13" width="7" height="7" rx="2"/><rect x="13" y="13" width="7" height="7" rx="2"/></svg></span><h3>Қондырмалар</h3><p>Әрқайсысы не үшін және қалай қолданылады.</p></a>
+      <a href="/kk/sm23/speeds/"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M4 17a8 8 0 1 1 16 0"/><path d="m12 17 4-6"/></svg></span><h3>Жылдамдықтар</h3><p>Қамырға, кремге және қаймаға қайсысын таңдау керек.</p></a>
+      <a href="/kk/sm23/care/"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M12 3c3 4 6 6.5 6 10a6 6 0 0 1-12 0c0-3.5 3-6 6-10z"/></svg></span><h3>Күтім</h3><p>Жылдар бойы қызмет ету үшін қалай жуу және сақтау керек.</p></a>
+    </div>
   </div>
 </section>
 <div class="wrap"><section class="block-section"><div class="band">
@@ -144,6 +176,7 @@
     <div><p class="eyebrow">Рецепттер</p><a href="/kk/sm23/recipes/besh/">Бесбармаққа қамыр</a><a href="/kk/sm23/recipes/manty/">Мәнті</a><a href="/kk/sm23/recipes/baursaki/">Бауырсақ</a><a href="/kk/sm23/recipes/pizza/">Үйде пицца</a><a href="/kk/sm23/recipes/lagman/">Лағманға кеспе</a><a href="/kk/sm23/recipes/">Барлық рецепттер</a></div>
     <div><p class="eyebrow">Байланыс</p><a href="https://jarvis-backend-alisher25.vercel.app/go/wa?src=guide&amp;p=sm23_owner" target="_blank" rel="noopener">WhatsApp қолдауы</a><a href="https://kaspi.kz/shop/p/kuhonnyi-kombain-ataria-at-sm23-temno-seryi-168203173/?m=30444998" target="_blank" rel="noopener">Kaspi-дегі карточка</a><a href="https://kaspi.kz/shop/p/kuhonnyi-kombain-ataria-at-sm23-temno-seryi-168203173/?c=750000000&amp;v=reviews" target="_blank" rel="noopener">Пікір қалдыру</a></div>
   </div>
+  <p class="foot-word" aria-hidden="true">ATARIA</p>
   <p class="copy">© ATARIA</p>
 </footer>
 <script src="/motion.js" defer></script>

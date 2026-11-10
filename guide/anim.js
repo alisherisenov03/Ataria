@@ -10,18 +10,18 @@
   animate("main", { opacity: [0, 1] }, { duration: 0.5, ease });
 
   // hero: text lines slide up in sequence, photo drifts in
-  const heroTxt = document.querySelectorAll(".hero-txt > *, .p-hero .txt > *");
+  const heroTxt = document.querySelectorAll(".hero-txt > *, .p-hero .txt > *, .cine-in > *");
   if (heroTxt.length) animate(heroTxt, { opacity: [0, 1], y: [24, 0] }, { delay: stagger(0.08), duration: 0.7, ease });
   const heroPh = document.querySelector(".hero-ph, .p-hero .ph");
   if (heroPh) animate(heroPh, { opacity: [0, 1], scale: [1.04, 1], y: [20, 0] }, { duration: 1, ease });
 
   // sections and grids reveal when scrolled into view
-  document.querySelectorAll(".sec-head, .stage-txt, .band, .review, .story, .specs, .steps, .parts, .note, .split, .meta-strip, .page-head, .faqs").forEach((el) => {
+  document.querySelectorAll(".sec-head, .stage-txt, .band, .review, .story, .specs, .steps, .parts, .note, .split, .meta-strip, .page-head, .faqs, .feat").forEach((el) => {
     if (el.closest(".hero, .p-hero")) return;
     el.style.opacity = 0;
     inView(el, () => { animate(el, { opacity: [0, 1], y: [28, 0] }, { duration: 0.7, ease }); }, { margin: "0px 0px -8% 0px" });
   });
-  document.querySelectorAll(".grid, .tiles, .pick, .tasks, .speeds, .rsteps, .results, .scenes").forEach((wrap) => {
+  document.querySelectorAll(".grid, .tiles, .pick, .tasks, .speeds, .rsteps, .results, .scenes, .tech-strip, .specs").forEach((wrap) => {
     const kids = [...wrap.children];
     kids.forEach((k) => (k.style.opacity = 0));
     inView(wrap, () => { animate(kids, { opacity: [0, 1], y: [30, 0] }, { delay: stagger(0.07), duration: 0.65, ease }); }, { margin: "0px 0px -6% 0px" });

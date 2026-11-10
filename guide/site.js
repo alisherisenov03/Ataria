@@ -255,3 +255,34 @@ if (splitScreen) {
   }));
   addEventListener("pageshow", () => { splitScreen.classList.remove("go"); splitScreen.querySelectorAll(".half").forEach((x) => x.classList.remove("sel")); });
 }
+
+// "Look closer": as the visitor scrolls through #look, the studio photo zooms to each detail listed under it.
+(() => {
+  const look = document.getElementById("look");
+  if (!look || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  const img = look.querySelector(".look-frame img"), items = [...look.querySelectorAll(".look-list li")];
+  let cur = -1;
+  const show = (i) => {
+    if (i === cur) return; cur = i;
+    const { x, y, z } = items[i].dataset;
+    img.style.transformOrigin = `${x}% ${y}%`;
+    img.style.transform = `translate(${50 - x}%, ${(z > 1.5 ? 40 : 50) - y}%) scale(${z})`; // detail sits above the captions
+    items.forEach((li, k) => li.classList.toggle("on", k === i));
+  };
+  const tick = () => {
+    const r = look.getBoundingClientRect(), span = r.height - innerHeight;
+    const p = Math.min(0.999, Math.max(0, -r.top / span));
+    show(Math.floor(p * items.length));
+  };
+  addEventListener("scroll", () => requestAnimationFrame(tick), { passive: true });
+  addEventListener("resize", tick);
+  tick();
+})();
+
+// Cinematic hero clip: plays only while on screen, stays on its poster for reduced motion.
+(() => {
+  const v = document.querySelector(".cine-v");
+  if (!v) return;
+  if (matchMedia("(prefers-reduced-motion: reduce)").matches) { v.removeAttribute("autoplay"); v.pause(); return; }
+  new IntersectionObserver(([e]) => (e.isIntersecting ? v.play().catch(() => {}) : v.pause()), { threshold: 0.1 }).observe(v);
+})();
