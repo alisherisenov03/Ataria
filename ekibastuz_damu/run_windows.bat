@@ -17,7 +17,9 @@ if errorlevel 1 (
   exit /b 1
 )
 echo Starting. A Microsoft Edge window will open with 2GIS. If a captcha appears - solve it. Do not close this window.
+echo If it stops (reboot, error) - just run this file again: it continues where it stopped.
 %PY% scrape_2gis.py
 echo.
-echo Done. The file ekibastuz_damu.xlsx is in this folder.
+echo Done. Opening ekibastuz_damu.xlsx
+if exist ekibastuz_damu.xlsx start "" "ekibastuz_damu.xlsx"
 pause

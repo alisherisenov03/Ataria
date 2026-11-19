@@ -26,6 +26,7 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 RAW = HERE / "raw_2gis.json"
 XLSX = HERE / "ekibastuz_damu.xlsx"
+DONE = HERE / "done_queries.json"
 
 SRC_ISKER_ADILET = ("adilet.zan.kz/rus/docs/P2500001176 — ПП РК от 30.12.2025 № 1176, "
                     "приложение к Правилам субсидирования (ред. ПП № 729 от 18.08.2026); "
@@ -322,6 +323,15 @@ def launch(pw):
     sys.exit("Нет браузера: установите Microsoft Edge или Google Chrome.")
 
 
+def keep_awake():
+    """Windows: не уходить в сон, пока идёт сбор (перезагрузку обновлений это не отменяет)."""
+    try:
+        import ctypes
+        ctypes.windll.kernel32.SetThreadExecutionState(0x80000000 | 0x00000001)
+    except Exception:
+        pass
+
+
 def scrape(max_pages):
     """Как в interlark/parser-2gis: поиск открывается один раз, фирмы открываются
     кликом (страница не перезагружается), картинки/карта/аналитика заблокированы,
@@ -339,6 +349,7 @@ def scrape(max_pages):
             if q not in queries:
                 queries.append(q)
 
+    keep_awake()
     with sync_playwright() as pw:
         br = launch(pw)
         ctx = br.new_context(locale="ru-RU", viewport={"width": 1400, "height": 900})
@@ -380,8 +391,7 @@ def scrape(max_pages):
                 return match(li)[1] is not None
             return True  # нет данных из выдачи — открываем карточку
 
-        t0 = time.time()
-        for qi, q in enumerate(queries, 1):
+        def run_query(q):
             got = 0
             page.goto(f"{BASE}/search/{q}", wait_until="domcontentloaded", timeout=60000)
             wait_captcha(page)
@@ -417,9 +427,31 @@ def scrape(max_pages):
                     time.sleep(0.25)
                     if {f for f, _ in firm_links()} - old:
                         break
+            return got
+
+        t0 = time.time()
+        done = set(json.loads(DONE.read_text(encoding="utf-8"))) if DONE.exists() else set()
+        if done:
+            print(f"Уже пройдено запросов: {len(done)} из {len(queries)} — пропускаю их")
+        for qi, q in enumerate(queries, 1):
+            if q in done:
+                continue
+            got = None
+            for attempt in (1, 2):  # при сбое (обрыв сети, таймаут) — ещё одна попытка
+                try:
+                    got = run_query(q)
+                    break
+                except Exception as e:
+                    print(f"   ! {q}: сбой ({str(e).splitlines()[0][:80]}), попытка {attempt}/2", flush=True)
+                    time.sleep(3)
             mins = (time.time() - t0) / 60
-            print(f"[{qi}/{len(queries)}] {q}: +{got} (всего {len(items)}, {mins:.1f} мин)", flush=True)
+            print(f"[{qi}/{len(queries)}] {q}: открыто фирм {got or 0} (всего {len(items)}, {mins:.1f} мин)", flush=True)
             RAW.write_text(json.dumps(items, ensure_ascii=False), encoding="utf-8")
+            if got is not None:
+                done.add(q)
+                DONE.write_text(json.dumps(sorted(done), ensure_ascii=False), encoding="utf-8")
+            live.flush()
+            write_xlsx(build_firms(items), quiet=True)  # Excel всегда актуален, даже если прервётся
         live.flush()
         br.close()
     return items
@@ -586,7 +618,7 @@ def rubrics_report(items, path=HERE / "rubrics_report.csv"):
         print(f"! {path.name} открыт в Excel — отчёт не записан")
 
 
-def write_xlsx(rows, path=XLSX):
+def write_xlsx(rows, path=XLSX, quiet=False):
     from openpyxl import Workbook
     from openpyxl.styles import Font, PatternFill, Alignment
     from openpyxl.utils import get_column_letter
@@ -635,8 +667,14 @@ def write_xlsx(rows, path=XLSX):
         mp.append([label, f"{code} {cname}", ", ".join(progs) if progs else "не входит — отсеивается"])
     sheet(wb.create_sheet("Соответствие"), ["Рубрика 2ГИС", "ОКЭД", "Программа"], mp, [48, 60, 50])
 
-    wb.save(path)
-    print(f"Excel: {path}  (фирм: {len(rows)})")
+    try:
+        wb.save(path)
+    except PermissionError:
+        if not quiet:
+            print(f"! {path.name} открыт в Excel — закройте его и запустите rebuild_excel.bat")
+        return
+    if not quiet:
+        print(f"Excel: {path}  (фирм: {len(rows)})")
 
 
 def main():
