@@ -16,7 +16,6 @@ if not defined PY (
 echo Python: %PY%
 echo Устанавливаю зависимости...
 %PY% -m pip install playwright openpyxl || (echo ОШИБКА pip & pause & exit /b 1)
-%PY% -m playwright install chromium || (echo ОШИБКА установки браузера & pause & exit /b 1)
 echo Запускаю сбор. Если в браузере появится капча - пройдите её. Окно не закрывайте.
 %PY% scrape_2gis.py
 echo.

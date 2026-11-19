@@ -6,7 +6,7 @@
 
 Запуск (на своём компьютере, нужен обычный интернет):
     pip install playwright openpyxl
-    python -m playwright install chromium
+    (браузер не скачивается: используется установленный Microsoft Edge или Google Chrome)
     python scrape_2gis.py               # сбор + Excel
     python scrape_2gis.py --excel-only  # только пересобрать Excel из raw_2gis.json
 
@@ -314,7 +314,17 @@ def scrape(max_pages):
                 queries.append(q)
 
     with sync_playwright() as pw:
-        br = pw.chromium.launch(headless=False)
+        br = None
+        # сначала браузеры, уже установленные в системе (скачивать ничего не нужно)
+        for ch in ("msedge", "chrome", None):
+            try:
+                br = pw.chromium.launch(headless=False, channel=ch) if ch else pw.chromium.launch(headless=False)
+                print(f"Браузер: {ch or 'chromium (playwright)'}")
+                break
+            except Exception as e:
+                print(f"Не удалось запустить {ch or 'chromium'}: {str(e).splitlines()[0]}")
+        if br is None:
+            sys.exit("Нет браузера: установите Microsoft Edge или Google Chrome.")
         page = br.new_page(locale="ru-RU")
         bucket = {"items": [], "total": None}
 
