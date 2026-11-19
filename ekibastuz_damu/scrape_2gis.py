@@ -10,6 +10,7 @@
     python scrape_2gis.py               # сбор + Excel
     python scrape_2gis.py --excel-only  # только пересобрать Excel из raw_2gis.json
 
+Подходящие фирмы сразу пишутся в live_firms.csv (телефон во 2-й колонке).
 Скрипт открывает ВИДИМОЕ окно браузера на 2gis.kz. Если 2ГИС покажет капчу —
 пройдите её руками в этом окне, скрипт подождёт и продолжит сам.
 
@@ -330,6 +331,8 @@ def scrape(max_pages):
     if RAW.exists():
         items = json.loads(RAW.read_text(encoding="utf-8"))
         print(f"Продолжаю: в {RAW.name} уже {len(items)} фирм")
+    live = Live(items)
+    print(f"Подходящие фирмы пишутся сразу в {LIVE.name}")
     queries = []
     for m in RUBRIC_MAP:
         for q in m[1]:
@@ -403,7 +406,8 @@ def scrape(max_pages):
                         it["_query"] = q
                         items[fid] = it
                         got += 1
-                    time.sleep(random.uniform(0.15, 0.4))
+                        live.add(fid, it)
+                    time.sleep(random.uniform(0.1, 0.25))
                 nxt = page.query_selector(f"a[href*='/page/{pn + 1}']")
                 if not nxt:
                     break
@@ -416,6 +420,7 @@ def scrape(max_pages):
             mins = (time.time() - t0) / 60
             print(f"[{qi}/{len(queries)}] {q}: +{got} (всего {len(items)}, {mins:.1f} мин)", flush=True)
             RAW.write_text(json.dumps(items, ensure_ascii=False), encoding="utf-8")
+        live.flush()
         br.close()
     return items
 
@@ -468,28 +473,87 @@ def address(it):
     return f"{a} ({comment})" if a and comment else a
 
 
+def firm_row(k, it):
+    """Строка листа «Фирмы» или None, если фирма не подходит."""
+    if not in_ekibastuz(it):
+        return None
+    rn, m = match(it)
+    if not m:
+        return None
+    progs = programs_for(m[3])
+    if not progs:
+        return None
+    tel, extra = contacts(it)
+    return [(it.get("name") or "").strip(), rn, f"{m[3]} {m[4]}", ", ".join(progs),
+            address(it), tel, extra, f"{BASE}/firm/{k}"]
+
+
 def build_firms(items):
     rows, seen = [], set()
     for k, it in items.items():
-        if not in_ekibastuz(it):
+        r = firm_row(k, it)
+        if not r:
             continue
-        rn, m = match(it)
-        if not m:
-            continue
-        progs = programs_for(m[3])
-        if not progs:
-            continue
-        name = (it.get("name") or "").strip()
-        adr = address(it)
-        key = (name.lower(), adr.lower())
+        key = (r[0].lower(), r[4].lower())
         if key in seen:
             continue
         seen.add(key)
-        tel, extra = contacts(it)
-        rows.append([name, rn, f"{m[3]} {m[4]}", ", ".join(progs), adr, tel, extra,
-                     f"{BASE}/firm/{k}"])
+        rows.append(r)
     rows.sort(key=lambda r: (r[3], r[1], r[0].lower()))
     return rows
+
+# ------------------------------------------------------------------ живой CSV
+LIVE = HERE / "live_firms.csv"
+LIVE_HEAD = ["Название", "Телефон", "WhatsApp/сайт/Instagram", "Рубрика", "Программа", "Адрес", "ОКЭД", "Ссылка 2ГИС"]
+
+
+class Live:
+    """Пишет подходящие фирмы в live_firms.csv сразу по мере сбора (Excel открывает
+    его двойным кликом; чтобы увидеть новые строки — закрыть и открыть заново).
+    Если файл открыт в Excel и заблокирован, строки копятся и дописываются позже."""
+
+    def __init__(self, items):
+        self.pending, self.seen, self.warned = [], set(), False
+        rows = build_firms(items)
+        self.seen = {(r[0].lower(), r[4].lower()) for r in rows}
+        try:
+            with open(LIVE, "w", encoding="utf-8-sig", newline="") as f:
+                import csv
+                w = csv.writer(f, delimiter=";")
+                w.writerow(LIVE_HEAD)
+                w.writerows(self._cols(r) for r in rows)
+        except PermissionError:
+            print("! live_firms.csv открыт в Excel — закройте его, иначе запись отложится")
+            self.pending = [self._cols(r) for r in rows]
+
+    @staticmethod
+    def _cols(r):
+        return [r[0], r[5], r[6], r[1], r[3], r[4], r[2], r[7]]
+
+    def add(self, k, it):
+        r = firm_row(k, it)
+        if not r:
+            return
+        key = (r[0].lower(), r[4].lower())
+        if key in self.seen:
+            return
+        self.seen.add(key)
+        print(f"   + {r[0]} | {r[5] or 'без телефона'} | {r[1]}", flush=True)
+        self.pending.append(self._cols(r))
+        self.flush()
+
+    def flush(self):
+        if not self.pending:
+            return
+        import csv
+        try:
+            with open(LIVE, "a", encoding="utf-8", newline="") as f:
+                csv.writer(f, delimiter=";").writerows(self.pending)
+            self.pending = []
+        except PermissionError:
+            if not self.warned:
+                print("! live_firms.csv открыт в Excel и заблокирован — допишу, когда закроете")
+                self.warned = True
 
 # ------------------------------------------------------------------ Excel
 
