@@ -474,6 +474,19 @@ def match(it):
     return None, None
 
 
+def wa_link(it):
+    """Первая ссылка WhatsApp в виде https://wa.me/<номер> (без шаблонного текста 2ГИС)."""
+    for g in it.get("contact_groups") or []:
+        for c in g.get("contacts") or []:
+            if c.get("type") == "whatsapp":
+                d = re.sub(r"\D", "", re.sub(r"\?.*", "", c.get("url") or "") or c.get("value") or "")
+                if not d:
+                    d = re.sub(r"\D", "", c.get("value") or c.get("text") or "")
+                if d:
+                    return f"https://wa.me/{d}"
+    return ""
+
+
 def contacts(it):
     phones, extra = [], []
     for g in it.get("contact_groups") or []:
@@ -484,9 +497,11 @@ def contacts(it):
                 v = c.get("text") or c.get("value") or ""
                 if v and v not in phones:
                     phones.append(v)
-            elif t in ("whatsapp", "website", "instagram"):
+            elif t in ("website", "instagram"):  # WhatsApp — в отдельной колонке
                 if t == "website":
                     v = c.get("text") or c.get("value") or ""
+                elif t == "instagram" and (c.get("url") or "").startswith("http"):
+                    v = c["url"]
                 elif t == "whatsapp" and c.get("value"):
                     v = c["value"]
                 if v:
@@ -522,7 +537,7 @@ def firm_row(k, it):
         return None
     tel, extra = contacts(it)
     return [(it.get("name") or "").strip(), rn, f"{m[3]} {m[4]}", ", ".join(progs),
-            address(it), tel, extra, f"{BASE}/firm/{k}"]
+            address(it), tel, wa_link(it), extra, f"{BASE}/firm/{k}"]
 
 
 def build_firms(items):
@@ -541,7 +556,7 @@ def build_firms(items):
 
 # ------------------------------------------------------------------ живой CSV
 LIVE = HERE / "live_firms.csv"
-LIVE_HEAD = ["Название", "Телефон", "WhatsApp/сайт/Instagram", "Рубрика", "Программа", "Адрес", "ОКЭД", "Ссылка 2ГИС"]
+LIVE_HEAD = ["Название", "Телефон", "WhatsApp", "сайт/Instagram", "Рубрика", "Программа", "Адрес", "ОКЭД", "Ссылка 2ГИС"]
 
 
 class Live:
@@ -565,7 +580,7 @@ class Live:
 
     @staticmethod
     def _cols(r):
-        return [r[0], r[5], r[6], r[1], r[3], r[4], r[2], r[7]]
+        return [r[0], r[5], r[6], r[7], r[1], r[3], r[4], r[2], r[8]]
 
     def add(self, k, it):
         r = firm_row(k, it)
@@ -640,13 +655,14 @@ def write_xlsx(rows, path=XLSX, quiet=False):
 
     ws = wb.active
     ws.title = "Фирмы"
-    sheet(ws, ["Название", "Рубрика", "ОКЭД", "Программа", "Адрес", "Телефон",
-               "WhatsApp/сайт/Instagram", "Ссылка 2ГИС"], rows, [34, 30, 40, 34, 36, 30, 44, 42])
+    sheet(ws, ["Название", "Рубрика", "ОКЭД", "Программа", "Адрес", "Телефон", "WhatsApp",
+               "сайт/Instagram", "Ссылка 2ГИС"], rows, [34, 30, 40, 34, 36, 30, 26, 44, 42])
     for r in range(2, ws.max_row + 1):
-        c = ws.cell(r, 8)
-        if c.value:
-            c.hyperlink = c.value
-            c.font = Font(color="0563C1", underline="single")
+        for col in (7, 9):
+            c = ws.cell(r, col)
+            if c.value:
+                c.hyperlink = c.value
+                c.font = Font(color="0563C1", underline="single")
 
     ok = []
     for c, n in ISKER:
