@@ -301,7 +301,30 @@ def wait_captcha(page):
         sys.exit("Капча не пройдена за 10 минут.")
 
 
+BLOCK_RX = re.compile(
+    r"google-analytics|counter\.yadro|tns-counter|mc\.yandex|vk\.com|favorites\.api\.2gis"
+    r"|2gis\.[a-z]+/_/(log|metrics)|/3\.0/ads/|tile\d*\.maps\.2gis|\.bss\.2gis|styles\.api\.2gis"
+    r"|video-pr\.api\.2gis|api\.photo\.2gis|market-backend\.api\.2gis|traffic\d*\.edromaps|disk\.2gis\.[a-z]+/styles"
+    r"|d-assets\.2gis\.[a-z]+/fonts|mapgl\.2gis\.[a-z]+/api/fonts")
+FIRM_HREF = re.compile(r"/firm/(\d+)")
+
+
+def launch(pw):
+    # браузеры, уже установленные в системе (скачивать ничего не нужно)
+    for ch in ("msedge", "chrome", None):
+        try:
+            br = pw.chromium.launch(headless=False, channel=ch) if ch else pw.chromium.launch(headless=False)
+            print(f"Браузер: {ch or 'chromium (playwright)'}")
+            return br
+        except Exception as e:
+            print(f"Не удалось запустить {ch or 'chromium'}: {str(e).splitlines()[0]}")
+    sys.exit("Нет браузера: установите Microsoft Edge или Google Chrome.")
+
+
 def scrape(max_pages):
+    """Как в interlark/parser-2gis: поиск открывается один раз, фирмы открываются
+    кликом (страница не перезагружается), картинки/карта/аналитика заблокированы,
+    страницы листаются кликом по номеру."""
     from playwright.sync_api import sync_playwright
     items = {}
     if RAW.exists():
@@ -314,93 +337,88 @@ def scrape(max_pages):
                 queries.append(q)
 
     with sync_playwright() as pw:
-        br = None
-        # сначала браузеры, уже установленные в системе (скачивать ничего не нужно)
-        for ch in ("msedge", "chrome", None):
-            try:
-                br = pw.chromium.launch(headless=False, channel=ch) if ch else pw.chromium.launch(headless=False)
-                print(f"Браузер: {ch or 'chromium (playwright)'}")
-                break
-            except Exception as e:
-                print(f"Не удалось запустить {ch or 'chromium'}: {str(e).splitlines()[0]}")
-        if br is None:
-            sys.exit("Нет браузера: установите Microsoft Edge или Google Chrome.")
-        page = br.new_page(locale="ru-RU")
-        bucket = {"items": [], "total": None}
+        br = launch(pw)
+        ctx = br.new_context(locale="ru-RU", viewport={"width": 1400, "height": 900})
+        ctx.route("**/*", lambda r: r.abort() if (
+            r.request.resource_type in ("image", "media", "font") or BLOCK_RX.search(r.request.url)
+        ) else r.continue_())
+        page = ctx.new_page()
+        listed = {}  # краткие данные фирм из выдачи (для отсева по рубрике до клика)
 
         def on_resp(r):
             u = r.url
-            if "2gis" not in u or "items" not in u:
+            if "catalog.api.2gis" not in u or "/items" not in u or "byid" in u:
                 return
             try:
-                data = r.json()
+                its = ((r.json() or {}).get("result") or {}).get("items") or []
             except Exception:
                 return
-            res = (data or {}).get("result") or {}
-            its = res.get("items")
-            if isinstance(its, list):
-                bucket["items"].extend(i for i in its if isinstance(i, dict) and i.get("id"))
-                if res.get("total") and bucket["total"] is None and "/search" in page.url:
-                    bucket["total"] = res["total"]
+            for i in its:
+                if isinstance(i, dict) and i.get("id"):
+                    listed[base_id(i["id"])] = i
 
         page.on("response", on_resp)
 
-        def load(url):
-            bucket["items"].clear()
-            bucket["total"] = None
-            page.goto(url, wait_until="domcontentloaded", timeout=60000)
-            wait_captcha(page)
-            try:
-                page.wait_for_load_state("networkidle", timeout=20000)
-            except Exception:
-                pass
-            time.sleep(random.uniform(1.5, 3.0))
-            return list(bucket["items"])
+        def firm_links():
+            out = []
+            for a in page.query_selector_all("a[href*='/firm/']"):
+                m = FIRM_HREF.search(a.get_attribute("href") or "")
+                if m and m.group(1) not in [x[0] for x in out]:
+                    out.append((m.group(1), a))
+            return out
 
+        def worth_click(fid):
+            if fid in items:
+                return False
+            li = listed.get(fid)
+            if li and li.get("rubrics"):
+                if li.get("adm_div") and not in_ekibastuz(li):
+                    return False
+                return match(li)[1] is not None
+            return True  # нет данных из выдачи — открываем карточку
+
+        t0 = time.time()
         for qi, q in enumerate(queries, 1):
             got = 0
-            pages = max_pages
+            page.goto(f"{BASE}/search/{q}", wait_until="domcontentloaded", timeout=60000)
+            wait_captcha(page)
             for pn in range(1, max_pages + 1):
-                url = f"{BASE}/search/{q}" + (f"/page/{pn}" if pn > 1 else "")
-                its = load(url)
-                if pn == 1 and bucket["total"]:
-                    pages = min(max_pages, math.ceil(bucket["total"] / 12))
-                new = 0
-                for it in its:
-                    if it.get("type") not in (None, "branch"):
+                try:
+                    page.wait_for_selector("a[href*='/firm/']", timeout=8000)
+                except Exception:
+                    break  # нет результатов
+                time.sleep(0.5)
+                for fid, a in firm_links():
+                    if not worth_click(fid):
                         continue
-                    k = base_id(it["id"])
-                    if k not in items:
+                    try:
+                        with page.expect_response(lambda r: "/items/byid" in r.url, timeout=8000) as ri:
+                            a.click()
+                        res = ((ri.value.json() or {}).get("result") or {}).get("items") or []
+                    except Exception:
+                        wait_captcha(page)
+                        res = []
+                    it = next((x for x in res if base_id(x.get("id", "")) == fid), None) or listed.get(fid)
+                    if it:
                         it["_query"] = q
-                        items[k] = it
-                        new += 1
-                got += new
-                if new == 0 or pn >= pages:
+                        items[fid] = it
+                        got += 1
+                    time.sleep(random.uniform(0.15, 0.4))
+                nxt = page.query_selector(f"a[href*='/page/{pn + 1}']")
+                if not nxt:
                     break
-            print(f"[{qi}/{len(queries)}] {q}: +{got} (всего {len(items)})", flush=True)
+                old = {f for f, _ in firm_links()}
+                nxt.click()
+                for _ in range(40):  # ждём, пока выдача сменится
+                    time.sleep(0.25)
+                    if {f for f, _ in firm_links()} - old:
+                        break
+            mins = (time.time() - t0) / 60
+            print(f"[{qi}/{len(queries)}] {q}: +{got} (всего {len(items)}, {mins:.1f} мин)", flush=True)
             RAW.write_text(json.dumps(items, ensure_ascii=False), encoding="utf-8")
-
-        # карточки фирм без телефонов/рубрик — дочитываем со страницы фирмы
-        need = [k for k, it in items.items()
-                if in_ekibastuz(it) and (not it.get("contact_groups") or not it.get("rubrics"))
-                and not it.get("_card")]
-        print(f"Дочитываю карточки: {len(need)}")
-        for n, k in enumerate(need, 1):
-            its = load(f"{BASE}/firm/{k}")
-            for it in its:
-                if base_id(it.get("id", "")) == k:
-                    it["_query"] = items[k].get("_query")
-                    it["_card"] = True
-                    items[k] = it
-                    break
-            else:
-                items[k]["_card"] = True
-            if n % 20 == 0:
-                RAW.write_text(json.dumps(items, ensure_ascii=False), encoding="utf-8")
-                print(f"  {n}/{len(need)}", flush=True)
-        RAW.write_text(json.dumps(items, ensure_ascii=False), encoding="utf-8")
         br.close()
     return items
+
 
 # ------------------------------------------------------------------ разбор фирм
 
@@ -531,7 +549,7 @@ def write_xlsx(rows, path=XLSX):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--excel-only", action="store_true", help="не ходить в 2ГИС, собрать Excel из raw_2gis.json")
-    ap.add_argument("--max-pages", type=int, default=15, help="страниц выдачи на один запрос (по 12 фирм)")
+    ap.add_argument("--max-pages", type=int, default=10, help="страниц выдачи на один запрос (по 12 фирм)")
     a = ap.parse_args()
     if a.excel_only:
         items = json.loads(RAW.read_text(encoding="utf-8")) if RAW.exists() else {}
