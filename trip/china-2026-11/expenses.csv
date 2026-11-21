@@ -1,0 +1,11 @@
+id;date;nights;city;category;item;amount_kzt;payer_split;booking;note
+1;2026-11-11;0;Астана;Еда;Кафе «Урбо», Кабанбай батыр 119;9650;half;QR18572274196;Kaspi Gold
+2;2026-11-11;0;—;Связь;5G eSIM материковый Китай, 100 ГБ (Trip.com);9771.75;alisher;1539369652157554;уточнить: только Алишер?
+3;2026-11-12;2;Гуанчжоу;Отель;Guangzhou Lihaotai Hotel (Changgang Jiangnanxi), 12–14.11;24464.40;alisher;1539369167529336;+111 Trip Coins (504,54 ₸)
+4;2026-11-13;0;Гуанчжоу→Чжуншань;Поезд;Guangzhou South 09:06 → Zhongshan 09:32, 2 пасс.;6389.28;half;1539369835994134;
+5;2026-11-15;0;Гуанчжоу→Нинбо;Перелёт;Hainan HU7233 CAN 07:25 → NGB 09:30, 2 пасс.;138336.00;half;1539369949289310;+92 Trip Coins (418,18 ₸)
+6;2026-11-15;1;Нинбо;Отель;baien Hotel (Ningbo Railway Station Nantang), 15–16.11;10684.59;alisher;1539369308904829;+78 Trip Coins (354,54 ₸)
+7;2026-11-16;0;Нинбо→Юйяо;Поезд;Ningbo 09:32 → Yuyao North 09:52, 2 пасс.;4266.82;half;1539369878783533;
+8;2026-11-16;0;Юйяо→Шанхай;Поезд;Yuyao North 17:47 → Shanghai Songjiang 19:25, 2 пасс.;15992.82;half;1539369878798115;
+9;2026-11-16;3;Шанхай;Отель;Original Intention Start Hotel (Shanghai Intl Tourism Resort), 16–19.11;38717.68;alisher;1539369329162398;+477 Trip Coins (2 168,18 ₸)
+10;2026-11-19;0;Шанхай→Астана;Перелёт;Шанхай → Астана, 2 пасс.;265000;half;—;дата и рейс уточнить
