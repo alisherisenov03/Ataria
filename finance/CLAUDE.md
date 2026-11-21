@@ -1,39 +1,63 @@
 # Финансы Алишера: правила для любого чата Claude
 
-Все деньги (личные и бизнес) учитываются в **одной** базе Supabase, в проекте `pepexjsboutlqmqjyemc`.
-Её читают и пишут все чаты (финансы, Kaspi, СФК и т.д.) и приложение «Финансы» на iPhone (папка `finance/` этого репозитория).
-Чаты не обмениваются сообщениями напрямую. Синхронизация происходит так: один чат записал в базу, остальные прочитали.
+Все деньги учитываются в **одной** базе Supabase, проект `pepexjsboutlqmqjyemc`. Её читают и пишут:
+- приложение «Финансы» на iPhone (папка `finance/`, https://alisher-finance.vercel.app), включая его поле умного ввода;
+- чат «Финансы» (Claude Code);
+- чат Kaspi и его «Ataria кабинет»;
+- любой другой чат Алишера (СФК и т.д.).
 
-## Таблицы (схема `public`)
-| Таблица | Что хранит |
+Чаты не пишут друг другу напрямую. Общая база и есть их общий разговор: один записал, остальные прочитали.
+
+## Кто чем владеет
+| Что | Хозяин | Где лежит |
+|---|---|---|
+| Деньги **компании** Ataria: счёт компании, резерв, инвестор, платежи заводу, расходы компании, долги компании Алишеру, P&L | **Кабинет Kaspi** | Своё хранилище кабинета, зеркало в `jarvis.cabinet_snapshot` (id `ataria`) |
+| Продажи Kaspi | Синхронизация заказов | `jarvis.kaspi_orders`, `jarvis.kaspi_items` |
+| Личные деньги Алишера: Kaspi Gold, депозит, наличные, другие банки | **Приложение «Финансы»** | `public.fin_*` |
+
+Правило: каждую сумму ведёт только её хозяин, остальные её читают. Поэтому ничего не задваивается.
+
+## Таблицы приложения (схема `public`)
+| Таблица / функция | Что хранит |
 |---|---|
-| `fin_accounts` | Счета: `kaspi-gold`, `kaspi-pay`, `kaspi-deposit`, `cash`, `other-bank`. У счёта есть `opening_balance` на дату `opening_date`, `interest_rate` (% годовых для депозита) и `last4` |
-| `fin_account_balances` | Вьюха с текущим балансом каждого счёта (`balance`) |
-| `fin_projects` | Проекты по `slug`: `personal` (Личное), `pillows` (Подушки), `combines` (Комбайны), `choppers` (Измельчители), `ads` (Реклама), `business` (Бизнес — общее) |
-| `fin_categories` | Категории (`type` = `income` / `expense`) |
-| `fin_transactions` | Операции: `type` = `income` / `expense` / `transfer`; `amount` > 0 в тенге; `occurred_on`; `account_id`; `to_account_id` (только для переводов); `project_id`; `category_id`; `note`; `source` |
-| `fin_budgets` | Месячные лимиты по проекту и/или категории |
-| `fin_kaspi_monthly(p_from)` | Продажи Kaspi по месяцам и проектам (выручка, комиссия, себестоимость). Считаются из `jarvis.kaspi_orders` |
+| `fin_accounts` | Счета: `kaspi-gold`, `kaspi-pay` (= **счёт компании**, `balance_source='cabinet'`: баланс берётся из кабинета), `kaspi-deposit`, `cash`, `other-bank` |
+| `fin_account_balances` | Текущий баланс каждого счёта |
+| `fin_projects` | `personal`, `pillows`, `combines`, `choppers`, `ads`, `business` |
+| `fin_categories` | Категории расходов и доходов |
+| `fin_transactions` | Операции. Важные поля: `company` (относится к компании), `cabinet_status` (`pending` → ждёт кабинета, `synced` → уже в кабинете, `skipped` → кабинету не нужно), `cabinet_ref` (id записи в кабинете), `source`, `receipt_path` (чек в bucket `fin-receipts`), `inbox_id` |
+| `fin_inbox` | Всё, что Алишер написал, надиктовал или прислал в поле умного ввода, и что с этим сделал ИИ |
+| `fin_budgets` | Месячные лимиты |
+| `fin_company()` | Сводка из кабинета: `cash`, `reserve`, `owner_debt`, `owner_loans`, `upcoming`, `expenses`, `pnl_month` |
+| `fin_kaspi_monthly(p_from)` | Продажи Kaspi по месяцам и проектам |
 
-## Как записывать
-1. Узнали о расходе, доходе или переводе: сразу запишите строку в `fin_transactions`. В поле `source` укажите имя своего чата: `claude`, `kaspi-chat`, `sfk-chat` и т.д.
-2. Перед записью проверьте дубль: если уже есть операция с той же датой, суммой и счётом, спросите, не одна ли это операция.
-3. **Продажи Kaspi вручную не вносите.** Они подтягиваются автоматически через `fin_kaspi_monthly`. Вносите только реальные движения денег, которых нет в заказах: закуп, карго, реклама, налоги, вывод на карту, личные траты.
-4. Перевод между своими счетами — это `type='transfer'` с `to_account_id`. Это не расход.
-5. Если пользователь назвал текущий остаток счёта, обновите `opening_balance` и поставьте `opening_date = текущая дата`. Учтите операции, уже записанные на сегодня.
-6. Никогда не храните полный номер карты, CVV, пароли и коды из SMS. Допустимы только последние 4 цифры.
-
-Пример:
+## Обмен с кабинетом Kaspi
+**Приложение → кабинет.** Каждая операция компании, записанная в приложении, получает `cabinet_status = 'pending'`. Так же помечается любая операция со счётом компании, в том числе перевод со счёта компании на карту Алишера (возврат долга). Чат Kaspi при каждом обновлении кабинета делает так:
 ```sql
-insert into public.fin_transactions (occurred_on, type, amount, account_id, project_id, category_id, note, source)
-select current_date, 'expense', 12000,
-  (select id from public.fin_accounts where slug = 'kaspi-gold'),
-  (select id from public.fin_projects where slug = 'ads'),
-  (select id from public.fin_categories where name = 'Реклама' and type = 'expense'),
-  'таргет Instagram, подушки', 'claude';
+select t.*, a.slug account, ta.slug to_account, p.slug project, c.name category
+from public.fin_transactions t
+join public.fin_accounts a on a.id = t.account_id
+left join public.fin_accounts ta on ta.id = t.to_account_id
+left join public.fin_projects p on p.id = t.project_id
+left join public.fin_categories c on c.id = t.category_id
+where t.cabinet_status = 'pending' order by t.occurred_on;
 ```
+- Если `cabinet_ref` пустой, это новая запись: добавить её в кабинет. Оплачена с личного счёта (`kaspi-gold`, `cash` и т.п.) → это расход компании и долг компании Алишеру (`paidBy: alisher`). Оплачена со счёта компании → расход из денег компании. Перевод `kaspi-pay → kaspi-gold` → возврат долга Алишеру (отметить в `owner_loans`).
+- Если `cabinet_ref` заполнен, запись изменили в приложении: обновить её в кабинете.
+- После этого: `update public.fin_transactions set cabinet_status='synced', cabinet_ref='<id в кабинете>' where id=...`.
+- Если записи в кабинете не место: `cabinet_status='skipped'`.
+
+**Кабинет → приложение.** Ничего копировать не нужно: приложение и ИИ читают `jarvis.cabinet_snapshot` через `fin_company()`. Кабинету достаточно обновлять снимок после каждого изменения, как он уже делает.
+
+## Как записывать из любого чата
+1. Личная трата, доход или перевод между личными счетами: строка в `fin_transactions` с `source = '<имя чата>'`.
+2. Трата компании: в кабинет её вносит чат Kaspi. Другой чат пишет её в `fin_transactions` с `company = true`, `cabinet_status = 'pending'`, а кабинет заберёт её сам.
+3. Перед записью проверьте дубль в `fin_transactions` **и** в `fin_company()->'expenses'` / `'upcoming'`.
+4. **Продажи Kaspi вручную не вносите.**
+5. Перевод между своими счетами — это `type='transfer'`, а не расход.
+6. Если Алишер назвал текущий остаток личного счёта, обновите `opening_balance` и поставьте `opening_date = текущая дата` (с учётом сегодняшних операций). Остаток счёта компании меняется только в кабинете.
+7. Не храните полные номера карт, CVV, пароли и коды из SMS.
 
 ## Как отвечать на вопросы о деньгах
-- Сначала прочитайте свежие данные: `fin_account_balances`, `fin_transactions` за нужный период и `fin_kaspi_monthly`.
-- Прибыль бизнеса за месяц считается так: выручка Kaspi − комиссия − себестоимость проданного + прочие доходы − расходы бизнес-проектов. «Закуп товара» в эту формулу не входит, потому что он уже учтён через себестоимость.
-- Отвечайте цифрами и давайте конкретный совет: что сократить, где бюджет близок к лимиту, хватит ли денег до конца месяца, сколько приносит депозит.
+- По компании отвечайте цифрами из `fin_company()`: деньги, резерв, прибыль за месяц и прогноз, долг компании Алишеру, ближайшие платежи.
+- По личным деньгам — из `fin_account_balances` и `fin_transactions`.
+- Отвечайте цифрами и давайте конкретный совет.

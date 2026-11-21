@@ -9,7 +9,8 @@ const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
 const S = {
   session: null, owner: false, tab: 'home', month: ym(new Date()),
   accounts: [], projects: [], categories: [], budgets: [], txs: [], kaspi: [],
-  filterProject: null, loading: false,
+  filterProject: null, loading: false, company: null,
+  draft: { text: '', files: [] }, sending: false,
 };
 
 /* ---------- helpers ---------- */
@@ -70,9 +71,13 @@ async function loadKaspi() {
   const { data, error } = await sb.rpc('fin_kaspi_monthly', { p_from: from });
   S.kaspi = error ? [] : data;
 }
+async function loadCompany() {
+  const { data, error } = await sb.rpc('fin_company');
+  S.company = error ? null : data;
+}
 async function reloadAll() {
   S.loading = true;
-  try { await Promise.all([loadRefs(), loadMonth(), loadKaspi()]); }
+  try { await Promise.all([loadRefs(), loadMonth(), loadKaspi(), loadCompany()]); }
   catch (e) { toast('Ошибка загрузки: ' + e.message); }
   S.loading = false; render();
 }
@@ -124,16 +129,35 @@ function monthNav() {
   return `<div class="monthnav"><button data-act="prev" aria-label="Предыдущий месяц">‹</button><span>${monthName(S.month)}</span><button data-act="next" aria-label="Следующий месяц">›</button></div>`;
 }
 
+function companyCard() {
+  const c = S.company;
+  if (!c) return '';
+  const p = c.pnl_month;
+  const up = (c.upcoming || []).slice(0, 3);
+  const pending = S.txs.filter(t => t.cabinet_status === 'pending').length;
+  return `<h2>Компания (кабинет Kaspi)</h2>
+    <div class="card">
+      <div class="row between"><span>Счёт компании</span><b class="num">${money(c.cash)}</b></div>
+      ${c.reserve ? `<div class="row between muted small"><span>из них резерв</span><span class="num">${money(c.reserve)}</span></div>` : ''}
+      <div class="row between" style="margin-top:6px"><span>Компания должна вам</span><b class="num warn">${money(c.owner_debt)}</b></div>
+      ${p ? `<div class="row between" style="margin-top:6px"><span>Чистая прибыль, ${esc(MONTHS[+p.month.slice(5) - 1].toLowerCase())}</span><b class="num ${p.net_to_date >= 0 ? 'pos' : 'neg'}">${money(p.net_to_date, true)}</b></div>
+      <div class="row between muted small"><span>прогноз на месяц</span><span class="num">${money(p.net_forecast, true)}</span></div>` : ''}
+      ${up.length ? `<div class="muted small" style="margin-top:10px">Ближайшие платежи</div>${up.map(x => `<div class="row between small" style="margin-top:3px"><span class="ell">${dayLabel(x.date)} · ${esc(x.name)}</span><span class="num">${money(x.amount)}</span></div>`).join('')}` : ''}
+      <div class="muted small" style="margin-top:8px">Данные кабинета на ${esc(c.asof || '')}.${pending ? ` Ждут передачи в кабинет: ${pending}.` : ''}</div>
+    </div>`;
+}
+
 function viewHome() {
   const active = S.accounts.filter(a => !a.archived);
   const total = active.reduce((s, a) => s + +a.balance, 0);
   const m = monthTotals(S.txs);
   const k = kaspiFor(S.month);
-  const inc = m.inc + k.revenue - k.fee, exp = m.exp;  // Kaspi: выручка минус комиссия = поступления
+  const inc = m.inc, exp = m.exp;  // only this ledger; company revenue lives in the cabinet block
   const personal = S.projects.find(p => p.slug === 'personal');
   const personalExp = S.txs.filter(t => t.type === 'expense' && t.project_id === personal?.id).reduce((s, t) => s + +t.amount, 0);
   const bizExp = exp - personalExp;
-  const bizProfit = S.projects.filter(p => p.kind === 'business').reduce((s, p) => s + projectStats(p).profit, 0);
+  const pnl = S.company?.pnl_month?.month === S.month ? S.company.pnl_month : null;
+  const bizProfit = pnl ? pnl.net_to_date : S.projects.filter(p => p.kind === 'business').reduce((s, p) => s + projectStats(p).profit, 0);
 
   const cats = {};
   for (const t of S.txs) if (t.type === 'expense') cats[t.category_id || '-'] = (cats[t.category_id || '-'] || 0) + +t.amount;
@@ -150,20 +174,22 @@ function viewHome() {
       <div class="chips" style="margin-top:8px">${active.map(a => `<span class="chip">${ACC_ICON[a.kind] || ''} ${esc(a.name)} <b class="num">${money(a.balance)}</b></span>`).join('')}</div>
     </div>
     <div class="grid3">
-      <div class="card"><div class="muted small">Доходы¹</div><div class="v num pos">${money(inc)}</div></div>
+      <div class="card"><div class="muted small">Доходы</div><div class="v num pos">${money(inc)}</div></div>
       <div class="card"><div class="muted small">Расходы</div><div class="v num neg">${money(exp)}</div></div>
       <div class="card"><div class="muted small">Итог</div><div class="v num ${inc - exp >= 0 ? 'pos' : 'neg'}">${money(inc - exp, true)}</div></div>
     </div>
     <div class="grid3" style="margin-top:8px">
       <div class="card"><div class="muted small">Личное</div><div class="v num">${money(personalExp)}</div></div>
       <div class="card"><div class="muted small">Бизнес расх.</div><div class="v num">${money(bizExp)}</div></div>
-      <div class="card"><div class="muted small">Прибыль бизн.*</div><div class="v num ${bizProfit >= 0 ? 'pos' : 'neg'}">${money(bizProfit, true)}</div></div>
+      <div class="card"><div class="muted small">Прибыль бизн.${pnl ? '' : '*'}</div><div class="v num ${bizProfit >= 0 ? 'pos' : 'neg'}">${money(bizProfit, true)}</div></div>
     </div>
 
     ${alerts.length ? `<h2>Бюджеты</h2><div class="card list">${alerts.map(x => `
       <div class="item" data-go="projects"><div class="grow"><div class="row between"><span class="ell">${esc(budgetName(x.b))}</span>
       <span class="num small ${x.pct >= 1 ? 'neg' : 'warn'}">${money(x.spent)} / ${money(x.b.monthly_limit)}</span></div>
       <div class="bar"><i style="width:${Math.min(100, x.pct * 100)}%;background:var(${x.pct >= 1 ? '--neg' : '--warn'})"></i></div></div></div>`).join('')}</div>` : ''}
+
+    ${companyCard()}
 
     <h2>Kaspi за месяц</h2>
     <div class="card">
@@ -183,8 +209,7 @@ function viewHome() {
         <div class="bar"><i style="width:${(v / maxCat) * 100}%;background:var(--accent)"></i></div></div>`;
     }).join('') : '<div class="muted">Расходов за месяц пока нет.</div>'}</div>
 
-    <div class="card tip small">💬 Записывайте расходы прямо в чате с Claude: «потратил 12 000 на рекламу подушек с Kaspi Gold», и они появятся здесь. Там же спрашивайте совета по цифрам.</div>
-    <div class="muted small" style="margin:6px 4px">¹ Включая продажи Kaspi за вычетом комиссии.<br>* Прибыль бизнеса = продажи Kaspi − комиссия − себестоимость проданного + прочие доходы − расходы бизнес-проектов (кроме закупа товара: он учтён через себестоимость).</div>
+    <div class="muted small" style="margin:6px 4px">${pnl ? 'Прибыль бизнеса — чистая прибыль с начала месяца из кабинета Kaspi.' : '* Прибыль бизнеса = продажи Kaspi − комиссия − себестоимость проданного + прочие доходы − расходы бизнес-проектов (кроме закупа товара: он учтён через себестоимость).'}</div>
   </div>`;
 }
 
@@ -198,7 +223,7 @@ function txRow(t) {
   const amt = t.type === 'income' ? money(t.amount, true) : t.type === 'expense' ? money(-t.amount) : money(t.amount);
   return `<div class="item" data-tx="${t.id}"><div class="ico">${icon}</div>
     <div class="grow"><div class="ell">${esc(title)}${t.note ? ` <span class="muted">— ${esc(t.note)}</span>` : ''}</div>
-    <div class="muted small ell">${sub}${t.source !== 'app' ? ' · ' + esc(t.source) : ''}</div></div>
+    <div class="muted small ell">${sub}${t.company ? ` · ${t.cabinet_status === 'synced' ? '✓ в кабинете' : '⏳ в кабинет'}` : ''}${t.receipt_path ? ' · 🧾' : ''}</div></div>
     <div class="num ${cls}">${amt}</div></div>`;
 }
 
@@ -228,7 +253,7 @@ function viewAccounts() {
     const interest = a.kind === 'deposit' && a.interest_rate ? `≈ ${money(a.balance * a.interest_rate / 100 / 12)} в мес. (${a.interest_rate}%)` : '';
     return `<div class="item" data-acc="${a.id}"><div class="ico">${ACC_ICON[a.kind] || '👛'}</div>
       <div class="grow"><div class="ell">${esc(a.name)}${a.last4 ? ` <span class="muted">•${esc(a.last4)}</span>` : ''}</div>
-      <div class="muted small ell">${esc(a.bank || '')}${interest ? (a.bank ? ' · ' : '') + interest : ''}</div></div>
+      <div class="muted small ell">${esc(a.bank || '')}${a.balance_source === 'cabinet' ? ' · из кабинета' : ''}${interest ? (a.bank ? ' · ' : '') + interest : ''}</div></div>
       <div class="num ${a.balance < 0 ? 'neg' : ''}">${money(a.balance)}</div></div>`;
   };
   return `<div class="wrap">
@@ -278,9 +303,87 @@ function render() {
   }
   const v = { home: viewHome, txs: viewTxs, accounts: viewAccounts, projects: viewProjects }[S.tab]();
   const tab = (id, label, icon) => `<button class="${S.tab === id ? 'on' : ''}" data-tab="${id}">${icon}<span>${label}</span></button>`;
-  $('#app').innerHTML = v + `<nav class="tabs">${tab('home', 'Обзор', I.home)}${tab('txs', 'Операции', I.list)}
+  $('#app').innerHTML = v + composer() + `<nav class="tabs">${tab('home', 'Обзор', I.home)}${tab('txs', 'Операции', I.list)}
     <button class="add" data-act="new-tx" aria-label="Добавить операцию">${I.plus}</button>
     ${tab('accounts', 'Счета', I.card)}${tab('projects', 'Проекты', I.folder)}</nav>`;
+}
+
+/* ---------- smart input ---------- */
+function composer() {
+  const d = S.draft;
+  return `<div class="composer">
+    ${d.files.length ? `<div class="chips" style="margin-bottom:6px">${d.files.map((f, i) => `<span class="chip">${f.type === 'application/pdf' ? '📄' : '🖼'} ${esc(f.name.slice(0, 18))} <button class="link" data-rmfile="${i}" aria-label="Убрать">✕</button></span>`).join('')}</div>` : ''}
+    <div class="row" style="gap:8px;align-items:flex-end">
+      <label class="cbtn" aria-label="Прикрепить чек">📎<input type="file" id="cfile" accept="image/*,application/pdf" multiple hidden></label>
+      <textarea id="ctext" rows="1" placeholder="Трата, чек или вопрос…" ${S.sending ? 'disabled' : ''}>${esc(d.text)}</textarea>
+      <button class="cbtn send" data-act="send" ${S.sending ? 'disabled' : ''} aria-label="Отправить">${S.sending ? '<span class="spin"></span>' : '↑'}</button>
+    </div>
+  </div>`;
+}
+function autosize(t) { t.style.height = 'auto'; t.style.height = Math.min(t.scrollHeight, 140) + 'px'; }
+
+// iPhone photos (HEIC, 12 MP) -> JPEG up to 2000 px, so uploads stay small and the AI can read them
+async function prepareFile(file) {
+  if (file.type === 'application/pdf') return { blob: file, ext: 'pdf', type: 'application/pdf' };
+  const url = URL.createObjectURL(file);
+  try {
+    const img = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = url; });
+    const k = Math.min(1, 2000 / Math.max(img.naturalWidth, img.naturalHeight));
+    const c = document.createElement('canvas');
+    c.width = Math.round(img.naturalWidth * k); c.height = Math.round(img.naturalHeight * k);
+    c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+    const blob = await new Promise(res => c.toBlob(res, 'image/jpeg', 0.85));
+    return { blob, ext: 'jpg', type: 'image/jpeg' };
+  } finally { URL.revokeObjectURL(url); }
+}
+
+async function sendDraft() {
+  const text = S.draft.text.trim(), files = S.draft.files;
+  if (!text && !files.length) return toast('Напишите сообщение или прикрепите чек');
+  S.sending = true; render();
+  try {
+    const paths = [];
+    for (const f of files) {
+      const { blob, ext, type } = await prepareFile(f);
+      const path = `${today().slice(0, 7)}/${crypto.randomUUID()}.${ext}`;
+      const { error } = await sb.storage.from('fin-receipts').upload(path, blob, { contentType: type });
+      if (error) throw new Error('Не удалось загрузить файл: ' + error.message);
+      paths.push(path);
+    }
+    const { data, error } = await sb.functions.invoke('fin-assistant', { body: { text, files: paths, today: today() } });
+    if (error) {
+      let msg = error.message;
+      try { msg = (await error.context.json()).error || msg; } catch (_) {}
+      throw new Error(msg);
+    }
+    S.draft = { text: '', files: [] };
+    S.sending = false;
+    await reloadAll();
+    resultSheet(data);
+  } catch (e) {
+    S.sending = false; render();
+    toast(e.message || 'Ошибка');
+  }
+}
+
+function resultSheet(r) {
+  const txs = r.transactions || [];
+  openSheet(`<div class="row" style="gap:10px;align-items:flex-start"><div class="ico">🤖</div><div class="grow" style="padding-top:6px">${esc(r.reply)}</div></div>
+    ${txs.length ? `<h2>Записано</h2><div class="card list">${txs.map(txRow).join('')}</div>` : ''}
+    ${(r.balances || []).map(b => `<div class="card small">Остаток «${esc(b.account)}»: <b class="num">${money(b.balance)}</b></div>`).join('')}
+    <button class="btn" type="button" data-ok>Готово</button>
+    ${txs.length ? `<button class="btn danger" type="button" data-undo>Отменить запись</button>` : ''}`, (el, close) => {
+    el.querySelector('[data-ok]').onclick = close;
+    el.querySelectorAll('[data-tx]').forEach(n => n.onclick = () => { close(); txSheet(txs.find(t => t.id === n.dataset.tx)); });
+    const undo = el.querySelector('[data-undo]');
+    if (undo) undo.onclick = async () => {
+      const ids = txs.map(t => t.id);
+      const d = await sb.from('fin_transactions').delete().in('id', ids);
+      if (d.error) return toast('Ошибка: ' + d.error.message);
+      await sb.from('fin_inbox').update({ status: 'undone' }).eq('id', r.inbox_id);
+      close(); toast('Отменено'); reloadAll();
+    };
+  });
 }
 
 /* ---------- auth ---------- */
@@ -338,6 +441,8 @@ function txSheet(tx) {
       <label class="field" id="cat-f"><span>Категория</span><select name="category_id"></select></label>
       <label class="field"><span>Дата</span><input type="date" name="occurred_on" value="${t.occurred_on}" required></label>
       <label class="field"><span>Комментарий</span><input name="note" value="${esc(t.note || '')}" placeholder="необязательно"></label>
+      <label class="field row" id="co-f" style="gap:10px"><input type="checkbox" name="company" ${t.company ? 'checked' : ''} style="width:auto"><span style="font-size:15px;color:var(--text)">Расход компании (передать в кабинет Kaspi)</span></label>
+      ${tx?.receipt_path ? `<button class="btn ghost" type="button" data-receipt>🧾 Показать чек</button>` : ''}
       <button class="btn" type="submit">${tx ? 'Сохранить' : 'Добавить'}</button>
       ${tx ? `<button class="btn danger" type="button" data-del>Удалить</button>` : ''}
     </form>`, (el, close) => {
@@ -348,6 +453,7 @@ function txSheet(tx) {
       el.querySelector('#proj-f').style.display = type === 'transfer' ? 'none' : '';
       el.querySelector('#cat-f').style.display = type === 'transfer' ? 'none' : '';
       el.querySelector('#acc-l').textContent = type === 'transfer' ? 'Со счёта' : 'Счёт';
+      el.querySelector('#co-f').style.display = type === 'transfer' ? 'none' : '';
       const cur = f.category_id.value || t.category_id;
       f.category_id.innerHTML = opts(S.categories.filter(c => c.type === (type === 'income' ? 'income' : 'expense')), cur, '—');
     };
@@ -368,7 +474,13 @@ function txSheet(tx) {
         project_id: type === 'transfer' ? null : f.project_id.value || null,
         category_id: type === 'transfer' ? null : f.category_id.value || null,
         note: f.note.value.trim() || null,
+        company: type !== 'transfer' && f.company.checked,
       };
+      // company rows go to the cabinet; an edit of one already there is sent again so the cabinet updates it
+      const changed = !tx || ['type', 'amount', 'occurred_on', 'account_id', 'note', 'company'].some(k => String(tx[k] ?? '') !== String(row[k] ?? ''));
+      if (row.company && changed) row.cabinet_status = 'pending';
+      if (!row.company && tx?.company && tx.cabinet_status === 'synced') row.cabinet_status = 'pending';
+      if (!row.company && !(tx?.company && tx.cabinet_status === 'synced')) row.cabinet_status = null;
       if (type === 'transfer' && !row.to_account_id) return toast('Выберите счёт получателя');
       const r = tx ? await sb.from('fin_transactions').update(row).eq('id', tx.id) : await sb.from('fin_transactions').insert({ ...row, source: 'app' });
       if (r.error) return toast('Ошибка: ' + r.error.message);
@@ -376,9 +488,15 @@ function txSheet(tx) {
       if (row.occurred_on.slice(0, 7) !== S.month) S.month = row.occurred_on.slice(0, 7);
       reloadAll();
     };
+    const rc = el.querySelector('[data-receipt]');
+    if (rc) rc.onclick = async () => {
+      const { data, error } = await sb.storage.from('fin-receipts').createSignedUrl(tx.receipt_path, 300);
+      if (error) return toast('Не удалось открыть чек');
+      window.open(data.signedUrl, '_blank');
+    };
     const del = el.querySelector('[data-del]');
     if (del) del.onclick = async () => {
-      if (!confirm('Удалить операцию?')) return;
+      if (!confirm(tx.cabinet_status === 'synced' ? 'Операция уже передана в кабинет Kaspi. Удалить здесь? В кабинете её нужно будет убрать отдельно (скажите об этом чату Kaspi).' : 'Удалить операцию?')) return;
       const r = await sb.from('fin_transactions').delete().eq('id', tx.id);
       if (r.error) return toast('Ошибка: ' + r.error.message);
       close(); toast('Удалено'); reloadAll();
@@ -398,7 +516,8 @@ function accSheet(a) {
         <label class="field"><span>Тип</span><select name="kind">${[['card', 'Карта'], ['business', 'Бизнес-счёт'], ['deposit', 'Депозит'], ['cash', 'Наличные'], ['other', 'Другое']].map(([k, l]) => `<option value="${k}" ${acc.kind === k ? 'selected' : ''}>${l}</option>`).join('')}</select></label>
         <label class="field"><span>Банк</span><input name="bank" value="${esc(acc.bank || '')}"></label>
         <label class="field"><span>Последние 4 цифры (необязательно)</span><input name="last4" inputmode="numeric" maxlength="4" pattern="[0-9]{4}" value="${esc(acc.last4 || '')}"></label>
-        ${a ? `<label class="field"><span>Установить текущий остаток, ₸</span><input name="set_balance" inputmode="decimal" placeholder="${Math.round(a.balance)}"></label>`
+        ${a?.balance_source === 'cabinet' ? `<div class="card small muted">Остаток этого счёта берётся из кабинета Kaspi. Меняйте его там.</div>`
+          : a ? `<label class="field"><span>Установить текущий остаток, ₸</span><input name="set_balance" inputmode="decimal" placeholder="${Math.round(a.balance)}"></label>`
             : `<label class="field"><span>Остаток сейчас, ₸</span><input name="opening_balance" inputmode="decimal" value="0"></label>`}
         <label class="field"><span>Ставка депозита, % годовых</span><input name="interest_rate" inputmode="decimal" value="${acc.interest_rate ?? ''}"></label>
         <label class="field"><span>Заметка</span><input name="note" value="${esc(acc.note || '')}"></label>
@@ -412,7 +531,7 @@ function accSheet(a) {
           interest_rate: f.interest_rate.value ? parseAmount(f.interest_rate.value) : null, note: f.note.value.trim() || null };
         let r;
         if (a) {
-          if (f.set_balance.value.trim() !== '') {
+          if (f.set_balance && f.set_balance.value.trim() !== '') {
             // Новый остаток на сегодня: стартовая точка переносится на сегодня, старые операции остаются в истории.
             const target = parseAmount(f.set_balance.value);
             const { data: todays } = await sb.from('fin_transactions').select('type,amount,account_id,to_account_id').eq('occurred_on', today()).or(`account_id.eq.${a.id},to_account_id.eq.${a.id}`);
@@ -503,6 +622,8 @@ function budSheet(b) {
 
 /* ---------- events ---------- */
 document.addEventListener('click', async e => {
+  const rm = e.target.closest('[data-rmfile]');
+  if (rm) { S.draft.files.splice(+rm.dataset.rmfile, 1); render(); return; }
   const el = e.target.closest('[data-tab],[data-act],[data-tx],[data-acc],[data-proj],[data-bud],[data-fp],[data-go],[data-auth]');
   if (!el || el.closest('.sheet')) return;
   const d = el.dataset;
@@ -518,13 +639,24 @@ document.addEventListener('click', async e => {
     case 'prev': S.month = shiftMonth(S.month, -1); await loadMonth().catch(() => {}); return render();
     case 'next': S.month = shiftMonth(S.month, 1); await loadMonth().catch(() => {}); return render();
     case 'new-tx': return txSheet(null);
+    case 'send': return sendDraft();
     case 'new-acc': return accSheet(null);
     case 'new-proj': return projSheet(null);
     case 'new-bud': return budSheet(null);
     case 'logout': await sb.auth.signOut(); return;
   }
 });
-document.addEventListener('visibilitychange', () => { if (!document.hidden && S.owner) reloadAll(); });
+document.addEventListener('input', e => {
+  if (e.target.id === 'ctext') { S.draft.text = e.target.value; autosize(e.target); }
+});
+document.addEventListener('change', e => {
+  if (e.target.id === 'cfile') { S.draft.files.push(...e.target.files); render(); }
+});
+document.addEventListener('keydown', e => {
+  // Enter sends on a computer; on iPhone Enter is a new line
+  if (e.target.id === 'ctext' && e.key === 'Enter' && !e.shiftKey && !('ontouchstart' in window)) { e.preventDefault(); sendDraft(); }
+});
+document.addEventListener('visibilitychange', () => { if (!document.hidden && S.owner && !S.sending) reloadAll(); });
 
 sb.auth.onAuthStateChange((event, session) => {
   if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN' || event === 'SIGNED_OUT') {

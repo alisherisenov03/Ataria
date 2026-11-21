@@ -1,5 +1,5 @@
 // Офлайн-оболочка: файлы приложения берутся из сети, а при её отсутствии из кэша. Данные Supabase не кэшируются.
-const CACHE = 'fin-v1';
+const CACHE = 'fin-v2';
 const SHELL = ['./', 'index.html', 'app.js', 'styles.css', 'icon.svg', 'icon-180.png', 'manifest.webmanifest'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL))); self.skipWaiting(); });
 self.addEventListener('activate', e => {
