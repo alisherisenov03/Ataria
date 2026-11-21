@@ -6,6 +6,8 @@ const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
   auth: { persistSession: true, autoRefreshToken: true, storageKey: 'fin-auth' },
 });
 
+const APP_VERSION = '3'; // bump together with version.json on every release
+
 const S = {
   session: null, owner: false, tab: 'home', month: ym(new Date()),
   accounts: [], projects: [], categories: [], budgets: [], txs: [], kaspi: [],
@@ -129,6 +131,21 @@ function monthNav() {
   return `<div class="monthnav"><button data-act="prev" aria-label="Предыдущий месяц">‹</button><span>${monthName(S.month)}</span><button data-act="next" aria-label="Следующий месяц">›</button></div>`;
 }
 
+// Business money vs Kaspi: sales from the order sync against the cabinet's revenue, plus money still on its way from Kaspi
+function kaspiCheck(c) {
+  const p = c.pnl_month;
+  const fromOrders = S.kaspi.filter(k => k.month === S.month).reduce((s, k) => s + +k.revenue, 0);
+  const inCabinet = p && p.month === S.month ? +p.to_date?.['Выручка'] || 0 : null;
+  if (!fromOrders && inCabinet == null && !c.kaspi_intransit) return '';
+  const diff = inCabinet != null ? fromOrders - inCabinet : 0;
+  const ok = inCabinet == null || Math.abs(diff) <= Math.max(1000, fromOrders * 0.01);
+  return `<div class="muted small" style="margin-top:10px">Сверка с Kaspi</div>
+    <div class="row between small" style="margin-top:3px"><span>Продажи по заказам Kaspi</span><span class="num">${money(fromOrders)}</span></div>
+    ${inCabinet != null ? `<div class="row between small"><span>Выручка в кабинете</span><span class="num">${money(inCabinet)}</span></div>
+    <div class="row between small ${ok ? 'pos' : 'warn'}"><span>${ok ? '✓ сходится' : 'Расхождение'}</span><span class="num">${ok ? '' : money(diff, true)}</span></div>` : ''}
+    ${c.kaspi_intransit ? `<div class="row between small"><span>В пути от Kaspi (${c.kaspi_intransit_orders} зак.)</span><span class="num">${money(c.kaspi_intransit)}</span></div>` : ''}`;
+}
+
 function companyCard() {
   const c = S.company;
   if (!c) return '';
@@ -143,6 +160,7 @@ function companyCard() {
       ${p ? `<div class="row between" style="margin-top:6px"><span>Чистая прибыль, ${esc(MONTHS[+p.month.slice(5) - 1].toLowerCase())}</span><b class="num ${p.net_to_date >= 0 ? 'pos' : 'neg'}">${money(p.net_to_date, true)}</b></div>
       <div class="row between muted small"><span>прогноз на месяц</span><span class="num">${money(p.net_forecast, true)}</span></div>` : ''}
       ${up.length ? `<div class="muted small" style="margin-top:10px">Ближайшие платежи</div>${up.map(x => `<div class="row between small" style="margin-top:3px"><span class="ell">${dayLabel(x.date)} · ${esc(x.name)}</span><span class="num">${money(x.amount)}</span></div>`).join('')}` : ''}
+      ${kaspiCheck(c)}
       <div class="muted small" style="margin-top:8px">Данные кабинета на ${esc(c.asof || '')}.${pending ? ` Ждут передачи в кабинет: ${pending}.` : ''}</div>
     </div>`;
 }
@@ -168,6 +186,7 @@ function viewHome() {
 
   return `<div class="wrap">
     <div class="row between"><h1>Финансы</h1>${monthNav()}</div>
+    ${composer(true)}
     <div class="card">
       <div class="muted small">Всего на счетах</div>
       <div class="big num">${money(total)}</div>
@@ -303,19 +322,20 @@ function render() {
   }
   const v = { home: viewHome, txs: viewTxs, accounts: viewAccounts, projects: viewProjects }[S.tab]();
   const tab = (id, label, icon) => `<button class="${S.tab === id ? 'on' : ''}" data-tab="${id}">${icon}<span>${label}</span></button>`;
-  $('#app').innerHTML = v + composer() + `<nav class="tabs">${tab('home', 'Обзор', I.home)}${tab('txs', 'Операции', I.list)}
+  $('#app').innerHTML = v + (S.tab === 'home' ? '' : composer()) + `<nav class="tabs">${tab('home', 'Обзор', I.home)}${tab('txs', 'Операции', I.list)}
     <button class="add" data-act="new-tx" aria-label="Добавить операцию">${I.plus}</button>
     ${tab('accounts', 'Счета', I.card)}${tab('projects', 'Проекты', I.folder)}</nav>`;
 }
 
 /* ---------- smart input ---------- */
-function composer() {
+function composer(inline) {
   const d = S.draft;
-  return `<div class="composer">
+  return `<div class="composer${inline ? ' inline card' : ''}">
+    ${inline ? '<div class="row between" style="margin-bottom:8px"><b>Записать или спросить</b><span class="muted small">текст, голос или чек</span></div>' : ''}
     ${d.files.length ? `<div class="chips" style="margin-bottom:6px">${d.files.map((f, i) => `<span class="chip">${f.type === 'application/pdf' ? '📄' : '🖼'} ${esc(f.name.slice(0, 18))} <button class="link" data-rmfile="${i}" aria-label="Убрать">✕</button></span>`).join('')}</div>` : ''}
     <div class="row" style="gap:8px;align-items:flex-end">
       <label class="cbtn" aria-label="Прикрепить чек">📎<input type="file" id="cfile" accept="image/*,application/pdf" multiple hidden></label>
-      <textarea id="ctext" rows="1" placeholder="Трата, чек или вопрос…" ${S.sending ? 'disabled' : ''}>${esc(d.text)}</textarea>
+      <textarea id="ctext" rows="1" placeholder="${inline ? 'Например: такси 3500 налом' : 'Трата, чек или вопрос…'}" ${S.sending ? 'disabled' : ''}>${esc(d.text)}</textarea>
       <button class="cbtn send" data-act="send" ${S.sending ? 'disabled' : ''} aria-label="Отправить">${S.sending ? '<span class="spin"></span>' : '↑'}</button>
     </div>
   </div>`;
@@ -663,4 +683,27 @@ sb.auth.onAuthStateChange((event, session) => {
     if ((session?.user?.id || null) !== (S.session?.user?.id || null) || event === 'INITIAL_SESSION') setTimeout(() => onSession(session), 0);
   } else if (session) S.session = session;
 });
-if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
+// Auto-update: the home-screen app checks for a new release on start, every minute and on return,
+// and reloads itself, so the user never has to reinstall it.
+async function checkUpdate() {
+  if (S.sending || document.querySelector('.sheet-bg')) return; // never interrupt typing or an open form
+  try {
+    const r = await fetch('version.json?t=' + Date.now(), { cache: 'no-store' });
+    const { v } = await r.json();
+    if (v && v !== APP_VERSION) {
+      // one reload per release: if a cache still serves the old file, don't loop
+      let tried = null; try { tried = sessionStorage.getItem('fin-reload'); } catch (_) {}
+      if (tried === v) return;
+      try { sessionStorage.setItem('fin-reload', v); } catch (_) {}
+      const reg = await navigator.serviceWorker?.getRegistration();
+      await reg?.update().catch(() => {});
+      location.reload();
+    }
+  } catch (_) {}
+}
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).catch(() => {});
+}
+checkUpdate();
+setInterval(checkUpdate, 60000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) checkUpdate(); });

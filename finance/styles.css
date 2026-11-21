@@ -89,3 +89,6 @@ nav.tabs .add svg { width: 26px; height: 26px; }
 .cbtn:disabled { opacity: .6; }
 .spin { width: 18px; height: 18px; border: 2.5px solid rgba(255,255,255,.4); border-top-color: #fff; border-radius: 50%; animation: sp .8s linear infinite; }
 @keyframes sp { to { transform: rotate(360deg); } }
+
+.composer.inline { position: static; background: var(--card); backdrop-filter: none; -webkit-backdrop-filter: none; padding: 14px 14px 12px; margin-bottom: 10px; }
+.composer.inline textarea { background: var(--bg); min-height: 64px; border-radius: 14px; }
