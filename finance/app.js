@@ -6,7 +6,7 @@ const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
   auth: { persistSession: true, autoRefreshToken: true, storageKey: 'fin-auth' },
 });
 
-const APP_VERSION = '4'; // bump together with version.json on every release
+const APP_VERSION = '5'; // bump together with version.json on every release
 
 const S = {
   session: null, owner: false, tab: 'home', month: ym(new Date()),
@@ -422,6 +422,9 @@ function viewAccounts() {
     <button class="btn ghost" data-act="new-acc">+ Добавить счёт</button>
     ${archived.length ? `<h2>Архив</h2><div class="card list">${archived.map(row).join('')}</div>` : ''}
     <div class="muted small" style="margin:12px 4px">Чтобы баланс был точным, откройте счёт и укажите текущий остаток на сегодня. Дальше он будет меняться от операций.</div>
+    <h2>Быстрая запись с iPhone</h2>
+    <div class="card"><div class="row" style="gap:12px"><div class="ico">⚡️</div><div class="grow small">Оплата Apple Pay записывается сама, а чек из Kaspi отправляется в одно касание через «Поделиться».</div></div>
+      <button class="btn" data-act="shortcuts">Настроить</button></div>
   </div>`;
 }
 
@@ -544,6 +547,50 @@ function resultSheet(r) {
       close(); toast('Отменено'); reloadAll();
     };
   });
+}
+
+/* ---------- iPhone Shortcuts ---------- */
+const CAPTURE_URL = SUPABASE_URL + '/functions/v1/fin-assistant?reply=text';
+function shortcutsSheet() {
+  const copyBtn = (id, label) => `<button class="btn ghost" type="button" data-copy="${id}">${label}</button>`;
+  openSheet(`<h1 style="font-size:22px">Быстрая запись с iPhone</h1>
+    <div class="card small">Шаг 1. Получите ключ. Он нужен «Быстрым командам», чтобы писать в ваши финансы. Новый ключ отключает старый.</div>
+    <div id="keybox"><button class="btn" type="button" data-newkey>Получить ключ</button></div>
+    <div class="card small"><b>Адрес</b><div class="mono" id="cap-url">${esc(CAPTURE_URL)}</div></div>
+    ${copyBtn('cap-url', 'Скопировать адрес')}
+    <h2>⚡️ Оплата Apple Pay → сама в приложение</h2>
+    <div class="card small steps">
+      <p>Команды → вкладка «Автоматизация» → «+» → <b>Транзакция</b>. Карта: Kaspi Gold. Выберите «Выполнять сразу».</p>
+      <p>Новая пустая команда, действие <b>«Текст»</b>: <i>Оплата Apple Pay: [Продавец], [Сумма], карта [Карта]</i> (переменные из «Ввода быстрой команды»).</p>
+      <p>Действие <b>«Получить содержимое URL»</b>: адрес выше, метод POST, заголовки: <i>x-fin-token</i> = ваш ключ, тело запроса JSON: поле <i>text</i> = Текст.</p>
+      <p>Действие <b>«Показать уведомление»</b> с результатом — увидите, что записалось.</p>
+    </div>
+    <h2>🧾 Чек из Kaspi → «Поделиться» → Финансы</h2>
+    <div class="card small steps">
+      <p>Новая команда «В Финансы». В настройках (ⓘ) включите <b>«Показывать в меню Поделиться»</b>, типы: изображения и PDF.</p>
+      <p>Если пришло фото: действие <b>«Конвертировать изображение»</b> в JPEG.</p>
+      <p>Действие <b>«Получить содержимое URL»</b>: тот же адрес и заголовок, тело запроса «Форма»: поле <i>file</i> (тип Файл) = Ввод быстрой команды.</p>
+      <p>Действие <b>«Показать уведомление»</b> с результатом.</p>
+      <p>Теперь в Kaspi: операция → «Поделиться чеком» → «В Финансы». Или скриншот → «Поделиться» → «В Финансы».</p>
+    </div>
+    <h2>🎙 Голосом через Siri</h2>
+    <div class="card small steps"><p>Команда «Записать трату»: <b>«Диктовать текст»</b> → «Получить содержимое URL» (JSON, поле <i>text</i>) → «Показать уведомление». Скажите: «Привет, Siri, записать трату», потом «такси 3500 налом».</p></div>
+    <button class="btn ghost" type="button" data-ok>Готово</button>`, (el, close) => {
+    el.querySelector('[data-ok]').onclick = close;
+    el.querySelectorAll('[data-copy]').forEach(b => b.onclick = () => copyText(el.querySelector('#' + b.dataset.copy).textContent));
+    el.querySelector('[data-newkey]').onclick = async () => {
+      if (!confirm('Создать новый ключ? Старый перестанет работать, его нужно будет заменить в командах.')) return;
+      const { data, error } = await sb.rpc('fin_new_device_token');
+      if (error) return toast('Ошибка: ' + error.message);
+      el.querySelector('#keybox').innerHTML = `<div class="card small"><b>Ваш ключ</b> (виден только сейчас, сохраните его в команде)<div class="mono" id="dev-key">${esc(data)}</div></div>
+        <button class="btn" type="button" data-copy="dev-key">Скопировать ключ</button>`;
+      el.querySelector('[data-copy="dev-key"]').onclick = () => copyText(data);
+    };
+  });
+}
+async function copyText(t) {
+  try { await navigator.clipboard.writeText(t); toast('Скопировано'); }
+  catch (_) { prompt('Скопируйте:', t); }
 }
 
 /* ---------- auth ---------- */
@@ -805,6 +852,7 @@ document.addEventListener('click', async e => {
     case 'new-tx': return txSheet(null);
     case 'send': return sendDraft();
     case 'details': S.details = !S.details; return render();
+    case 'shortcuts': return shortcutsSheet();
     case 'new-acc': return accSheet(null);
     case 'new-proj': return projSheet(null);
     case 'new-bud': return budSheet(null);

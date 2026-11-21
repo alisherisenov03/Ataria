@@ -121,3 +121,6 @@ nav.tabs .add svg { width: 26px; height: 26px; }
 .m-track i { display: block; height: 100%; border-radius: 4px; background: var(--s1); }
 .meter.warn .m-track i { background: var(--warn); } .meter.neg .m-track i { background: var(--neg); }
 .tip-pop { position: absolute; z-index: 40; background: var(--text); color: var(--bg); font-size: 13px; padding: 6px 10px; border-radius: 8px; pointer-events: none; white-space: nowrap; }
+
+.mono { font: 13px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; word-break: break-all; margin-top: 4px; user-select: all; }
+.steps p { margin: 0 0 8px; } .steps p:last-child { margin-bottom: 0; }
