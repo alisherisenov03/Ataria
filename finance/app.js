@@ -6,13 +6,13 @@ const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
   auth: { persistSession: true, autoRefreshToken: true, storageKey: 'fin-auth' },
 });
 
-const APP_VERSION = '3'; // bump together with version.json on every release
+const APP_VERSION = '4'; // bump together with version.json on every release
 
 const S = {
   session: null, owner: false, tab: 'home', month: ym(new Date()),
   accounts: [], projects: [], categories: [], budgets: [], txs: [], kaspi: [],
   filterProject: null, loading: false, company: null,
-  draft: { text: '', files: [] }, sending: false,
+  draft: { text: '', files: [] }, sending: false, mode: (() => { try { return localStorage.getItem('fin-mode') || 'personal'; } catch (_) { return 'personal'; } })(), details: false,
 };
 
 /* ---------- helpers ---------- */
@@ -165,7 +165,7 @@ function companyCard() {
     </div>`;
 }
 
-function viewHome() {
+function homeDetails() {
   const active = S.accounts.filter(a => !a.archived);
   const total = active.reduce((s, a) => s + +a.balance, 0);
   const m = monthTotals(S.txs);
@@ -184,9 +184,7 @@ function viewHome() {
 
   const alerts = S.budgets.map(b => ({ b, ...budgetUsage(b) })).filter(x => x.pct >= 0.8).sort((a, b) => b.pct - a.pct);
 
-  return `<div class="wrap">
-    <div class="row between"><h1>Финансы</h1>${monthNav()}</div>
-    ${composer(true)}
+  return `<div>
     <div class="card">
       <div class="muted small">Всего на счетах</div>
       <div class="big num">${money(total)}</div>
@@ -230,6 +228,148 @@ function viewHome() {
 
     <div class="muted small" style="margin:6px 4px">${pnl ? 'Прибыль бизнеса — чистая прибыль с начала месяца из кабинета Kaspi.' : '* Прибыль бизнеса = продажи Kaspi − комиссия − себестоимость проданного + прочие доходы − расходы бизнес-проектов (кроме закупа товара: он учтён через себестоимость).'}</div>
   </div>`;
+}
+
+/* ---------- visual home ---------- */
+// categorical slots (validated reference palette); text never wears these colors
+const SERIES = ['var(--s1)', 'var(--s2)', 'var(--s3)', 'var(--s4)', 'var(--s5)', 'var(--s6)'];
+function compact(v) {
+  const n = Math.abs(Math.round(+v || 0)), sign = v < 0 ? '−' : '';
+  if (n >= 1e6) return sign + (n / 1e6).toLocaleString('ru-RU', { maximumFractionDigits: n >= 1e7 ? 0 : 1 }) + ' млн ₸';
+  if (n >= 1e3) return sign + Math.round(n / 1e3).toLocaleString('ru-RU') + ' тыс ₸';
+  return sign + n + ' ₸';
+}
+// one whole split into <= 6 parts: tall segmented bar + legend, tap a block for its amount
+function segBar(parts, total) {
+  parts = parts.filter(p => p.v > 0);
+  if (!parts.length) return '';
+  total = total || parts.reduce((s, p) => s + p.v, 0);
+  return `<div class="seg-bar" role="img" aria-label="${esc(parts.map(p => `${p.name}: ${compact(p.v)}`).join(', '))}">${parts.map((p, i) => {
+    const pct = p.v / total * 100;
+    const ink = p.color ? (p.color === 'var(--other)' ? '#0b0b0b' : '#fff') : ['#fff', '#fff', '#0b0b0b', '#0b0b0b', '#0b0b0b', '#fff'][i];
+    return `<i style="flex:${p.v};background:${p.color || SERIES[i]};color:${ink}" data-tip="${esc(p.name)} · ${compact(p.v)} · ${Math.round(pct)}%">${pct >= 12 ? Math.round(pct) + '%' : ''}</i>`;
+  }).join('')}</div>
+  <div class="legend">${parts.map((p, i) => `<span><i style="background:${p.color || SERIES[i]}"></i>${p.icon ? p.icon + ' ' : ''}${esc(p.name)}</span>`).join('')}</div>`;
+}
+// ranked horizontal bars, one hue
+function rankBars(rows) {
+  const max = Math.max(...rows.map(r => r.v), 1);
+  return rows.map(r => `<div class="rb" data-tip="${esc(r.name)} · ${compact(r.v)}"><div class="row between small"><span>${r.icon || ''} ${esc(r.name)}</span><span class="muted">${compact(r.v)}</span></div>
+    <div class="rb-track"><i style="width:${Math.max(2, r.v / max * 100)}%"></i></div></div>`).join('');
+}
+// columns over time, one series, the current one in the accent
+function columns(items, label) {
+  const max = Math.max(...items.map(x => x.v), 1);
+  return `<div class="cols" role="img" aria-label="${esc(label)}">${items.map(x => `<div class="col" data-tip="${esc(x.tip)}"><i class="${x.on ? 'on' : ''}" style="height:${x.v > 0 ? Math.max(3, x.v / max * 100) : 0}%"></i><span>${esc(x.label)}</span></div>`).join('')}</div>`;
+}
+function meter(label, used, limit) {
+  const pct = limit > 0 ? used / limit : 0;
+  const tone = pct >= 1 ? 'neg' : pct >= 0.8 ? 'warn' : 'ok';
+  return `<div class="meter ${tone}" data-tip="${esc(label)}: ${compact(used)} из ${compact(limit)}"><div class="row between small"><span>${esc(label)}</span><span class="muted">${Math.round(pct * 100)}%</span></div><div class="m-track"><i style="width:${Math.min(100, pct * 100)}%"></i></div></div>`;
+}
+
+function personalVisual() {
+  const accs = S.accounts.filter(a => !a.archived && a.balance_source !== 'cabinet');
+  const total = accs.reduce((s, a) => s + Math.max(0, +a.balance), 0);
+  const mine = S.txs.filter(t => !t.company);
+  const spent = mine.filter(t => t.type === 'expense').reduce((s, t) => s + +t.amount, 0);
+  const got = mine.filter(t => t.type === 'income').reduce((s, t) => s + +t.amount, 0);
+
+  const cats = {};
+  for (const t of mine) if (t.type === 'expense') cats[t.category_id || '-'] = (cats[t.category_id || '-'] || 0) + +t.amount;
+  let parts = Object.entries(cats).sort((a, b) => b[1] - a[1]).map(([id, v]) => { const c = byId(S.categories, id); return { name: c?.name || 'Без категории', icon: c?.icon, v }; });
+  if (parts.length > 6) parts = [...parts.slice(0, 5), { name: 'Остальное', v: parts.slice(5).reduce((s, p) => s + p.v, 0), color: 'var(--other)' }];
+
+  const [y, mo] = S.month.split('-').map(Number), days = new Date(y, mo, 0).getDate();
+  const byDay = Array(days).fill(0);
+  for (const t of mine) if (t.type === 'expense') byDay[+t.occurred_on.slice(8) - 1] += +t.amount;
+  const todayN = S.month === ym(new Date()) ? new Date().getDate() : 0;
+
+  const budgets = S.budgets.map(b => ({ b, ...budgetUsage(b) })).sort((a, b) => b.pct - a.pct).slice(0, 3);
+  const mood = !spent ? '🌱' : got && spent > got ? '🔥' : '🙂';
+
+  return `
+    <div class="card hero">
+      <div class="muted small">Ваши деньги сейчас</div>
+      <div class="hero-v">${compact(total)}</div>
+      ${segBar(accs.map(a => ({ name: a.name, icon: ACC_ICON[a.kind], v: Math.max(0, +a.balance) })), total)}
+    </div>
+    <div class="grid2">
+      <div class="card tile"><div class="t-ico">💸</div><div class="muted small">Потрачено</div><div class="t-v">${compact(spent)}</div></div>
+      <div class="card tile"><div class="t-ico">${mood}</div><div class="muted small">Пришло</div><div class="t-v">${compact(got)}</div></div>
+    </div>
+    <div class="card"><b>Куда уходят деньги</b>${parts.length ? segBar(parts) : '<div class="muted small" style="margin-top:8px">В этом месяце трат пока нет.</div>'}</div>
+    <div class="card"><b>Траты по дням</b>${columns(byDay.map((v, i) => ({ v, label: (i + 1) % 5 === 0 || i === 0 ? String(i + 1) : '', on: i + 1 === todayN, tip: `${i + 1} ${['янв','фев','мар','апр','мая','июн','июл','авг','сен','окт','ноя','дек'][mo - 1]} · ${compact(v)}` })), 'Траты по дням месяца')}</div>
+    ${budgets.length ? `<div class="card"><b>Лимиты</b>${budgets.map(x => meter(budgetName(x.b), x.spent, x.b.monthly_limit)).join('')}</div>` : ''}`;
+}
+
+function businessVisual() {
+  const c = S.company;
+  const pnl = c?.pnl_month?.month === S.month ? c.pnl_month : null;
+  const ks = S.kaspi.filter(k => k.month === S.month);
+  const name = { combines: ['Комбайны', '🍳'], pillows: ['Подушки', '🛏'], choppers: ['Измельчители', '🔪'], business: ['Другое', '📦'] };
+  const products = ks.map(k => ({ name: name[k.project_slug]?.[0] || k.project_slug, icon: name[k.project_slug]?.[1], v: +k.revenue })).sort((a, b) => b.v - a.v);
+
+  let split = '';
+  if (pnl) {
+    const td = pnl.to_date || {}, rev = +td['Выручка'] || 0;
+    const g = (keys) => keys.reduce((s, k) => s + Math.max(0, -(+td[k] || 0)), 0);
+    const parts = [
+      { name: 'Товар и карго', v: g(['Товар: закуп и карго']) },
+      { name: 'Реклама', v: g(['Реклама Kaspi', 'Реклама вне Kaspi']) },
+      { name: 'Комиссия и доставка Kaspi', v: g(['Комиссия Kaspi', 'Доставка Kaspi']) },
+      { name: 'Налог, склад, прочее', v: Object.keys(td).filter(k => !['Выручка', 'Товар: закуп и карго', 'Реклама Kaspi', 'Реклама вне Kaspi', 'Комиссия Kaspi', 'Доставка Kaspi'].includes(k)).reduce((s, k) => s + Math.max(0, -(+td[k] || 0)), 0) },
+      { name: 'Прибыль', v: Math.max(0, pnl.net_to_date), color: 'var(--good)' },
+    ];
+    split = `<div class="card"><b>Куда уходит выручка</b><div class="muted small">из ${compact(rev)} продаж за месяц</div>${segBar(parts, rev)}</div>`;
+  }
+
+  const months = [];
+  for (let i = 5; i >= 0; i--) {
+    const m = shiftMonth(ym(new Date()), -i);
+    const v = S.kaspi.filter(k => k.month === m).reduce((s, k) => s + +k.revenue, 0);
+    months.push({ v, label: MONTHS[+m.slice(5) - 1].slice(0, 3).toLowerCase(), on: m === S.month, tip: `${monthName(m)} · ${compact(v)}` });
+  }
+  const next = (c?.upcoming || [])[0];
+
+  return `
+    <div class="card hero">
+      <div class="muted small">Прибыль бизнеса, ${MONTHS[+S.month.slice(5) - 1].toLowerCase()}</div>
+      <div class="hero-v ${pnl && pnl.net_to_date < 0 ? 'neg' : ''}">${pnl ? (pnl.net_to_date >= 0 ? '+' : '') + compact(pnl.net_to_date) : '—'}</div>
+      ${pnl ? `<div class="muted small">к концу месяца ожидается ${compact(pnl.net_forecast)}</div>` : '<div class="muted small">Кабинет Kaspi ещё не прислал данные за этот месяц</div>'}
+    </div>
+    ${c ? `<div class="grid2">
+      <div class="card tile"><div class="t-ico">🏦</div><div class="muted small">Деньги компании</div><div class="t-v">${compact(c.cash)}</div></div>
+      <div class="card tile"><div class="t-ico">🤝</div><div class="muted small">Компания должна вам</div><div class="t-v">${compact(c.owner_debt)}</div></div>
+    </div>` : ''}
+    ${split}
+    ${products.length ? `<div class="card"><b>Продажи по товарам</b>${rankBars(products)}</div>` : ''}
+    <div class="card"><b>Продажи Kaspi по месяцам</b>${columns(months, 'Продажи Kaspi за 6 месяцев')}</div>
+    ${next ? `<div class="card row" style="gap:12px"><div class="ico">📅</div><div class="grow"><div class="small muted">Ближайший платёж · ${dayLabel(next.date)}</div><div class="ell">${esc(next.name)}</div></div><b>${compact(next.amount)}</b></div>` : ''}`;
+}
+
+function viewHome() {
+  const seg = (id, l) => `<button type="button" data-mode="${id}" class="${S.mode === id ? 'on' : ''}">${l}</button>`;
+  return `<div class="wrap">
+    <div class="row between"><h1>Финансы</h1>${monthNav()}</div>
+    ${composer(true)}
+    <div class="seg" style="margin-bottom:10px">${seg('personal', '👤 Личное')}${seg('business', '💼 Бизнес')}</div>
+    ${S.mode === 'business' ? businessVisual() : personalVisual()}
+    <button class="btn ghost" data-act="details">${S.details ? 'Скрыть детали ▲' : 'Подробнее: все цифры ▼'}</button>
+    ${S.details ? `<div style="margin-top:12px">${homeDetails()}</div>` : ''}
+  </div>`;
+}
+
+// tap/hover a mark to see its name and amount
+let tipEl = null;
+function showTip(el) {
+  tipEl?.remove();
+  tipEl = document.createElement('div'); tipEl.className = 'tip-pop'; tipEl.textContent = el.dataset.tip;
+  document.body.appendChild(tipEl);
+  const r = el.getBoundingClientRect(), w = tipEl.offsetWidth;
+  tipEl.style.left = Math.max(8, Math.min(innerWidth - w - 8, r.left + r.width / 2 - w / 2)) + 'px';
+  tipEl.style.top = (r.top + scrollY - tipEl.offsetHeight - 6) + 'px';
+  clearTimeout(showTip.t); showTip.t = setTimeout(() => tipEl?.remove(), 2500);
 }
 
 function txRow(t) {
@@ -642,6 +782,10 @@ function budSheet(b) {
 
 /* ---------- events ---------- */
 document.addEventListener('click', async e => {
+  const tipT = e.target.closest('[data-tip]');
+  if (tipT) showTip(tipT);
+  const md = e.target.closest('[data-mode]');
+  if (md) { S.mode = md.dataset.mode; try { localStorage.setItem('fin-mode', S.mode); } catch (_) {} render(); return; }
   const rm = e.target.closest('[data-rmfile]');
   if (rm) { S.draft.files.splice(+rm.dataset.rmfile, 1); render(); return; }
   const el = e.target.closest('[data-tab],[data-act],[data-tx],[data-acc],[data-proj],[data-bud],[data-fp],[data-go],[data-auth]');
@@ -660,6 +804,7 @@ document.addEventListener('click', async e => {
     case 'next': S.month = shiftMonth(S.month, 1); await loadMonth().catch(() => {}); return render();
     case 'new-tx': return txSheet(null);
     case 'send': return sendDraft();
+    case 'details': S.details = !S.details; return render();
     case 'new-acc': return accSheet(null);
     case 'new-proj': return projSheet(null);
     case 'new-bud': return budSheet(null);
