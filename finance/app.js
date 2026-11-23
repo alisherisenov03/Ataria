@@ -6,13 +6,13 @@ const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
   auth: { persistSession: true, autoRefreshToken: true, storageKey: 'fin-auth' },
 });
 
-const APP_VERSION = '5'; // bump together with version.json on every release
+const APP_VERSION = '6'; // bump together with version.json on every release
 
 const S = {
   session: null, owner: false, tab: 'home', month: ym(new Date()),
   accounts: [], projects: [], categories: [], budgets: [], txs: [], kaspi: [],
   filterProject: null, loading: false, company: null,
-  draft: { text: '', files: [] }, sending: false, mode: (() => { try { return localStorage.getItem('fin-mode') || 'personal'; } catch (_) { return 'personal'; } })(), details: false,
+  draft: { text: '', files: [] }, sending: false, mode: 'personal', // the app always opens on personal money; Business is one tap away details: false,
 };
 
 /* ---------- helpers ---------- */
@@ -832,7 +832,7 @@ document.addEventListener('click', async e => {
   const tipT = e.target.closest('[data-tip]');
   if (tipT) showTip(tipT);
   const md = e.target.closest('[data-mode]');
-  if (md) { S.mode = md.dataset.mode; try { localStorage.setItem('fin-mode', S.mode); } catch (_) {} render(); return; }
+  if (md) { S.mode = md.dataset.mode; render(); return; }
   const rm = e.target.closest('[data-rmfile]');
   if (rm) { S.draft.files.splice(+rm.dataset.rmfile, 1); render(); return; }
   const el = e.target.closest('[data-tab],[data-act],[data-tx],[data-acc],[data-proj],[data-bud],[data-fp],[data-go],[data-auth]');
