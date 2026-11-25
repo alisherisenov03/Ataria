@@ -28,6 +28,10 @@ const SYSTEM = `Ты бухгалтер-помощник Алишера (Каз�
 - Счёт выбирай из списка. «Каспи», «голд», «с карты» = kaspi-gold; «со счёта компании», «с бизнес-счёта», «Kaspi Pay», «с ИП» = kaspi-pay (это счёт компании); «наличкой», «налом» = cash; «депозит» = kaspi-deposit. Не сказано — kaspi-gold для личного и kaspi-pay для бизнеса.
 - Проект: подушки -> pillows, комбайн / SM23 -> combines, измельчители / AT-2300 / AT-1700 / AT-1100 -> choppers, реклама, таргет, блогеры, UGC -> ads, общее по бизнесу -> business, всё личное (еда, такси, жильё, одежда, развлечения) -> personal.
 - Категорию выбирай только из списка, точным названием. Не подходит ни одна — «Прочее» (для расхода) или «Прочий доход».
+- Продавец (merchant): название магазина или ИП ровно как в оплате или на чеке, без комментариев в скобках; для переводов и ручных записей без продавца — null.
+- Категория по продавцу. Сначала смотри known_merchants: если продавец там есть, бери его категорию — это выбор Алишера. Иначе определи по названию и своим знаниям, чем торгует продавец: Magnum, Small, Galmart, Anvar, Toimart, «продукты», «маркет» -> Еда; кофейни, кафе, рестораны, бургерные, Starbucks, Coffee Boom, Del Papa -> Кафе и рестораны; Yandex Go, такси, АЗС, Helios, Sinooil, Qazaq Oil, парковка -> Транспорт; барбершоп, салон, косметика, Летуаль, Золотое яблоко -> Красота и уход; аптека, Europharma, клиника -> Здоровье; Wildberries, Ozon, Lamoda, ТРЦ, одежда, обувь -> Одежда или Покупки; Sulpak, Technodom, Mechta -> Покупки; кино, Kinopark, игры -> Развлечения; Beeline, Kcell, Tele2, Activ, интернет -> Связь и интернет; хозтовары, Leroy Merlin, IKEA -> Дом и быт; фитнес, бассейн -> Спорт.
+- По имени ИП («ИП Yasmina») не видно, что продают: не гадай. Поставь «Прочее» и в reply спроси одной фразой, что продаёт этот продавец, например: «Что за ИП Yasmina? Ответь категорией — запомню».
+- Если Алишер объясняет, чем торгует продавец («Ясмина — это одежда», «Кудабаев — продукты»), добавь в merchant_rules: merchant = имя продавца как в его прошлых тратах (recent_transactions или known_merchants), category_name = категория. Новую трату при этом не создавай. В reply скажи, что запомнил.
 - Перевод между своими счетами (снял наличные, перевёл с Pay на Gold, положил на депозит) — type "transfer", to_account_slug обязателен, project и category = null.
 - Компания Ataria (подушки, комбайны, измельчители, реклама, карго, склад) ведёт свой учёт в «кабинете» (поле company в контексте: деньги компании, её расходы, платежи заводу, долги компании Алишеру). Расход на бизнес помечай company=true: он уйдёт в кабинет. Если бизнес-расход оплачен с личной карты или наличными, счёт личный, company=true (тогда компания должна Алишеру). Личные траты: company=false.
 - Не дублируй кабинет: если такая трата или платёж уже есть в company.expenses или company.upcoming (та же сумма и близкая дата или то же описание), не записывай её, а скажи в reply, что она уже учтена в кабинете.
@@ -50,7 +54,7 @@ function schema(accSlugs: string[], projSlugs: string[], catNames: string[]) {
   return {
     type: "object",
     additionalProperties: false,
-    required: ["reply", "transactions", "balance_updates"],
+    required: ["reply", "transactions", "balance_updates", "merchant_rules"],
     properties: {
       reply: { type: "string" },
       transactions: {
@@ -58,7 +62,7 @@ function schema(accSlugs: string[], projSlugs: string[], catNames: string[]) {
         items: {
           type: "object",
           additionalProperties: false,
-          required: ["type", "amount", "occurred_on", "account_slug", "to_account_slug", "project_slug", "category_name", "note", "company"],
+          required: ["type", "amount", "occurred_on", "account_slug", "to_account_slug", "project_slug", "category_name", "note", "company", "merchant"],
           properties: {
             type: { type: "string", enum: ["expense", "income", "transfer"] },
             amount: { type: "number", description: "Сумма в тенге, больше нуля" },
@@ -69,6 +73,7 @@ function schema(accSlugs: string[], projSlugs: string[], catNames: string[]) {
             category_name: nullable({ type: "string", enum: catNames }),
             note: nullable({ type: "string" }),
             company: { type: "boolean", description: "true, если это расход или доход компании Ataria" },
+            merchant: nullable({ type: "string", description: "Продавец как в оплате или чеке, без комментариев" }),
           },
         },
       },
@@ -79,6 +84,15 @@ function schema(accSlugs: string[], projSlugs: string[], catNames: string[]) {
           additionalProperties: false,
           required: ["account_slug", "balance"],
           properties: { account_slug: { type: "string", enum: accSlugs }, balance: { type: "number" } },
+        },
+      },
+      merchant_rules: {
+        type: "array",
+        items: {
+          type: "object",
+          additionalProperties: false,
+          required: ["merchant", "category_name"],
+          properties: { merchant: { type: "string" }, category_name: { type: "string", enum: catNames } },
         },
       },
     },
@@ -154,15 +168,16 @@ Deno.serve(async (req) => {
   if (!text && !files.length) return json({ error: "Пустое сообщение" }, 400);
 
   const month = today.slice(0, 7);
-  const [acc, proj, cat, recent, monthTx, kaspi, company] = await Promise.all([
+  const [acc, proj, cat, recent, monthTx, kaspi, company, rules] = await Promise.all([
     db.from("fin_account_balances").select("id,slug,name,kind,balance,archived,balance_source").order("sort"),
     db.from("fin_projects").select("id,slug,name,archived").order("sort"),
     db.from("fin_categories").select("id,name,type").order("sort"),
-    db.from("fin_transactions").select("occurred_on,type,amount,account_id,to_account_id,project_id,category_id,note")
+    db.from("fin_transactions").select("occurred_on,type,amount,account_id,to_account_id,project_id,category_id,note,merchant")
       .order("created_at", { ascending: false }).limit(15),
     db.from("fin_transactions").select("type,amount,project_id,category_id").gte("occurred_on", month + "-01"),
     db.rpc("fin_kaspi_monthly", { p_from: month + "-01" }),
     db.rpc("fin_company"),
+    db.from("fin_merchant_rules").select("merchant, fin_categories(name)").order("updated_at", { ascending: false }).limit(200),
   ]);
   for (const r of [acc, proj, cat]) if (r.error) return json({ error: r.error.message }, 500);
   const accounts = (acc.data as Acc[]).filter((a) => !a.archived);
@@ -195,8 +210,11 @@ Deno.serve(async (req) => {
     } : null,
     recent_transactions: (recent.data ?? []).map((t) => ({
       date: t.occurred_on, type: t.type, amount: Number(t.amount), account: accBy(t.account_id), to: accBy(t.to_account_id),
-      project: projBy(t.project_id), category: catBy(t.category_id), note: t.note,
+      project: projBy(t.project_id), category: catBy(t.category_id), note: t.note, merchant: t.merchant,
     })),
+    // sellers Alisher already sorted: seller -> category
+    // deno-lint-ignore no-explicit-any
+    known_merchants: (rules.data ?? []).map((r: any) => ({ merchant: r.merchant, category: r.fin_categories?.name })),
   };
 
   // attachments come from the private bucket; RLS lets only the owner read them
@@ -222,8 +240,9 @@ Deno.serve(async (req) => {
 
   let parsed: {
     reply: string;
-    transactions: { type: string; amount: number; occurred_on: string; account_slug: string; to_account_slug: string | null; project_slug: string | null; category_name: string | null; note: string | null; company: boolean }[];
+    transactions: { type: string; amount: number; occurred_on: string; account_slug: string; to_account_slug: string | null; project_slug: string | null; category_name: string | null; note: string | null; company: boolean; merchant: string | null }[];
     balance_updates: { account_slug: string; balance: number }[];
+    merchant_rules: { merchant: string; category_name: string }[];
   };
   try {
     const response = await claude.beta.messages.create({
@@ -262,6 +281,7 @@ Deno.serve(async (req) => {
       category_id: t.type === "transfer" ? null
         : categories.find((c) => c.name === t.category_name && c.type === (t.type === "income" ? "income" : "expense"))?.id ?? null,
       note: t.note,
+      merchant: t.merchant?.trim() || null,
       source,
       company: t.type !== "transfer" && !!t.company,
       cabinet_status: t.type !== "transfer" && t.company ? "pending" : null,
@@ -294,6 +314,9 @@ Deno.serve(async (req) => {
     const { error } = await db.from("fin_accounts").update({ opening_balance: u.balance - delta, opening_date: today }).eq("id", a.id);
     if (!error) balanceDone.push({ account: a.name, balance: u.balance });
   }
+
+  // "Ясмина — это одежда": remember the seller; its past "Прочее" rows move too
+  for (const m of parsed.merchant_rules ?? []) await db.rpc("fin_teach_merchant", { p_merchant: m.merchant, p_category: m.category_name });
 
   await db.from("fin_inbox").update({ reply: parsed.reply, transaction_ids: inserted.map((t) => t.id) }).eq("id", inbox.id);
   // a Shortcut shows the reply as a notification: plain text is easiest there

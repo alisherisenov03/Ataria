@@ -6,7 +6,7 @@ const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
   auth: { persistSession: true, autoRefreshToken: true, storageKey: 'fin-auth' },
 });
 
-const APP_VERSION = '6'; // bump together with version.json on every release
+const APP_VERSION = '7'; // bump together with version.json on every release
 
 const S = {
   session: null, owner: false, tab: 'home', month: ym(new Date()),
@@ -647,6 +647,7 @@ function txSheet(tx) {
       <label class="field" id="proj-f"><span>Проект</span><select name="project_id">${opts(S.projects.filter(p => !p.archived || p.id === t.project_id), t.project_id, '—')}</select></label>
       <label class="field" id="cat-f"><span>Категория</span><select name="category_id"></select></label>
       <label class="field"><span>Дата</span><input type="date" name="occurred_on" value="${t.occurred_on}" required></label>
+      ${tx?.merchant ? `<div class="muted small" style="margin:0 4px 8px">Продавец: ${esc(tx.merchant)}. Смените категорию — все его оплаты будут записываться туда же.</div>` : ''}
       <label class="field"><span>Комментарий</span><input name="note" value="${esc(t.note || '')}" placeholder="необязательно"></label>
       <label class="field row" id="co-f" style="gap:10px"><input type="checkbox" name="company" ${t.company ? 'checked' : ''} style="width:auto"><span style="font-size:15px;color:var(--text)">Расход компании (передать в кабинет Kaspi)</span></label>
       ${tx?.receipt_path ? `<button class="btn ghost" type="button" data-receipt>🧾 Показать чек</button>` : ''}
@@ -691,7 +692,9 @@ function txSheet(tx) {
       if (type === 'transfer' && !row.to_account_id) return toast('Выберите счёт получателя');
       const r = tx ? await sb.from('fin_transactions').update(row).eq('id', tx.id) : await sb.from('fin_transactions').insert({ ...row, source: 'app' });
       if (r.error) return toast('Ошибка: ' + r.error.message);
-      close(); toast(tx ? 'Сохранено' : 'Добавлено');
+      // a corrected seller is remembered by the database: say so, so Alisher knows he won't have to do it again
+      const learned = tx?.merchant && row.category_id && row.category_id !== tx.category_id;
+      close(); toast(learned ? `Запомнил: ${tx.merchant} → ${byId(S.categories, row.category_id)?.name}` : tx ? 'Сохранено' : 'Добавлено');
       if (row.occurred_on.slice(0, 7) !== S.month) S.month = row.occurred_on.slice(0, 7);
       reloadAll();
     };
